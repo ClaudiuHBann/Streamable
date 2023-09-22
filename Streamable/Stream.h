@@ -14,7 +14,7 @@ class Stream
         return forward<Self>(aSelf).mStream;
     }
 
-    inline decltype(auto) Reserve(std::streamsize aSize, char *aData = nullptr)
+    inline decltype(auto) Reserve(const std::streamsize aSize, char *aData = nullptr)
     {
         return mStream.pubsetbuf(aData, aSize);
     }
@@ -35,7 +35,7 @@ class Stream
     }
 
   private:
-    std::basic_stringbuf<char, std::char_traits<char>, std::allocator<char>> mStream;
+    std::stringbuf mStream;
     std::istream mStreamI;
     std::ostream mStreamO;
 };
