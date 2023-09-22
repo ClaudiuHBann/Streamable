@@ -6,10 +6,22 @@
     <ClCompile Include="Streamable\Stream.cpp">
       <Filter>Streamable</Filter>
     </ClCompile>
+    <ClCompile Include="Streamable\StreamReader.cpp">
+      <Filter>Streamable</Filter>
+    </ClCompile>
+    <ClCompile Include="Streamable\StreamWriter.cpp">
+      <Filter>Streamable</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Streamable\Stream.h">
+      <Filter>Streamable</Filter>
+    </ClInclude>
+    <ClInclude Include="Streamable\StreamWriter.h">
+      <Filter>Streamable</Filter>
+    </ClInclude>
+    <ClInclude Include="Streamable\StreamReader.h">
       <Filter>Streamable</Filter>
     </ClInclude>
   </ItemGroup>

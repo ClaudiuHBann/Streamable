@@ -147,10 +147,14 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Streamable\Stream.cpp" />
+    <ClCompile Include="Streamable\StreamReader.cpp" />
+    <ClCompile Include="Streamable\StreamWriter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Streamable\Stream.h" />
+    <ClInclude Include="Streamable\StreamReader.h" />
+    <ClInclude Include="Streamable\StreamWriter.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

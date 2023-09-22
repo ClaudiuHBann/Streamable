@@ -1,0 +1,13 @@
+---
+
+BasedOnStyle: Microsoft
+
+---
+
+Language: Cpp
+
+IncludeCategories:
+  - Regex:           '^".*pch\.h"'
+    Priority:        -2
+
+...
