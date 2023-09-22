@@ -1,1 +1,1 @@
-# IStreamable
+# Streamable
