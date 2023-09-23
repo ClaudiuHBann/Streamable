@@ -11,7 +11,7 @@ class Stream
 
     template <class Self> [[nodiscard]] constexpr auto &&GetBuffer(this Self &&aSelf)
     {
-        return forward<Self>(aSelf).mStream;
+        return std::forward<Self>(aSelf).mStream;
     }
 
     inline decltype(auto) Reserve(const std::streamsize aSize, char *aData = nullptr)

@@ -5,7 +5,7 @@
 
 namespace hbann
 {
-class StreamableSizeFinder
+class SizeFinder
 {
   public:
     template <typename Type, typename... Types>
@@ -16,29 +16,33 @@ class StreamableSizeFinder
 
     template <typename Type> static [[nodiscard]] constexpr decltype(auto) FindObjectSize(const Type &aObject) noexcept
     {
-        if constexpr (std::is_standard_layout_v<Type> && !std::is_pointer_v<Type>)
+        using TypeRaw = get_raw_t<Type>;
+
+        if constexpr (std::is_standard_layout_v<TypeRaw> && !std::is_pointer_v<TypeRaw>)
         {
-            return sizeof(Type);
+            return sizeof(TypeRaw);
         }
-        else if constexpr (std::is_base_of_v<IStreamable, Type>)
+        else if constexpr (std::is_base_of_v<IStreamable, TypeRaw>)
         {
             return static_cast<const IStreamable *>(&aObject)->GetObjectsSize();
         }
-        else if constexpr (std::ranges::range<Type>)
+        else if constexpr (std::ranges::range<TypeRaw>)
         {
             return FindRangeSize(aObject);
         }
         else
         {
-            static_assert(always_false<Type>, "Type is not accepted!");
+            static_assert(always_false<TypeRaw>, "Type is not accepted!");
         }
     }
 
     template <typename Type> static [[nodiscard]] constexpr size_t FindRangeRank() noexcept
     {
-        if constexpr (std::ranges::range<Type>)
+        using TypeRaw = get_raw_t<Type>;
+
+        if constexpr (std::ranges::range<TypeRaw>)
         {
-            return 1 + FindRangeRank<typename Type::value_type>();
+            return 1 + FindRangeRank<typename TypeRaw::value_type>();
         }
         else
         {
@@ -48,17 +52,19 @@ class StreamableSizeFinder
 
     template <typename Type> static [[nodiscard]] constexpr decltype(auto) FindRangeSize(const Type &aObject) noexcept
     {
-        if constexpr (FindRangeRank<Type>())
+        using TypeRaw = get_raw_t<Type>;
+
+        if constexpr (FindRangeRank<TypeRaw>())
         {
             const auto size = std::ranges::size(aObject);
             if (size)
             {
-                return sizeof(size) + size * FindRangeSize(*std::ranges::cbegin(aObject));
+                return sizeof(size_range) + size * FindRangeSize(*std::ranges::cbegin(aObject));
             }
             else
             {
                 // TODO: do we really need to specify that there are 0 elements in the range?
-                return sizeof(size);
+                return sizeof(size_range);
             }
         }
         else
