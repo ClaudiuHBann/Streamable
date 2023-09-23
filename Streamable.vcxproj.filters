@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="pch.cpp" />
     <ClCompile Include="Streamable\Stream.cpp">
       <Filter>Streamable</Filter>
     </ClCompile>
@@ -17,9 +16,9 @@
     <ClCompile Include="Streamable\SizeFinder.cpp">
       <Filter>Streamable</Filter>
     </ClCompile>
+    <ClCompile Include="pch.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h" />
     <ClInclude Include="Streamable\Stream.h">
       <Filter>Streamable</Filter>
     </ClInclude>
@@ -35,6 +34,7 @@
     <ClInclude Include="Streamable\SizeFinder.h">
       <Filter>Streamable</Filter>
     </ClInclude>
+    <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Streamable">
