@@ -158,14 +158,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Catch2-3.4.0\catch_amalgamated.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\pch.h" />
-    <ClInclude Include="Catch2-3.4.0\catch_amalgamated.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="Catch2-3.4.0\LICENSE.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

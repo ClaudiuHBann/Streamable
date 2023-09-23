@@ -3,13 +3,8 @@
   <ItemGroup>
     <ClCompile Include="..\Main.cpp" />
     <ClCompile Include="..\pch.cpp" />
-    <ClCompile Include="Catch2-3.4.0\catch_amalgamated.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\pch.h" />
-    <ClInclude Include="Catch2-3.4.0\catch_amalgamated.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="Catch2-3.4.0\LICENSE.txt" />
   </ItemGroup>
 </Project>
