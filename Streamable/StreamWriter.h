@@ -1,11 +1,12 @@
 #pragma once
 
-#include "IStreamable.h"
 #include "SizeFinder.h"
 #include "Stream.h"
 
 namespace hbann
 {
+class IStreamable;
+
 class StreamWriter
 {
   public:
@@ -37,13 +38,7 @@ class StreamWriter
         mStream.Write(objectPtr, sizeof(aObject));
     }
 
-    inline void WriteStreamable(IStreamable &aStreamable)
-    {
-        WriteObjectOfKnownSize(aStreamable.FindParseSize());
-
-        const auto stream = aStreamable.ToStream();
-        mStream.Write(stream.data(), (size_range)stream.size());
-    }
+    void WriteStreamable(IStreamable &aStreamable);
 
     template <typename Type> constexpr void WriteRange(const Type &aRange)
     {

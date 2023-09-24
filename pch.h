@@ -4,6 +4,8 @@
 #include <sstream>
 
 // Streamable
+#define STREAMABLE_INTERFACE_NAME "IStreamable"s
+
 namespace hbann
 {
 using size_range = uint32_t;

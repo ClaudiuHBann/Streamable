@@ -1,11 +1,12 @@
 #pragma once
 
-#include "IStreamable.h"
 #include "SizeFinder.h"
 #include "Stream.h"
 
 namespace hbann
 {
+class IStreamable;
+
 class StreamReader
 {
   public:
@@ -48,14 +49,7 @@ class StreamReader
         }
     }
 
-    template <typename Type> [[nodiscard]] constexpr decltype(auto) ReadStreamable() noexcept
-    {
-        static_assert(std::is_base_of_v<IStreamable, Type>, "Type is not a streamable!");
-
-        Type streamable{};
-        streamable.FromStream(mStream.Read(ReadObjectOfKnownSize<size_range>()));
-        return streamable;
-    }
+    template <typename Type = IStreamable> [[nodiscard]] constexpr decltype(auto) ReadStreamable() noexcept;
 
     template <typename Type> [[nodiscard]] constexpr decltype(auto) ReadRange()
     {
