@@ -9,33 +9,38 @@ namespace hbann
 class StreamReader
 {
   public:
-    template <typename Type, typename... Types>
-    static constexpr void ReadAll(const Stream &aStream, Type &aObject, Types &...aObjects)
+    constexpr StreamReader(Stream &aStream) noexcept : mStream(aStream)
+    {
+    }
+
+    template <typename Type, typename... Types> constexpr void ReadAll(Type &aObject, Types &...aObjects)
     {
         using TypeRaw = get_raw_t<Type>;
 
-        aObject = Read<TypeRaw>(aStream);
+        aObject = Read<TypeRaw>();
 
         if constexpr (sizeof...(aObjects))
         {
-            ReadAll(aStream, aObjects...);
+            ReadAll(aObjects...);
         }
     }
 
   private:
-    template <typename Type> static [[nodiscard]] constexpr decltype(auto) Read(const Stream &aStream)
+    Stream &mStream;
+
+    template <typename Type> [[nodiscard]] constexpr decltype(auto) Read()
     {
         if constexpr (std::is_standard_layout_v<Type> && !std::is_pointer_v<Type>)
         {
-            return ReadObjectOfKnownSize<Type>(aStream);
+            return ReadObjectOfKnownSize<Type>();
         }
         else if constexpr (std::is_base_of_v<IStreamable, Type>)
         {
-            return ReadStreamable<Type>(aStream);
+            return ReadStreamable<Type>();
         }
         else if constexpr (std::ranges::range<Type>)
         {
-            return ReadRange<Type>(aStream);
+            return ReadRange<Type>();
         }
         else
         {
@@ -43,16 +48,16 @@ class StreamReader
         }
     }
 
-    template <typename Type> static [[nodiscard]] constexpr decltype(auto) ReadStreamable(Stream &aStream) noexcept
+    template <typename Type> [[nodiscard]] constexpr decltype(auto) ReadStreamable() noexcept
     {
         static_assert(std::is_base_of_v<IStreamable, Type>, "Type is not a streamable!");
 
         Type streamable{};
-        streamable.FromStream(aStream.Read(ReadObjectOfKnownSize<size_range>()));
+        streamable.FromStream(mStream.Read(ReadObjectOfKnownSize<size_range>()));
         return streamable;
     }
 
-    template <typename Type> static [[nodiscard]] constexpr decltype(auto) ReadRange(const Stream &aStream)
+    template <typename Type> [[nodiscard]] constexpr decltype(auto) ReadRange()
     {
         static_assert(std::ranges::range<Type>, "Type is not a range!");
 
@@ -67,27 +72,26 @@ class StreamReader
         {
             for (size_t i = 0; i < size; i++)
             {
-                range.insert(std::ranges::cend(range), ReadRange<typename Type::value_type>(aStream));
+                range.insert(std::ranges::cend(range), ReadRange<typename Type::value_type>());
             }
         }
         else
         {
             for (size_t i = 0; i < size; i++)
             {
-                range.insert(std::ranges::cend(range), Read<typename Type::value_type>(aStream));
+                range.insert(std::ranges::cend(range), Read<typename Type::value_type>());
             }
         }
 
         return range;
     }
 
-    template <typename Type>
-    static [[nodiscard]] constexpr decltype(auto) ReadObjectOfKnownSize(Stream &aStream) noexcept
+    template <typename Type> [[nodiscard]] constexpr decltype(auto) ReadObjectOfKnownSize() noexcept
     {
         static_assert(std::is_standard_layout_v<Type> && !std::is_pointer_v<Type>,
                       "Type is not an object of known size or it is a pointer!");
 
-        return *reinterpret_cast<const Type *>(aStream.Read(sizeof(Type)).data());
+        return *reinterpret_cast<const Type *>(mStream.Read(sizeof(Type)).data());
     }
 };
 } // namespace hbann
