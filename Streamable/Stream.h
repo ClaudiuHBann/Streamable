@@ -5,7 +5,7 @@ namespace hbann
 class Stream
 {
   public:
-    inline Stream() : mStreamI(&mStream), mStreamO(&mStream)
+    inline Stream() : mStreamO(&mStream)
     {
     }
 
@@ -14,29 +14,39 @@ class Stream
         return std::forward<Self>(aSelf).mStream;
     }
 
-    inline decltype(auto) Reserve(const std::streamsize aSize, char *aData = nullptr)
+    inline void Reserve(const size_t aSize, char *aData = nullptr)
     {
-        return mStream.pubsetbuf(aData, aSize);
+        mStream.pubsetbuf(aData, aSize);
     }
 
-    inline decltype(auto) Read(char *aData, const std::streamsize aSize)
+    inline decltype(auto) Read(size_t aSize)
     {
-        return mStreamI.read(aData, aSize);
+        const auto streamView = mStream.view();
+        if (mReadCount + aSize > streamView.size())
+        {
+            aSize = streamView.size() - mReadCount;
+        }
+
+        mReadCount += aSize;
+        return std::string_view{streamView.data() + (mReadCount - aSize), aSize};
     }
 
-    inline decltype(auto) Write(const char *aData, const std::streamsize aSize)
+    inline decltype(auto) Write(const char *aData, const size_t aSize)
     {
-        return mStreamO.write(aData, aSize);
+        mStreamO.write(aData, aSize);
+        return *this;
     }
 
     inline decltype(auto) Flush()
     {
-        return mStreamO.flush();
+        mStreamO.flush();
+        return *this;
     }
 
   private:
     std::stringbuf mStream;
-    std::istream mStreamI;
     std::ostream mStreamO;
+
+    std::streamsize mReadCount{};
 };
 } // namespace hbann

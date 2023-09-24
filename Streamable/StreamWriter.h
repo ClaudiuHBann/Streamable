@@ -9,6 +9,17 @@ namespace hbann
 class StreamWriter
 {
   public:
+    template <typename Type, typename... Types>
+    constexpr void WriteAll(Stream &aStream, const Type &aObject, const Types &...aObjects)
+    {
+        Write(aStream, aObject);
+
+        if constexpr (sizeof...(aObjects))
+        {
+            WriteAll(aStream, aObjects...);
+        }
+    }
+
     template <typename Type> static inline void WriteObjectOfKnownSize(Stream &aStream, const Type &aObject)
     {
         using TypeRaw = get_raw_t<Type>;
