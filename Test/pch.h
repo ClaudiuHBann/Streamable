@@ -38,3 +38,9 @@ using namespace hbann;
 #include "Shared/Catch2-3.4.0/catch_amalgamated.hpp"
 
 using namespace Catch;
+
+// Test
+#include <list>
+#include <vector>
+
+using namespace std;
