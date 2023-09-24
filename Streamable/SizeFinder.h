@@ -14,6 +14,21 @@ class SizeFinder
         return FindObjectSize(aObject) + FindParseSize(aObjects...);
     }
 
+    template <typename Type> static [[nodiscard]] constexpr size_range FindRangeRank() noexcept
+    {
+        using TypeRaw = get_raw_t<Type>;
+
+        if constexpr (std::ranges::range<TypeRaw>)
+        {
+            return 1 + FindRangeRank<typename TypeRaw::value_type>();
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+  private:
     template <typename Type> static [[nodiscard]] constexpr decltype(auto) FindObjectSize(const Type &aObject) noexcept
     {
         using TypeRaw = get_raw_t<Type>;
@@ -36,20 +51,6 @@ class SizeFinder
         }
     }
 
-    template <typename Type> static [[nodiscard]] constexpr size_t FindRangeRank() noexcept
-    {
-        using TypeRaw = get_raw_t<Type>;
-
-        if constexpr (std::ranges::range<TypeRaw>)
-        {
-            return 1 + FindRangeRank<typename TypeRaw::value_type>();
-        }
-        else
-        {
-            return 0;
-        }
-    }
-
     template <typename Type> static [[nodiscard]] constexpr decltype(auto) FindRangeSize(const Type &aObject) noexcept
     {
         using TypeRaw = get_raw_t<Type>;
@@ -63,7 +64,6 @@ class SizeFinder
             }
             else
             {
-                // TODO: do we really need to specify that there are 0 elements in the range?
                 return sizeof(size_range);
             }
         }
@@ -73,8 +73,7 @@ class SizeFinder
         }
     }
 
-  private:
-    static constexpr size_t FindParseSize() noexcept
+    static constexpr size_range FindParseSize() noexcept
     {
         return 0;
     }

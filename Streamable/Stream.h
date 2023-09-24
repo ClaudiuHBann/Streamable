@@ -14,24 +14,24 @@ class Stream
         return std::forward<Self>(aSelf).mStream;
     }
 
-    inline void Reserve(const size_t aSize, char *aData = nullptr)
+    inline void Reserve(const size_range aSize, char *aData = nullptr)
     {
         mStream.pubsetbuf(aData, aSize);
     }
 
-    inline decltype(auto) Read(size_t aSize)
+    inline decltype(auto) Read(size_range aSize)
     {
         const auto streamView = mStream.view();
-        if (mReadCount + aSize > streamView.size())
+        if (mReadCount + aSize > (size_range)streamView.size())
         {
-            aSize = streamView.size() - mReadCount;
+            aSize = (size_range)streamView.size() - mReadCount;
         }
 
         mReadCount += aSize;
         return std::string_view{streamView.data() + (mReadCount - aSize), aSize};
     }
 
-    inline decltype(auto) Write(const char *aData, const size_t aSize)
+    inline decltype(auto) Write(const char *aData, const size_range aSize)
     {
         mStreamO.write(aData, aSize);
         return *this;
@@ -47,6 +47,6 @@ class Stream
     std::stringbuf mStream;
     std::ostream mStreamO;
 
-    std::streamsize mReadCount{};
+    size_range mReadCount{};
 };
 } // namespace hbann
