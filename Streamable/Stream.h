@@ -9,6 +9,11 @@ class Stream
     {
     }
 
+    inline Stream(Stream &&aStream) : mStreamO(&mStream)
+    {
+        *this = std::move(aStream);
+    }
+
     template <class Self> [[nodiscard]] constexpr auto &&GetBuffer(this Self &&aSelf)
     {
         return std::forward<Self>(aSelf).mStream;
@@ -40,6 +45,15 @@ class Stream
     inline decltype(auto) Flush()
     {
         mStreamO.flush();
+        return *this;
+    }
+
+    inline Stream &operator=(Stream &&aStream) noexcept
+    {
+        mStream = std::move(aStream.mStream);
+        mStreamO.move(std::move(aStream.mStreamO));
+        mReadCount = aStream.mReadCount;
+
         return *this;
     }
 
