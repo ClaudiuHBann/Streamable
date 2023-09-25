@@ -47,7 +47,13 @@
         return (size_range)size;                                                                                       \
     }
 
+#define STREAMABLE_DEFINE_INTRUSIVE                                                                                    \
+  private:                                                                                                             \
+    friend class StreamReader;                                                                                         \
+    friend class StreamWriter;
+
 #define STREAMABLE_DEFINE(baseClass, ...)                                                                              \
+    STREAMABLE_DEFINE_INTRUSIVE                                                                                        \
     STREAMABLE_DEFINE_TO_STREAM(baseClass, __VA_ARGS__)                                                                \
     STREAMABLE_DEFINE_FROM_STREAM(baseClass, __VA_ARGS__)                                                              \
     STREAMABLE_DEFINE_FIND_PARSE_SIZE(baseClass, __VA_ARGS__)
@@ -56,7 +62,9 @@ namespace hbann
 {
 class IStreamable
 {
+    friend class SizeFinder;
     friend class StreamWriter;
+    friend class StreamReader;
 
   public:
     virtual [[nodiscard]] Stream &&ToStream() = 0;
@@ -72,7 +80,7 @@ class IStreamable
 
     virtual [[nodiscard]] constexpr size_range FindParseSize() const noexcept = 0;
 
-    virtual [[nodiscard]] inline IStreamable *FindDerivedStreamable()
+    virtual [[nodiscard]] inline IStreamable *FindDerivedStreamable(StreamReader &)
     {
         return nullptr;
     }
@@ -89,6 +97,12 @@ class IStreamable
         mStreamReader = StreamReader(mStream);
 
         return mStream;
+    }
+
+    // used by StreamWriter::WriteStreamable to not make 2 or more methods
+    constexpr IStreamable &operator*() noexcept
+    {
+        return *this;
     }
 
   private:

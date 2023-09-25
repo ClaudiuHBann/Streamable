@@ -47,9 +47,16 @@ class StreamReader
         {
             return ReadObjectOfKnownSize<Type>();
         }
-        else if constexpr (std::is_base_of_v<IStreamable, Type>)
+        else if constexpr (std::is_base_of_v<IStreamable, std::remove_pointer_t<Type>>)
         {
-            return ReadStreamable<Type>();
+            if constexpr (std::is_pointer_v<Type>)
+            {
+                return ReadStreamablePtr<Type>();
+            }
+            else
+            {
+                return ReadStreamable<Type>();
+            }
         }
         else if constexpr (std::ranges::range<Type>)
         {
@@ -61,7 +68,34 @@ class StreamReader
         }
     }
 
-    template <typename Type = IStreamable> [[nodiscard]] constexpr decltype(auto) ReadStreamable() noexcept;
+    template <typename Type> [[nodiscard]] constexpr Type ReadStreamable() noexcept
+    {
+        static_assert(std::is_base_of_v<IStreamable, Type>, "Type is not a streamable!");
+
+        Type streamable{};
+        streamable.FromStream(mStream->Read(ReadObjectOfKnownSize<size_range>()));
+        return streamable;
+    }
+
+    template <typename Type> [[nodiscard]] constexpr Type ReadStreamablePtr() noexcept
+    {
+        using TypeNoPtr = std::remove_pointer_t<Type>;
+
+        static_assert(std::is_base_of_v<IStreamable, TypeNoPtr>, "Type is not a streamable pointer!");
+
+        // TODO: wtf is this brada?
+        const auto readIndex = mStream->GetReadIndex();
+
+        TypeNoPtr typeNoPtr{};
+        Stream stream(mStream->Read(ReadObjectOfKnownSize<size_range>()));
+        StreamReader streamReader(stream);
+        auto streamablePtr(typeNoPtr.FindDerivedStreamable(streamReader));
+
+        mStream->SetReadIndex(readIndex);
+
+        streamablePtr->FromStream(mStream->Read(ReadObjectOfKnownSize<size_range>()));
+        return static_cast<Type>(streamablePtr);
+    }
 
     template <typename Type> [[nodiscard]] constexpr decltype(auto) ReadRange()
     {

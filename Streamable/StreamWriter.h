@@ -50,7 +50,16 @@ class StreamWriter
         mStream->Write(objectPtr, sizeof(aObject));
     }
 
-    void WriteStreamable(IStreamable &aStreamable);
+    template <typename Type> void WriteStreamable(Type &aStreamable)
+    {
+        static_assert(std::is_base_of_v<IStreamable, std::remove_pointer_t<Type>>,
+                      "Type is not a streamable (pointer)!");
+
+        WriteObjectOfKnownSize((*aStreamable).FindParseSize());
+
+        const auto streamView = (*aStreamable).ToStream().GetBuffer().view();
+        mStream->Write(streamView.data(), (size_range)streamView.size());
+    }
 
     template <typename Type> constexpr void WriteRange(const Type &aRange)
     {
@@ -80,7 +89,7 @@ class StreamWriter
         {
             WriteObjectOfKnownSize(aObject);
         }
-        else if constexpr (std::is_base_of_v<IStreamable, Type>)
+        else if constexpr (std::is_base_of_v<IStreamable, std::remove_pointer_t<Type>>)
         {
             WriteStreamable(aObject);
         }

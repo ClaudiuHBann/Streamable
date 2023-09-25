@@ -12,7 +12,7 @@ class SizeFinder
     template <typename Type, typename... Types>
     static [[nodiscard]] constexpr auto FindParseSize(const Type &aObject, const Types &...aObjects) noexcept
     {
-        return FindObjectSize(aObject) + FindParseSize(aObjects...);
+        return FindObjectSize<get_raw_t<Type>>(aObject) + FindParseSize(aObjects...);
     }
 
     template <typename Type> static [[nodiscard]] constexpr size_t FindRangeRank() noexcept
@@ -32,23 +32,28 @@ class SizeFinder
   private:
     template <typename Type> static [[nodiscard]] constexpr auto FindObjectSize(const Type &aObject) noexcept
     {
-        using TypeRaw = get_raw_t<Type>;
-
-        if constexpr (std::is_standard_layout_v<TypeRaw> && !std::is_pointer_v<TypeRaw>)
+        if constexpr (std::is_standard_layout_v<Type> && !std::is_pointer_v<Type>)
         {
-            return sizeof(TypeRaw);
+            return sizeof(Type);
         }
-        else if constexpr (std::is_base_of_v<IStreamable, TypeRaw>)
+        else if constexpr (std::is_base_of_v<IStreamable, std::remove_pointer_t<Type>>)
         {
-            return static_cast<const IStreamable *>(&aObject)->FindParseSize();
+            if constexpr (std::is_pointer_v<Type>)
+            {
+                return static_cast<const IStreamable *>(aObject)->FindParseSize();
+            }
+            else
+            {
+                return static_cast<const IStreamable *>(&aObject)->FindParseSize();
+            }
         }
-        else if constexpr (std::ranges::range<TypeRaw>)
+        else if constexpr (std::ranges::range<Type>)
         {
             return FindRangeSize(aObject);
         }
         else
         {
-            static_assert(always_false<TypeRaw>, "Type is not accepted!");
+            static_assert(always_false<Type>, "Type is not accepted!");
         }
     }
 
