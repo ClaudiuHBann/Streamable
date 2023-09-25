@@ -132,6 +132,89 @@ TEST_CASE("Streamable", "[Streamable]")
     }
 }
 
+class Shape : public IStreamable
+{
+    STREAMABLE_DEFINE(IStreamable, mType);
+
+  protected:
+    [[nodiscard]] IStreamable *FindDerivedStreamable(StreamReader &aStreamReader) override;
+
+  public:
+    enum class Type : uint8_t
+    {
+        UNKNOWN,
+        RECTANGLE,
+        SQUARE,
+        CIRCLE
+    };
+
+    constexpr Shape() noexcept = default;
+
+    Shape(const Type &aType) : mType(aType)
+    {
+    }
+
+    bool operator==(const Shape &aShape) const
+    {
+        return mType == aShape.mType;
+    }
+
+    bool operator!=(const Shape &aShape) const
+    {
+        return !(*this == aShape);
+    }
+
+    const Type &GetType() const
+    {
+        return mType;
+    }
+
+  private:
+    Type mType = Type::UNKNOWN;
+};
+
+class Circle : public Shape
+{
+    STREAMABLE_DEFINE(Shape, mRadius);
+
+  public:
+    Circle() : Shape(Type::CIRCLE)
+    {
+    }
+
+    Circle(const double aRadius) : Shape(Type::CIRCLE), mRadius(aRadius)
+    {
+    }
+
+    bool operator==(const Circle &aCircle) const
+    {
+        return *(Shape *)this == *(Shape *)&aCircle && mRadius == aCircle.mRadius;
+    }
+
+    bool operator!=(const Circle &aCircle) const
+    {
+        return !(*this == aCircle);
+    }
+
+  private:
+    double mRadius{};
+};
+
+[[nodiscard]] IStreamable *Shape::FindDerivedStreamable(StreamReader &aStreamReader)
+{
+    Shape::Type type{};
+    aStreamReader.ReadAll(type);
+
+    switch (type)
+    {
+    case Shape::Type::CIRCLE:
+        return new Circle;
+
+    default:
+        return nullptr;
+    }
+}
+
 TEST_CASE("IStreamable", "[IStreamable]")
 {
     SECTION("Simple")
@@ -163,56 +246,6 @@ TEST_CASE("IStreamable", "[IStreamable]")
 
         REQUIRE(smth == smthElse);
     }
-
-    class Shape : public IStreamable
-    {
-        STREAMABLE_DEFINE(IStreamable, mType);
-
-      public:
-        enum class Type : uint8_t
-        {
-            UNKNOWN,
-            RECTANGLE,
-            SQUARE,
-            CIRCLE
-        };
-
-        constexpr Shape() noexcept = default;
-
-        Shape(const Type &aType) : mType(aType)
-        {
-        }
-
-        bool operator==(const Shape &aShape) const
-        {
-            return mType == aShape.mType;
-        }
-
-      private:
-        Type mType = Type::UNKNOWN;
-    };
-
-    class Circle : public Shape
-    {
-        STREAMABLE_DEFINE(Shape, mRadius);
-
-      public:
-        Circle() : Shape(Type::CIRCLE)
-        {
-        }
-
-        Circle(const double aRadius) : Shape(Type::CIRCLE), mRadius(aRadius)
-        {
-        }
-
-        bool operator==(const Circle &aCircle) const
-        {
-            return *(Shape *)this == *(Shape *)&aCircle && mRadius == aCircle.mRadius;
-        }
-
-      private:
-        double mRadius{};
-    };
 
     SECTION("Derived")
     {
@@ -252,6 +285,55 @@ TEST_CASE("IStreamable", "[IStreamable]")
         [[maybe_unused]] auto _(sphereEnd.FromStream(sphereStart.ToStream()));
 
         REQUIRE(sphereStart == sphereEnd);
+    }
+
+    SECTION("BaseClass*")
+    {
+        class Context : public IStreamable
+        {
+            STREAMABLE_DEFINE(IStreamable, mShapes);
+
+          public:
+            constexpr Context() noexcept = default;
+
+            Context(vector<Shape *> &&aShapes) : mShapes(move(aShapes))
+            {
+            }
+
+            bool operator==(const Context &aContext) const
+            {
+                if (mShapes.size() != aContext.mShapes.size())
+                {
+                    return false;
+                }
+
+                for (size_t i = 0; i < mShapes.size(); i++)
+                {
+                    if (*mShapes[i] != *aContext.mShapes[i])
+                    {
+                        return false;
+                    }
+
+                    if (*(Circle *)mShapes[i] != *(Circle *)aContext.mShapes[i])
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+          private:
+            vector<Shape *> mShapes{};
+        };
+
+        vector<Shape *> shapes{new Circle(3.14156), new Circle(2.4)};
+        Context contextStart(move(shapes));
+
+        Context contextEnd;
+        [[maybe_unused]] auto _(contextEnd.FromStream(contextStart.ToStream()));
+
+        REQUIRE(contextStart == contextEnd);
     }
 }
 
