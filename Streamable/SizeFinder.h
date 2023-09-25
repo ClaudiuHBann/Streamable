@@ -1,20 +1,21 @@
 #pragma once
 
-#include "IStreamable.h"
 #include "Stream.h"
 
 namespace hbann
 {
+class IStreamable;
+
 class SizeFinder
 {
   public:
     template <typename Type, typename... Types>
-    static [[nodiscard]] constexpr decltype(auto) FindParseSize(const Type &aObject, const Types &...aObjects) noexcept
+    static [[nodiscard]] constexpr auto FindParseSize(const Type &aObject, const Types &...aObjects) noexcept
     {
         return FindObjectSize(aObject) + FindParseSize(aObjects...);
     }
 
-    template <typename Type> static [[nodiscard]] constexpr size_range FindRangeRank() noexcept
+    template <typename Type> static [[nodiscard]] constexpr size_t FindRangeRank() noexcept
     {
         using TypeRaw = get_raw_t<Type>;
 
@@ -29,7 +30,7 @@ class SizeFinder
     }
 
   private:
-    template <typename Type> static [[nodiscard]] constexpr decltype(auto) FindObjectSize(const Type &aObject) noexcept
+    template <typename Type> static [[nodiscard]] constexpr auto FindObjectSize(const Type &aObject) noexcept
     {
         using TypeRaw = get_raw_t<Type>;
 
@@ -39,7 +40,7 @@ class SizeFinder
         }
         else if constexpr (std::is_base_of_v<IStreamable, TypeRaw>)
         {
-            return static_cast<const IStreamable *>(&aObject)->GetObjectsSize();
+            return static_cast<const IStreamable *>(&aObject)->FindParseSize();
         }
         else if constexpr (std::ranges::range<TypeRaw>)
         {
@@ -51,7 +52,7 @@ class SizeFinder
         }
     }
 
-    template <typename Type> static [[nodiscard]] constexpr decltype(auto) FindRangeSize(const Type &aObject) noexcept
+    template <typename Type> static [[nodiscard]] constexpr auto FindRangeSize(const Type &aObject) noexcept
     {
         using TypeRaw = get_raw_t<Type>;
 
@@ -73,7 +74,7 @@ class SizeFinder
         }
     }
 
-    static constexpr size_range FindParseSize() noexcept
+    static constexpr size_t FindParseSize() noexcept
     {
         return 0;
     }

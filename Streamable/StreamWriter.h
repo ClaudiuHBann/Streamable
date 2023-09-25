@@ -10,8 +10,13 @@ class IStreamable;
 class StreamWriter
 {
   public:
-    constexpr StreamWriter(Stream &aStream) noexcept : mStream(aStream)
+    constexpr StreamWriter(Stream &aStream) noexcept : mStream(&aStream)
     {
+    }
+
+    constexpr StreamWriter(StreamWriter &&aStreamWriter) noexcept
+    {
+        *this = std::move(aStreamWriter);
     }
 
     template <typename Type, typename... Types> constexpr void WriteAll(const Type &aObject, const Types &...aObjects)
@@ -26,8 +31,15 @@ class StreamWriter
         }
     }
 
+    constexpr StreamWriter &operator=(StreamWriter &&aStreamWriter) noexcept
+    {
+        mStream = aStreamWriter.mStream;
+
+        return *this;
+    }
+
   private:
-    Stream &mStream;
+    Stream *mStream{};
 
     template <typename Type> inline void WriteObjectOfKnownSize(const Type &aObject)
     {
@@ -35,7 +47,7 @@ class StreamWriter
                       "Type is not an object of known size or it is a pointer!");
 
         const auto objectPtr = reinterpret_cast<const char *>(&aObject);
-        mStream.Write(objectPtr, sizeof(aObject));
+        mStream->Write(objectPtr, sizeof(aObject));
     }
 
     void WriteStreamable(IStreamable &aStreamable);

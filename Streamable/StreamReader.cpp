@@ -9,7 +9,7 @@ template <typename Type> [[nodiscard]] constexpr decltype(auto) StreamReader::Re
     static_assert(std::is_base_of_v<IStreamable, Type>, "Type is not a streamable!");
 
     Type streamable{};
-    streamable.FromStream(mStream.Read(ReadObjectOfKnownSize<size_range>()));
+    streamable.FromStream(mStream->Read(ReadObjectOfKnownSize<size_range>()));
     return streamable;
 }
 } // namespace hbann

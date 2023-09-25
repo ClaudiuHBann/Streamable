@@ -25,3 +25,8 @@ struct has_method_reserve<Container, std::void_t<decltype(std::declval<Container
 
 template <typename Type> constexpr auto has_method_reserve_v = has_method_reserve<Type>::value;
 } // namespace hbann
+
+/*
+    TOOD:
+         - use size_t everywhere and size_range just when writing/reading from the stream
+*/

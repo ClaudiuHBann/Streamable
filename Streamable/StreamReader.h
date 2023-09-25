@@ -10,8 +10,13 @@ class IStreamable;
 class StreamReader
 {
   public:
-    constexpr StreamReader(Stream &aStream) noexcept : mStream(aStream)
+    constexpr StreamReader(Stream &aStream) noexcept : mStream(&aStream)
     {
+    }
+
+    constexpr StreamReader(StreamReader &&aStreamReader) noexcept
+    {
+        *this = std::move(aStreamReader);
     }
 
     template <typename Type, typename... Types> constexpr void ReadAll(Type &aObject, Types &...aObjects)
@@ -26,8 +31,15 @@ class StreamReader
         }
     }
 
+    constexpr StreamReader &operator=(StreamReader &&aStreamReader) noexcept
+    {
+        mStream = aStreamReader.mStream;
+
+        return *this;
+    }
+
   private:
-    Stream &mStream;
+    Stream *mStream{};
 
     template <typename Type> [[nodiscard]] constexpr decltype(auto) Read()
     {
@@ -85,7 +97,7 @@ class StreamReader
         static_assert(std::is_standard_layout_v<Type> && !std::is_pointer_v<Type>,
                       "Type is not an object of known size or it is a pointer!");
 
-        return *reinterpret_cast<const Type *>(mStream.Read(sizeof(Type)).data());
+        return *reinterpret_cast<const Type *>(mStream->Read(sizeof(Type)).data());
     }
 };
 } // namespace hbann
