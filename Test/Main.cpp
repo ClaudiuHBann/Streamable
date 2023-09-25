@@ -134,6 +134,125 @@ TEST_CASE("Streamable", "[Streamable]")
 
 TEST_CASE("IStreamable", "[IStreamable]")
 {
+    SECTION("Simple")
+    {
+        class Something : public IStreamable
+        {
+            STREAMABLE_DEFINE(IStreamable, mNickname, mIDK);
+
+          public:
+            Something() noexcept = default;
+
+            Something(const wstring &aNickname, const size_t aAge) : mNickname(aNickname), mIDK(aAge)
+            {
+            }
+
+            bool operator==(const Something &aSomething) const
+            {
+                return mNickname == aSomething.mNickname && mIDK == aSomething.mIDK;
+            }
+
+          private:
+            wstring mNickname{};
+            size_t mIDK{};
+        };
+
+        Something smth(L"HBann"s, 1234567890);
+        Something smthElse{};
+        [[maybe_unused]] auto _(smthElse.FromStream(smth.ToStream()));
+
+        REQUIRE(smth == smthElse);
+    }
+
+    class Shape : public IStreamable
+    {
+        STREAMABLE_DEFINE(IStreamable, mType);
+
+      public:
+        enum class Type : uint8_t
+        {
+            UNKNOWN,
+            RECTANGLE,
+            SQUARE,
+            CIRCLE
+        };
+
+        constexpr Shape() noexcept = default;
+
+        Shape(const Type &aType) : mType(aType)
+        {
+        }
+
+        bool operator==(const Shape &aShape) const
+        {
+            return mType == aShape.mType;
+        }
+
+      private:
+        Type mType = Type::UNKNOWN;
+    };
+
+    class Circle : public Shape
+    {
+        STREAMABLE_DEFINE(Shape, mRadius);
+
+      public:
+        Circle() : Shape(Type::CIRCLE)
+        {
+        }
+
+        Circle(const double aRadius) : Shape(Type::CIRCLE), mRadius(aRadius)
+        {
+        }
+
+        bool operator==(const Circle &aCircle) const
+        {
+            return *(Shape *)this == *(Shape *)&aCircle && mRadius == aCircle.mRadius;
+        }
+
+      private:
+        double mRadius{};
+    };
+
+    SECTION("Derived")
+    {
+        Shape *circleStart = new Circle(3.14156);
+        Shape *circleEnd = new Circle(2.4);
+        [[maybe_unused]] auto _(circleEnd->FromStream(circleStart->ToStream()));
+
+        REQUIRE(*(Circle *)circleStart == *(Circle *)circleEnd);
+    }
+
+    SECTION("Derived++")
+    {
+        class Sphere : public Circle
+        {
+            STREAMABLE_DEFINE(Circle, mReflexion);
+
+          public:
+            Sphere() : Circle()
+            {
+            }
+
+            Sphere(const double aRadius, const bool aReflexion) : Circle(aRadius), mReflexion(aReflexion)
+            {
+            }
+
+            bool operator==(const Sphere &aSphere) const
+            {
+                return *(Circle *)this == *(Circle *)&aSphere && mReflexion == aSphere.mReflexion;
+            }
+
+          private:
+            bool mReflexion{};
+        };
+
+        Sphere sphereStart(3.14156, true);
+        Sphere sphereEnd;
+        [[maybe_unused]] auto _(sphereEnd.FromStream(sphereStart.ToStream()));
+
+        REQUIRE(sphereStart == sphereEnd);
+    }
 }
 
 int main(int argc, char **argv)
