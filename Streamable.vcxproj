@@ -154,6 +154,7 @@
     <ClCompile Include="Streamable\Stream.cpp" />
     <ClCompile Include="Streamable\StreamReader.cpp" />
     <ClCompile Include="Streamable\StreamWriter.cpp" />
+    <ClCompile Include="Streamable\StringBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -162,6 +163,7 @@
     <ClInclude Include="Streamable\Stream.h" />
     <ClInclude Include="Streamable\StreamReader.h" />
     <ClInclude Include="Streamable\StreamWriter.h" />
+    <ClInclude Include="Streamable\StringBuffer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
