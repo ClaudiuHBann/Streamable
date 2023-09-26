@@ -6,21 +6,23 @@ namespace hbann
 {
 class Stream
 {
+    // TODO: delete after deserialize IStreamable* right
     friend class StreamReader;
 
   public:
-    inline Stream() : mStreamO(&mStream)
+    inline Stream() : mStream(StringBuffer::State::BOTH), mStreamO(&mStream)
     {
     }
 
-    inline Stream(std::string_view aStringView) : mStreamO(&mStream)
+    // mStream.mState and mStreamO will be refreshed
+    inline Stream(std::string_view aStringView) : mStream(StringBuffer::State::READ), mStreamO(&mStream)
     {
-        // TODO: we remove the const but we know what we are doing 💪, right?
-        Reserve((size_range)aStringView.size(), (char *)aStringView.data());
-        mStreamO.move(std::ostream(&mStream)); // refresh output stream
+        Reserve((size_range)aStringView.size(), const_cast<char *>(aStringView.data()));
+        mStreamO.move(std::ostream(&mStream));
     }
 
-    inline Stream(Stream &&aStream) noexcept : mStreamO(&mStream)
+    // mStreamO will be refreshed
+    inline Stream(Stream &&aStream) : mStreamO(&mStream)
     {
         *this = std::move(aStream);
     }
@@ -35,8 +37,11 @@ class Stream
         mStream.pubsetbuf(aData, aSize);
     }
 
-    inline decltype(auto) Read(size_range aSize)
+    inline auto Read(size_range aSize)
     {
+        ThrowIfCant(StringBuffer::State::READ);
+
+        // clamp read count
         const auto streamView = mStream.view();
         if (mReadIndex + aSize > (size_range)streamView.size())
         {
@@ -49,12 +54,16 @@ class Stream
 
     inline decltype(auto) Write(const char *aData, const size_range aSize)
     {
+        ThrowIfCant(StringBuffer::State::WRITE);
+
         mStreamO.write(aData, aSize);
         return *this;
     }
 
     inline decltype(auto) Flush()
     {
+        ThrowIfCant(StringBuffer::State::WRITE);
+
         mStreamO.flush();
         return *this;
     }
@@ -74,6 +83,15 @@ class Stream
 
     size_range mReadIndex{};
 
+    inline void ThrowIfCant(const StringBuffer::State aState) const
+    {
+        if (!mStream.Can(aState))
+        {
+            throw std::runtime_error(std::format("The stream cannot {}!", std::to_string(aState)));
+        }
+    }
+
+    // TODO: delete after deserialize IStreamable* right
     constexpr size_range GetReadIndex() const noexcept
     {
         return mReadIndex;

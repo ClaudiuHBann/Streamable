@@ -13,7 +13,7 @@ class StringBuffer : public std::stringbuf
         BOTH = 0b11
     };
 
-    inline StringBuffer(const State aState) : mState(aState)
+    inline StringBuffer(const State aState = State::NONE) : mState(aState)
     {
     }
 
@@ -76,4 +76,26 @@ class StringBuffer : public std::stringbuf
         setp(nullptr, nullptr, nullptr);
     }
 };
+
 } // namespace hbann
+
+namespace std
+{
+[[nodiscard]] inline string to_string(const hbann::StringBuffer::State aState)
+{
+    switch (aState)
+    {
+    case hbann::StringBuffer::State::NONE:
+        return "NONE";
+    case hbann::StringBuffer::State::WRITE:
+        return "WRITE";
+    case hbann::StringBuffer::State::READ:
+        return "READ";
+    case hbann::StringBuffer::State::BOTH:
+        return "BOTH";
+
+    default:
+        return "";
+    }
+}
+} // namespace std
