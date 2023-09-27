@@ -17,7 +17,7 @@ class Stream
     // mStream.mState and mStreamO will be refreshed
     inline Stream(std::string_view aStringView) : mStream(StringBuffer::State::READ), mStreamO(&mStream)
     {
-        Reserve(aStringView.size(), const_cast<char *>(aStringView.data()));
+        PubSetBuf(const_cast<char *>(aStringView.data()), aStringView.size());
         mStreamO.move(std::ostream(&mStream));
     }
 
@@ -27,14 +27,14 @@ class Stream
         *this = std::move(aStream);
     }
 
-    template <class Self> [[nodiscard]] constexpr auto &&GetBuffer(this Self &&aSelf)
+    constexpr const StringBuffer &GetBuffer() const noexcept
     {
-        return std::forward<Self>(aSelf).mStream;
+        return mStream;
     }
 
-    inline void Reserve(const size_t aSize, char *aData = nullptr)
+    inline void Reserve(const size_t aSize)
     {
-        mStream.pubsetbuf(aData, aSize);
+        mStream.pubsetbuf(nullptr, aSize);
     }
 
     inline auto Read(size_t aSize)
@@ -83,11 +83,16 @@ class Stream
 
     size_t mReadIndex{};
 
+    inline void PubSetBuf(char *aData, const size_t aSize)
+    {
+        mStream.pubsetbuf(aData, aSize);
+    }
+
     inline void ThrowIfCant(const StringBuffer::State aState) const
     {
         if (!mStream.Can(aState))
         {
-            throw std::runtime_error(std::format("The stream cannot {}!", std::to_string(aState)));
+            throw std::runtime_error("The stream cannot " + std::to_string(aState) + "!");
         }
     }
 

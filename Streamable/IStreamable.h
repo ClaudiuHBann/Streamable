@@ -85,7 +85,7 @@ class IStreamable
         return nullptr;
     }
 
-    constexpr Stream &&Release()
+    [[nodiscard]] constexpr decltype(auto) Release()
     {
         return std::move(mStream);
     }

@@ -48,7 +48,7 @@ class StringBuffer : public std::stringbuf
         else
         {
             Clear();
-            setbuf(new char_type[aSize], aSize);
+            setbuf(new char_type[(size_t)aSize], aSize);
         }
 
         return this;
@@ -57,7 +57,8 @@ class StringBuffer : public std::stringbuf
   private:
     inline void Clear() noexcept
     {
-        auto streamO(pbase()), streamI(eback());
+        auto streamO(pbase());
+        auto streamI(eback());
         if (!streamO && !streamI)
         {
             return;
