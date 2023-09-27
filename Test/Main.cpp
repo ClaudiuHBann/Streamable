@@ -357,7 +357,3 @@ int main(int argc, char **argv)
 
     return returnCode;
 }
-
-// class == ""s -> use strcmp_s
-// move -> std::move
-// setp only has 2 params use the one with 2 params and offset the next pointer

@@ -39,11 +39,14 @@ class StringBuffer : public std::stringbuf
 
         if (aData)
         {
-            auto dataStart = aData;
-            auto dataEnd = aData + aSize;
+            const auto dataStart = aData;
+            const auto dataEnd = aData + aSize;
+            const auto dataNext = Can(State::WRITE) ? dataStart : dataEnd;
 
             setg(dataStart, dataStart, dataEnd);
-            setp(dataStart, Can(State::WRITE) ? dataStart : dataEnd, dataEnd);
+
+            setp(dataStart, dataEnd);
+            pbump(static_cast<int>(dataNext - dataStart));
         }
         else
         {
