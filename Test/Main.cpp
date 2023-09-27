@@ -5,18 +5,18 @@ TEST_CASE("Streamable", "[Streamable]")
     SECTION("SizeFinder")
     {
         int i{42};
-        REQUIRE(SizeFinder::FindRangeRank<decltype(i)>() == 0);
-        REQUIRE(SizeFinder::FindParseSize(i) == (size_range)sizeof(i));
+        REQUIRE(hbann::SizeFinder::FindRangeRank<decltype(i)>() == 0);
+        REQUIRE(hbann::SizeFinder::FindParseSize(i) == sizeof(i));
 
         std::list<std::pair<int, float>> l{{22, 14.f}, {93, 32.f}};
-        REQUIRE(SizeFinder::FindRangeRank<decltype(l)>() == 1);
-        REQUIRE(SizeFinder::FindParseSize(l) ==
-                size_range(sizeof(size_range) + l.size() * sizeof(decltype(l)::value_type)));
+        REQUIRE(hbann::SizeFinder::FindRangeRank<decltype(l)>() == 1);
+        REQUIRE(hbann::SizeFinder::FindParseSize(l) ==
+                sizeof(hbann::size_range) + l.size() * sizeof(decltype(l)::value_type));
 
         std::vector<double> v{512., 52., 77., 42321.};
-        REQUIRE(SizeFinder::FindRangeRank<decltype(v)>() == 1);
-        REQUIRE(SizeFinder::FindParseSize(v) ==
-                size_range(sizeof(size_range) + v.size() * sizeof(decltype(v)::value_type)));
+        REQUIRE(hbann::SizeFinder::FindRangeRank<decltype(v)>() == 1);
+        REQUIRE(hbann::SizeFinder::FindParseSize(v) ==
+                sizeof(hbann::size_range) + v.size() * sizeof(decltype(v)::value_type));
 
         enum class enumClassTest : uint8_t
         {
@@ -27,61 +27,62 @@ TEST_CASE("Streamable", "[Streamable]")
 
         std::list<std::vector<enumClassTest>> lv{{enumClassTest::NONE, enumClassTest::NOTHING},
                                                  {enumClassTest::NOTHING, enumClassTest::NADA}};
-        REQUIRE(SizeFinder::FindRangeRank<decltype(lv)>() == 2);
+        REQUIRE(hbann::SizeFinder::FindRangeRank<decltype(lv)>() == 2);
 
-        size_t lvSize = sizeof(size_range);
+        size_t lvSize = sizeof(hbann::size_range);
         for (const auto &lvItem : lv)
         {
-            lvSize += sizeof(size_range) + lvItem.size() * sizeof(decltype(lv)::value_type::value_type);
+            lvSize += sizeof(hbann::size_range) + lvItem.size() * sizeof(decltype(lv)::value_type::value_type);
         }
-        REQUIRE(SizeFinder::FindParseSize(lv) == (size_range)lvSize);
+        REQUIRE(hbann::SizeFinder::FindParseSize(lv) == lvSize);
 
         std::vector<std::vector<std::string>> vvs{{"gsbbbawf", "hbann", "1fwah10"}, {"palelica", "t43hachhew"}};
-        REQUIRE(SizeFinder::FindRangeRank<decltype(vvs)>() == 3); // the string is a range itself
+        REQUIRE(hbann::SizeFinder::FindRangeRank<decltype(vvs)>() == 3); // the string is a range itself
 
-        size_t vvsSize = sizeof(size_range);
+        size_t vvsSize = sizeof(hbann::size_range);
         for (const auto &vsItem : vvs)
         {
-            vvsSize += sizeof(size_range);
+            vvsSize += sizeof(hbann::size_range);
             for (const auto &sItem : vsItem)
             {
-                vvsSize += sizeof(size_range) + sItem.size() * sizeof(get_raw_t<decltype(sItem)>::value_type);
+                vvsSize +=
+                    sizeof(hbann::size_range) + sItem.size() * sizeof(hbann::get_raw_t<decltype(sItem)>::value_type);
             }
         }
-        REQUIRE(SizeFinder::FindParseSize(vvs) == (size_range)vvsSize);
+        REQUIRE(hbann::SizeFinder::FindParseSize(vvs) == vvsSize);
 
         // TODO: add IStreamable SizeFinder test
     }
 
     SECTION("Stream")
     {
-        Stream stream;
+        hbann::Stream stream;
         stream.Reserve(21);
 
         std::string biceps("biceps");
-        stream.Write(biceps.c_str(), (size_range)biceps.size()).Flush();
-        const auto bicepsView = stream.Read((size_range)biceps.size());
+        stream.Write(biceps.c_str(), biceps.size()).Flush();
+        const auto bicepsView = stream.Read(biceps.size());
         REQUIRE(biceps.compare(bicepsView) == 0);
 
         REQUIRE(!stream.Read(1).size());
 
         std::string triceps("triceps");
-        stream.Write(triceps.c_str(), (size_range)triceps.size()).Flush();
-        const auto tricepsView = stream.Read((size_range)triceps.size());
+        stream.Write(triceps.c_str(), triceps.size()).Flush();
+        const auto tricepsView = stream.Read(triceps.size());
         REQUIRE(triceps.compare(tricepsView) == 0);
 
         REQUIRE(!stream.Read(1).size());
 
         std::string cariceps("cariceps");
-        stream.Write(cariceps.c_str(), (size_range)cariceps.size()).Flush();
-        const auto caricepsView = stream.Read((size_range)cariceps.size());
+        stream.Write(cariceps.c_str(), cariceps.size()).Flush();
+        const auto caricepsView = stream.Read(cariceps.size());
         REQUIRE(cariceps.compare(caricepsView) == 0);
     }
 
     SECTION("StreamWriter")
     {
-        Stream stream;
-        StreamWriter streamWriter(stream);
+        hbann::Stream stream;
+        hbann::StreamWriter streamWriter(stream);
 
         double d = 12.34;
         std::string s("cariceps");
@@ -90,8 +91,8 @@ TEST_CASE("Streamable", "[Streamable]")
         const auto dView = stream.Read(sizeof(d)).data();
         REQUIRE(d == *reinterpret_cast<const decltype(d) *>(dView));
 
-        const auto sSizeView = stream.Read(sizeof(size_range)).data();
-        const auto sSize = *reinterpret_cast<const size_range *>(sSizeView);
+        const auto sSizeView = stream.Read(sizeof(hbann::size_range)).data();
+        const auto sSize = *reinterpret_cast<const hbann::size_range *>(sSizeView);
         REQUIRE(s.size() == sSize);
         const auto sView = stream.Read(sSize);
         REQUIRE(s.compare(sView) == 0);
@@ -101,9 +102,9 @@ TEST_CASE("Streamable", "[Streamable]")
 
     SECTION("StreamReader")
     {
-        Stream stream;
-        StreamWriter streamWriter(stream);
-        StreamReader streamReader(stream);
+        hbann::Stream stream;
+        hbann::StreamWriter streamWriter(stream);
+        hbann::StreamReader streamReader(stream);
 
         double d = 12.34;
         std::string s("cariceps");
@@ -120,12 +121,12 @@ TEST_CASE("Streamable", "[Streamable]")
     }
 }
 
-class Shape : public IStreamable
+class Shape : public hbann::IStreamable
 {
     STREAMABLE_DEFINE(IStreamable, mType);
 
   protected:
-    [[nodiscard]] IStreamable *FindDerivedStreamable(StreamReader &aStreamReader) override;
+    [[nodiscard]] IStreamable *FindDerivedStreamable(hbann::StreamReader &aStreamReader) override;
 
   public:
     enum class Type : uint8_t
@@ -188,7 +189,7 @@ class Circle : public Shape
     double mRadius{};
 };
 
-[[nodiscard]] IStreamable *Shape::FindDerivedStreamable(StreamReader &aStreamReader)
+[[nodiscard]] hbann::IStreamable *Shape::FindDerivedStreamable(hbann::StreamReader &aStreamReader)
 {
     Shape::Type type{};
     aStreamReader.ReadAll(type);
@@ -207,7 +208,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
 {
     SECTION("Simple")
     {
-        class Something : public IStreamable
+        class Something : public hbann::IStreamable
         {
             STREAMABLE_DEFINE(IStreamable, mNickname, mIDK);
 
@@ -277,7 +278,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
 
     SECTION("BaseClass*")
     {
-        class Context : public IStreamable
+        class Context : public hbann::IStreamable
         {
             STREAMABLE_DEFINE(IStreamable, mShapes);
 

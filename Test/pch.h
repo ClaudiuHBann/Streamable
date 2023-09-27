@@ -8,8 +8,6 @@
 #include "Streamable/StreamReader.h"
 #include "Streamable/StreamWriter.h"
 
-using namespace hbann;
-
 // Shared
 #define CATCH_AMALGAMATED_CUSTOM_MAIN
 

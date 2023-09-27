@@ -86,17 +86,17 @@ class StringBuffer : public std::stringbuf
 
 namespace std
 {
-[[nodiscard]] inline string to_string(const hbann::StringBuffer::State aState)
+[[nodiscard]] inline string to_string(const ::hbann::StringBuffer::State aState)
 {
     switch (aState)
     {
-    case hbann::StringBuffer::State::NONE:
+    case ::hbann::StringBuffer::State::NONE:
         return "NONE";
-    case hbann::StringBuffer::State::WRITE:
+    case ::hbann::StringBuffer::State::WRITE:
         return "WRITE";
-    case hbann::StringBuffer::State::READ:
+    case ::hbann::StringBuffer::State::READ:
         return "READ";
-    case hbann::StringBuffer::State::BOTH:
+    case ::hbann::StringBuffer::State::BOTH:
         return "BOTH";
 
     default:

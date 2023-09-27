@@ -5,7 +5,7 @@
 
 #define STREAMABLE_DEFINE_FROM_STREAM(baseClass, ...)                                                                  \
   public:                                                                                                              \
-    [[nodiscard]] Stream &&FromStream(Stream &&aStream) override                                                       \
+    [[nodiscard]] ::hbann::Stream &&FromStream(::hbann::Stream &&aStream) override                                     \
     {                                                                                                                  \
         if constexpr (std::string_view(#baseClass) != STREAMABLE_INTERFACE_NAME)                                       \
         {                                                                                                              \
@@ -20,7 +20,7 @@
 
 #define STREAMABLE_DEFINE_TO_STREAM(baseClass, ...)                                                                    \
   public:                                                                                                              \
-    [[nodiscard]] Stream &&ToStream() override                                                                         \
+    [[nodiscard]] ::hbann::Stream &&ToStream() override                                                                \
     {                                                                                                                  \
         if constexpr (std::string_view(#baseClass) != STREAMABLE_INTERFACE_NAME)                                       \
         {                                                                                                              \
@@ -42,15 +42,15 @@
             size += baseClass::FindParseSize();                                                                        \
         }                                                                                                              \
                                                                                                                        \
-        size += hbann::SizeFinder::FindParseSize(__VA_ARGS__);                                                         \
+        size += ::hbann::SizeFinder::FindParseSize(__VA_ARGS__);                                                       \
                                                                                                                        \
         return size;                                                                                                   \
     }
 
 #define STREAMABLE_DEFINE_INTRUSIVE                                                                                    \
   private:                                                                                                             \
-    friend class StreamReader;                                                                                         \
-    friend class StreamWriter;
+    friend class ::hbann::StreamReader;                                                                                \
+    friend class ::hbann::StreamWriter;
 
 #define STREAMABLE_DEFINE(baseClass, ...)                                                                              \
     STREAMABLE_DEFINE_INTRUSIVE                                                                                        \
