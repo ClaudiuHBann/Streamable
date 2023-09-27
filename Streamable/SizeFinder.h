@@ -59,24 +59,21 @@ class SizeFinder
 
     template <typename Type> static [[nodiscard]] constexpr auto FindRangeSize(const Type &aObject) noexcept
     {
-        using TypeRaw = get_raw_t<Type>;
-
-        if constexpr (FindRangeRank<TypeRaw>())
+        size_t size{};
+        if constexpr (FindRangeRank<Type>())
         {
-            const auto size = std::ranges::size(aObject);
-            if (size)
+            size += sizeof(size_range);
+            for (const auto &object : aObject)
             {
-                return sizeof(size_range) + size * FindRangeSize(*std::ranges::cbegin(aObject));
-            }
-            else
-            {
-                return sizeof(size_range);
+                size += FindRangeSize(aObject);
             }
         }
         else
         {
-            return FindObjectSize(aObject);
+            size += FindObjectSize(aObject);
         }
+
+        return size;
     }
 
     static constexpr size_t FindParseSize() noexcept

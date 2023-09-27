@@ -36,31 +36,19 @@ TEST_CASE("Streamable", "[Streamable]")
         }
         REQUIRE(SizeFinder::FindParseSize(lv) == (size_range)lvSize);
 
-        vector<vector<vector<string>>> vvv{{{"000", "001"}, {"010", "011"}}, {{"100", "101"}, {"110", "111"}}};
-        REQUIRE(SizeFinder::FindRangeRank<decltype(vvv)>() == 4); // the string is a range itself
+        vector<vector<string>> vvs{{"gsbbbawf", "hbann", "1fwah10"}, {"palelica", "t43hachhew"}};
+        REQUIRE(SizeFinder::FindRangeRank<decltype(vvs)>() == 3); // the string is a range itself
 
-        size_t vvvSize = sizeof(size_range);
-        for (const auto &vvvItem : vvv)
+        size_t vvsSize = sizeof(size_range);
+        for (const auto &vsItem : vvs)
         {
-            if (vvvItem.size())
+            vvsSize += sizeof(size_range);
+            for (const auto &sItem : vsItem)
             {
-                vvvSize += sizeof(size_range);
-            }
-
-            for (const auto &vvItem : vvvItem)
-            {
-                if (vvItem.size())
-                {
-                    vvvSize += sizeof(size_range);
-                }
-
-                for (const auto &vItem : vvItem)
-                {
-                    vvvSize += sizeof(size_range) + vItem.size() * sizeof(get_raw_t<decltype(vItem)>::value_type);
-                }
+                vvsSize += sizeof(size_range) + sItem.size() * sizeof(get_raw_t<decltype(sItem)>::value_type);
             }
         }
-        REQUIRE(SizeFinder::FindParseSize(vvv) == (size_range)vvvSize);
+        REQUIRE(SizeFinder::FindParseSize(vvs) == (size_range)vvsSize);
 
         // TODO: add IStreamable SizeFinder test
     }
