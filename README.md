@@ -41,3 +41,5 @@ There are 5 macros:
 - **STREAMABLE_DEFINE_TO_STREAM** - implements the ToStream method
 - **STREAMABLE_DEFINE_FROM_STREAM** - implements the FromStream method
 - **STREAMABLE_DEFINE_FIND_PARSE_SIZE** - implements the FindParseSize method
+
+And a method that MUST be implemented in order to deserialize BaseClass* which returns a default BaseClass*: `FindDerivedStreamable`
