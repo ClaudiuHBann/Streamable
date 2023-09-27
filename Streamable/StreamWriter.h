@@ -50,7 +50,7 @@ class StreamWriter
         mStream->Write(objectPtr, sizeof(aObject));
     }
 
-    inline void WriteSize(const size_t aSize)
+    inline void WriteCount(const size_t aSize)
     {
         WriteObjectOfKnownSize((size_range)aSize);
     }
@@ -73,7 +73,7 @@ class StreamWriter
             streamView = aStreamable.ToStream().GetBuffer().view();
         }
 
-        WriteSize(size);
+        WriteCount(size); // we write the size in bytes of the stream
         mStream->Write(streamView.data(), streamView.size());
     }
 
@@ -81,20 +81,32 @@ class StreamWriter
     {
         static_assert(std::ranges::range<Type>, "Type is not a range!");
 
-        WriteSize(std::ranges::size(aRange));
+        using TypeValueType = typename Type::value_type;
+
+        WriteCount(std::ranges::size(aRange));
 
         if constexpr (SizeFinder::FindRangeRank<Type>() > 1)
         {
-            for (const auto &aObject : aRange)
+            for (const auto &object : aRange)
             {
-                WriteRange(aObject);
+                WriteRange(object);
             }
         }
         else
         {
-            for (const auto &aObject : aRange)
+            if constexpr (std::ranges::contiguous_range<Type> && std::is_standard_layout_v<TypeValueType> &&
+                          !std::is_pointer_v<TypeValueType>)
             {
-                Write(aObject);
+                const auto rangePtr = reinterpret_cast<const char *>(std::ranges::data(aRange));
+                const auto rangeSize = std::ranges::size(aRange) * sizeof(TypeValueType);
+                mStream->Write(rangePtr, rangeSize);
+            }
+            else
+            {
+                for (const auto &object : aRange)
+                {
+                    Write(object);
+                }
             }
         }
     }

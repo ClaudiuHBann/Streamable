@@ -73,7 +73,7 @@ class StreamReader
         static_assert(std::is_base_of_v<IStreamable, Type>, "Type is not a streamable!");
 
         Type streamable{};
-        streamable.FromStream(mStream->Read(ReadSize()));
+        streamable.FromStream(mStream->Read(ReadCount())); // read streamable size in bytes
         return streamable;
     }
 
@@ -87,13 +87,13 @@ class StreamReader
         const auto readIndex = mStream->GetReadIndex();
 
         TypeNoPtr typeNoPtr{};
-        Stream stream(mStream->Read(ReadSize()));
+        Stream stream(mStream->Read(ReadCount())); // read streamable size in bytes
         StreamReader streamReader(stream);
         auto streamablePtr(typeNoPtr.FindDerivedStreamable(streamReader));
 
         mStream->SetReadIndex(readIndex);
 
-        [[maybe_unused]] auto _(streamablePtr->FromStream(mStream->Read(ReadSize())));
+        [[maybe_unused]] auto _(streamablePtr->FromStream(mStream->Read(ReadCount()))); // read streamable size in bytes
         return static_cast<Type>(streamablePtr);
     }
 
@@ -101,25 +101,44 @@ class StreamReader
     {
         static_assert(std::ranges::range<Type>, "Type is not a range!");
 
+        using TypeValueType = typename Type::value_type;
+
         Type range{};
-        const auto size = ReadSize();
+        const auto count = ReadCount();
         if constexpr (has_method_reserve_v<Type>)
         {
-            range.reserve(size);
+            if constexpr (std::is_standard_layout_v<TypeValueType> && !std::is_pointer_v<TypeValueType>)
+            {
+                range.reserve(count * sizeof(TypeValueType));
+            }
+            else
+            {
+                range.reserve(count);
+            }
         }
 
         if constexpr (SizeFinder::FindRangeRank<Type>() > 1)
         {
-            for (size_t i = 0; i < size; i++)
+            for (size_t i = 0; i < count; i++)
             {
-                range.insert(std::ranges::cend(range), ReadRange<typename Type::value_type>());
+                range.insert(std::ranges::cend(range), ReadRange<TypeValueType>());
             }
         }
         else
         {
-            for (size_t i = 0; i < size; i++)
+            if constexpr (std::ranges::contiguous_range<Type> && std::is_standard_layout_v<TypeValueType> &&
+                          !std::is_pointer_v<TypeValueType>)
             {
-                range.insert(std::ranges::cend(range), Read<typename Type::value_type>());
+                const auto rangeView = mStream->Read(count * sizeof(TypeValueType));
+                const auto rangePtr = reinterpret_cast<const TypeValueType *>(rangeView.data());
+                range.assign(rangePtr, rangeView.size() / sizeof(TypeValueType));
+            }
+            else
+            {
+                for (size_t i = 0; i < count; i++)
+                {
+                    range.insert(std::ranges::cend(range), Read<TypeValueType>());
+                }
             }
         }
 
@@ -134,7 +153,7 @@ class StreamReader
         return *reinterpret_cast<const Type *>(mStream->Read(sizeof(Type)).data());
     }
 
-    constexpr size_t ReadSize() noexcept
+    constexpr size_t ReadCount() noexcept
     {
         return ReadObjectOfKnownSize<size_range>();
     }

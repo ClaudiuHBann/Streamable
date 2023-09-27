@@ -59,8 +59,10 @@ class SizeFinder
 
     template <typename Type> [[nodiscard]] static constexpr size_t FindRangeSize(const Type &aRange) noexcept
     {
+        using TypeValueType = typename Type::value_type;
+
         size_t size{};
-        if constexpr (FindRangeRank<Type>())
+        if constexpr (FindRangeRank<Type>() > 1)
         {
             size += sizeof(size_range);
             for (const auto &object : aRange)
@@ -70,7 +72,19 @@ class SizeFinder
         }
         else
         {
-            size += FindObjectSize(aRange);
+            size += sizeof(size_range);
+            if constexpr (std::ranges::contiguous_range<Type> && std::is_standard_layout_v<TypeValueType> &&
+                          !std::is_pointer_v<TypeValueType>)
+            {
+                size += std::ranges::size(aRange) * sizeof(TypeValueType);
+            }
+            else
+            {
+                for (const auto &object : aRange)
+                {
+                    size += FindObjectSize(object);
+                }
+            }
         }
 
         return size;
