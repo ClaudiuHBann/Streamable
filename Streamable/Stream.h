@@ -18,7 +18,7 @@ class Stream
     inline Stream(std::string_view aStringView) : mStream(StringBuffer::State::READ), mStreamO(&mStream)
     {
         PubSetBuf(const_cast<char *>(aStringView.data()), aStringView.size());
-        mStreamO.move(std::ostream(&mStream));
+        mStreamO = std::move(OStream(&mStream));
     }
 
     // mStreamO will be refreshed
@@ -71,7 +71,7 @@ class Stream
     inline Stream &operator=(Stream &&aStream) noexcept
     {
         mStream = std::move(aStream.mStream);
-        mStreamO.move(std::move(aStream.mStreamO));
+        mStreamO = std::move(aStream.mStreamO);
         mReadIndex = aStream.mReadIndex;
 
         return *this;
@@ -79,7 +79,20 @@ class Stream
 
   private:
     StringBuffer mStream;
-    std::ostream mStreamO;
+
+    class OStream : public std::ostream
+    {
+      public:
+        OStream(std::stringbuf *aStringBuf) : std::ostream(aStringBuf)
+        {
+        }
+
+        OStream &operator=(OStream &&aOStream) noexcept
+        {
+            swap(aOStream);
+            return *this;
+        }
+    } mStreamO;
 
     size_t mReadIndex{};
 
