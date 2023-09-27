@@ -17,12 +17,12 @@ class Stream
     // mStream.mState and mStreamO will be refreshed
     inline Stream(std::string_view aStringView) : mStream(StringBuffer::State::READ), mStreamO(&mStream)
     {
-        Reserve((size_range)aStringView.size(), const_cast<char *>(aStringView.data()));
+        Reserve(aStringView.size(), const_cast<char *>(aStringView.data()));
         mStreamO.move(std::ostream(&mStream));
     }
 
     // mStreamO will be refreshed
-    inline Stream(Stream &&aStream) : mStreamO(&mStream)
+    inline Stream(Stream &&aStream) noexcept : mStreamO(&mStream)
     {
         *this = std::move(aStream);
     }
@@ -32,27 +32,27 @@ class Stream
         return std::forward<Self>(aSelf).mStream;
     }
 
-    inline void Reserve(const size_range aSize, char *aData = nullptr)
+    inline void Reserve(const size_t aSize, char *aData = nullptr)
     {
         mStream.pubsetbuf(aData, aSize);
     }
 
-    inline auto Read(size_range aSize)
+    inline auto Read(size_t aSize)
     {
         ThrowIfCant(StringBuffer::State::READ);
 
         // clamp read count
         const auto streamView = mStream.view();
-        if (mReadIndex + aSize > (size_range)streamView.size())
+        if (mReadIndex + aSize > streamView.size())
         {
-            aSize = (size_range)streamView.size() - mReadIndex;
+            aSize = streamView.size() - mReadIndex;
         }
 
         mReadIndex += aSize;
         return std::string_view{streamView.data() + (mReadIndex - aSize), aSize};
     }
 
-    inline decltype(auto) Write(const char *aData, const size_range aSize)
+    inline decltype(auto) Write(const char *aData, const size_t aSize)
     {
         ThrowIfCant(StringBuffer::State::WRITE);
 
@@ -81,7 +81,7 @@ class Stream
     StringBuffer mStream;
     std::ostream mStreamO;
 
-    size_range mReadIndex{};
+    size_t mReadIndex{};
 
     inline void ThrowIfCant(const StringBuffer::State aState) const
     {
@@ -92,12 +92,12 @@ class Stream
     }
 
     // TODO: delete after deserialize IStreamable* right
-    constexpr size_range GetReadIndex() const noexcept
+    constexpr size_t GetReadIndex() const noexcept
     {
         return mReadIndex;
     }
 
-    constexpr void SetReadIndex(const size_range aReadIndex) noexcept
+    constexpr void SetReadIndex(const size_t aReadIndex) noexcept
     {
         mReadIndex = aReadIndex;
     }

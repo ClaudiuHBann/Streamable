@@ -34,7 +34,7 @@
 
 #define STREAMABLE_DEFINE_FIND_PARSE_SIZE(baseClass, ...)                                                              \
   protected:                                                                                                           \
-    constexpr [[nodiscard]] size_range FindParseSize() const noexcept override                                         \
+    constexpr [[nodiscard]] size_t FindParseSize() const noexcept override                                             \
     {                                                                                                                  \
         size_t size{};                                                                                                 \
         if constexpr (#baseClass##s != STREAMABLE_INTERFACE_NAME)                                                      \
@@ -44,7 +44,7 @@
                                                                                                                        \
         size += hbann::SizeFinder::FindParseSize(__VA_ARGS__);                                                         \
                                                                                                                        \
-        return (size_range)size;                                                                                       \
+        return size;                                                                                                   \
     }
 
 #define STREAMABLE_DEFINE_INTRUSIVE                                                                                    \
@@ -78,7 +78,7 @@ class IStreamable
     {
     }
 
-    virtual [[nodiscard]] constexpr size_range FindParseSize() const noexcept = 0;
+    virtual [[nodiscard]] constexpr size_t FindParseSize() const noexcept = 0;
 
     virtual [[nodiscard]] inline IStreamable *FindDerivedStreamable(StreamReader &)
     {
@@ -97,12 +97,6 @@ class IStreamable
         mStreamReader = StreamReader(mStream);
 
         return mStream;
-    }
-
-    // used by StreamWriter::WriteStreamable to not make 2 or more methods
-    constexpr IStreamable &operator*() noexcept
-    {
-        return *this;
     }
 
   private:

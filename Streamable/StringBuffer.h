@@ -28,7 +28,7 @@ class StringBuffer : public std::stringbuf
     }
 
   protected:
-    State mState;
+    State mState = State::NONE;
 
     inline std::stringbuf *setbuf(char_type *aData, std::streamsize aSize) noexcept override
     {
@@ -65,9 +65,13 @@ class StringBuffer : public std::stringbuf
 
         // at least one pointer exists so delete at lease one
         // if the pointers were not the same delete the other one
-        delete streamI;
+        if (streamI == streamO)
+        {
+            delete streamI;
+        }
         if (streamI != streamO)
         {
+            delete streamI;
             delete streamO;
         }
 

@@ -73,7 +73,7 @@ class StreamReader
         static_assert(std::is_base_of_v<IStreamable, Type>, "Type is not a streamable!");
 
         Type streamable{};
-        streamable.FromStream(mStream->Read(ReadObjectOfKnownSize<size_range>()));
+        streamable.FromStream(mStream->Read(ReadSize()));
         return streamable;
     }
 
@@ -87,13 +87,13 @@ class StreamReader
         const auto readIndex = mStream->GetReadIndex();
 
         TypeNoPtr typeNoPtr{};
-        Stream stream(mStream->Read(ReadObjectOfKnownSize<size_range>()));
+        Stream stream(mStream->Read(ReadSize()));
         StreamReader streamReader(stream);
         auto streamablePtr(typeNoPtr.FindDerivedStreamable(streamReader));
 
         mStream->SetReadIndex(readIndex);
 
-        streamablePtr->FromStream(mStream->Read(ReadObjectOfKnownSize<size_range>()));
+        streamablePtr->FromStream(mStream->Read(ReadSize()));
         return static_cast<Type>(streamablePtr);
     }
 
@@ -102,7 +102,7 @@ class StreamReader
         static_assert(std::ranges::range<Type>, "Type is not a range!");
 
         Type range{};
-        const auto size = ReadObjectOfKnownSize<size_range>();
+        const auto size = ReadSize();
         if constexpr (has_method_reserve_v<Type>)
         {
             range.reserve(size);
@@ -132,6 +132,11 @@ class StreamReader
                       "Type is not an object of known size or it is a pointer!");
 
         return *reinterpret_cast<const Type *>(mStream->Read(sizeof(Type)).data());
+    }
+
+    constexpr size_t ReadSize() noexcept
+    {
+        return ReadObjectOfKnownSize<size_range>();
     }
 };
 } // namespace hbann

@@ -27,8 +27,7 @@ template <typename Type> constexpr auto has_method_reserve_v = has_method_reserv
 } // namespace hbann
 
 /*
-    TOOD:
-         - use size_t everywhere and size_range just when writing/reading from the stream
+    TODO:
          - create our own exception class for more specific info
          - reserve the stream size before writing to it
 */

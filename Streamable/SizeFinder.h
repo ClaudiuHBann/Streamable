@@ -57,20 +57,20 @@ class SizeFinder
         }
     }
 
-    template <typename Type> static [[nodiscard]] constexpr auto FindRangeSize(const Type &aObject) noexcept
+    template <typename Type> static [[nodiscard]] constexpr size_t FindRangeSize(const Type &aRange) noexcept
     {
         size_t size{};
         if constexpr (FindRangeRank<Type>())
         {
             size += sizeof(size_range);
-            for (const auto &object : aObject)
+            for (const auto &object : aRange)
             {
-                size += FindRangeSize(aObject);
+                size += FindRangeSize(object);
             }
         }
         else
         {
-            size += FindObjectSize(aObject);
+            size += FindObjectSize(aRange);
         }
 
         return size;
