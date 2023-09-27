@@ -81,7 +81,7 @@ class StringBuffer : public std::stringbuf
 
         // reset internal pointers
         setg(nullptr, nullptr, nullptr);
-        setp(nullptr, nullptr, nullptr);
+        setp(nullptr, nullptr);
     }
 };
 

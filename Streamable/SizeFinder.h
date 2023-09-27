@@ -10,12 +10,12 @@ class SizeFinder
 {
   public:
     template <typename Type, typename... Types>
-    static [[nodiscard]] constexpr auto FindParseSize(const Type &aObject, const Types &...aObjects) noexcept
+    [[nodiscard]] static constexpr auto FindParseSize(const Type &aObject, const Types &...aObjects) noexcept
     {
         return FindObjectSize<get_raw_t<Type>>(aObject) + FindParseSize(aObjects...);
     }
 
-    template <typename Type> static [[nodiscard]] constexpr size_t FindRangeRank() noexcept
+    template <typename Type> [[nodiscard]] static constexpr size_t FindRangeRank() noexcept
     {
         using TypeRaw = get_raw_t<Type>;
 
@@ -30,7 +30,7 @@ class SizeFinder
     }
 
   private:
-    template <typename Type> static [[nodiscard]] constexpr auto FindObjectSize(const Type &aObject) noexcept
+    template <typename Type> [[nodiscard]] static constexpr auto FindObjectSize(const Type &aObject) noexcept
     {
         if constexpr (std::is_standard_layout_v<Type> && !std::is_pointer_v<Type>)
         {
@@ -57,7 +57,7 @@ class SizeFinder
         }
     }
 
-    template <typename Type> static [[nodiscard]] constexpr size_t FindRangeSize(const Type &aRange) noexcept
+    template <typename Type> [[nodiscard]] static constexpr size_t FindRangeSize(const Type &aRange) noexcept
     {
         size_t size{};
         if constexpr (FindRangeRank<Type>())

@@ -34,7 +34,7 @@
 
 #define STREAMABLE_DEFINE_FIND_PARSE_SIZE(baseClass, ...)                                                              \
   protected:                                                                                                           \
-    constexpr [[nodiscard]] size_t FindParseSize() const noexcept override                                             \
+    [[nodiscard]] constexpr size_t FindParseSize() const noexcept override                                             \
     {                                                                                                                  \
         size_t size{};                                                                                                 \
         if constexpr (std::string_view(#baseClass) != STREAMABLE_INTERFACE_NAME)                                       \
@@ -67,8 +67,8 @@ class IStreamable
     friend class StreamReader;
 
   public:
-    virtual [[nodiscard]] Stream &&ToStream() = 0;
-    virtual [[nodiscard]] Stream &&FromStream(Stream &&aStream) = 0;
+    [[nodiscard]] virtual Stream &&ToStream() = 0;
+    [[nodiscard]] virtual Stream &&FromStream(Stream &&aStream) = 0;
 
   protected:
     StreamWriter mStreamWriter;
@@ -78,9 +78,9 @@ class IStreamable
     {
     }
 
-    virtual [[nodiscard]] constexpr size_t FindParseSize() const noexcept = 0;
+    [[nodiscard]] virtual constexpr size_t FindParseSize() const noexcept = 0;
 
-    virtual [[nodiscard]] inline IStreamable *FindDerivedStreamable(StreamReader &)
+    [[nodiscard]] virtual inline IStreamable *FindDerivedStreamable(StreamReader &)
     {
         return nullptr;
     }
