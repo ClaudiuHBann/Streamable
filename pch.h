@@ -30,5 +30,4 @@ template <typename Type> constexpr auto has_method_reserve_v = has_method_reserv
 /*
     TODO:
          - create our own exception class for more specific info
-         - reserve the stream size before writing to it
 */

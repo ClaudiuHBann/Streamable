@@ -32,9 +32,10 @@ class Stream
         return mStream;
     }
 
-    inline void Reserve(const size_t aSize)
+    inline decltype(auto) Reserve(const size_t aSize)
     {
         mStream.pubsetbuf(nullptr, aSize);
+        return *this;
     }
 
     inline auto Read(size_t aSize)
@@ -96,9 +97,10 @@ class Stream
 
     size_t mReadIndex{};
 
-    inline void PubSetBuf(char *aData, const size_t aSize)
+    inline decltype(auto) PubSetBuf(char *aData, const size_t aSize)
     {
         mStream.pubsetbuf(aData, aSize);
+        return *this;
     }
 
     inline void ThrowIfCant(const StringBuffer::State aState) const

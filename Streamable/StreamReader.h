@@ -93,7 +93,7 @@ class StreamReader
 
         mStream->SetReadIndex(readIndex);
 
-        streamablePtr->FromStream(mStream->Read(ReadSize()));
+        [[maybe_unused]] auto _(streamablePtr->FromStream(mStream->Read(ReadSize())));
         return static_cast<Type>(streamablePtr);
     }
 

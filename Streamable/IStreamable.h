@@ -26,6 +26,10 @@
         {                                                                                                              \
             SetStream(baseClass::ToStream());                                                                          \
         }                                                                                                              \
+        else                                                                                                           \
+        {                                                                                                              \
+            Reserve(FindParseSize());                                                                                  \
+        }                                                                                                              \
                                                                                                                        \
         mStreamWriter.WriteAll(__VA_ARGS__);                                                                           \
                                                                                                                        \
@@ -97,6 +101,11 @@ class IStreamable
         mStreamReader = StreamReader(mStream);
 
         return mStream;
+    }
+
+    inline decltype(auto) Reserve(const size_t aSize)
+    {
+        return mStream.Reserve(aSize);
     }
 
   private:
