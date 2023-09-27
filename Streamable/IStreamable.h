@@ -7,12 +7,12 @@
   public:                                                                                                              \
     [[nodiscard]] Stream &&FromStream(Stream &&aStream) override                                                       \
     {                                                                                                                  \
-        if constexpr (#baseClass##s != STREAMABLE_INTERFACE_NAME)                                                      \
+        if constexpr (std::string_view(#baseClass) != STREAMABLE_INTERFACE_NAME)                                       \
         {                                                                                                              \
-            aStream = move(baseClass::FromStream(move(aStream)));                                                      \
+            aStream = std::move(baseClass::FromStream(std::move(aStream)));                                            \
         }                                                                                                              \
                                                                                                                        \
-        SetStream(move(aStream));                                                                                      \
+        SetStream(std::move(aStream));                                                                                 \
         mStreamReader.ReadAll(__VA_ARGS__);                                                                            \
                                                                                                                        \
         return Release();                                                                                              \
@@ -22,7 +22,7 @@
   public:                                                                                                              \
     [[nodiscard]] Stream &&ToStream() override                                                                         \
     {                                                                                                                  \
-        if constexpr (#baseClass##s != STREAMABLE_INTERFACE_NAME)                                                      \
+        if constexpr (std::string_view(#baseClass) != STREAMABLE_INTERFACE_NAME)                                       \
         {                                                                                                              \
             SetStream(baseClass::ToStream());                                                                          \
         }                                                                                                              \
@@ -37,7 +37,7 @@
     constexpr [[nodiscard]] size_t FindParseSize() const noexcept override                                             \
     {                                                                                                                  \
         size_t size{};                                                                                                 \
-        if constexpr (#baseClass##s != STREAMABLE_INTERFACE_NAME)                                                      \
+        if constexpr (std::string_view(#baseClass) != STREAMABLE_INTERFACE_NAME)                                       \
         {                                                                                                              \
             size += baseClass::FindParseSize();                                                                        \
         }                                                                                                              \

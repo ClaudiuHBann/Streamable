@@ -70,7 +70,7 @@ class StringBuffer : public std::stringbuf
         {
             delete streamI;
         }
-        if (streamI != streamO)
+        else if (streamI != streamO)
         {
             delete streamI;
             delete streamO;

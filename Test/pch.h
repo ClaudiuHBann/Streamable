@@ -20,5 +20,3 @@ using namespace Catch;
 // Test
 #include <list>
 #include <vector>
-
-using namespace std;

@@ -8,12 +8,12 @@ TEST_CASE("Streamable", "[Streamable]")
         REQUIRE(SizeFinder::FindRangeRank<decltype(i)>() == 0);
         REQUIRE(SizeFinder::FindParseSize(i) == (size_range)sizeof(i));
 
-        std::list<pair<int, float>> l{{22, 14.f}, {93, 32.f}};
+        std::list<std::pair<int, float>> l{{22, 14.f}, {93, 32.f}};
         REQUIRE(SizeFinder::FindRangeRank<decltype(l)>() == 1);
         REQUIRE(SizeFinder::FindParseSize(l) ==
                 size_range(sizeof(size_range) + l.size() * sizeof(decltype(l)::value_type)));
 
-        vector<double> v{512., 52., 77., 42321.};
+        std::vector<double> v{512., 52., 77., 42321.};
         REQUIRE(SizeFinder::FindRangeRank<decltype(v)>() == 1);
         REQUIRE(SizeFinder::FindParseSize(v) ==
                 size_range(sizeof(size_range) + v.size() * sizeof(decltype(v)::value_type)));
@@ -25,8 +25,8 @@ TEST_CASE("Streamable", "[Streamable]")
             NADA
         };
 
-        std::list<vector<enumClassTest>> lv{{enumClassTest::NONE, enumClassTest::NOTHING},
-                                            {enumClassTest::NOTHING, enumClassTest::NADA}};
+        std::list<std::vector<enumClassTest>> lv{{enumClassTest::NONE, enumClassTest::NOTHING},
+                                                 {enumClassTest::NOTHING, enumClassTest::NADA}};
         REQUIRE(SizeFinder::FindRangeRank<decltype(lv)>() == 2);
 
         size_t lvSize = sizeof(size_range);
@@ -36,7 +36,7 @@ TEST_CASE("Streamable", "[Streamable]")
         }
         REQUIRE(SizeFinder::FindParseSize(lv) == (size_range)lvSize);
 
-        vector<vector<string>> vvs{{"gsbbbawf", "hbann", "1fwah10"}, {"palelica", "t43hachhew"}};
+        std::vector<std::vector<std::string>> vvs{{"gsbbbawf", "hbann", "1fwah10"}, {"palelica", "t43hachhew"}};
         REQUIRE(SizeFinder::FindRangeRank<decltype(vvs)>() == 3); // the string is a range itself
 
         size_t vvsSize = sizeof(size_range);
@@ -58,21 +58,21 @@ TEST_CASE("Streamable", "[Streamable]")
         Stream stream;
         stream.Reserve(21);
 
-        string biceps("biceps");
+        std::string biceps("biceps");
         stream.Write(biceps.c_str(), (size_range)biceps.size()).Flush();
         const auto bicepsView = stream.Read((size_range)biceps.size());
         REQUIRE(biceps.compare(bicepsView) == 0);
 
         REQUIRE(!stream.Read(1).size());
 
-        string triceps("triceps");
+        std::string triceps("triceps");
         stream.Write(triceps.c_str(), (size_range)triceps.size()).Flush();
         const auto tricepsView = stream.Read((size_range)triceps.size());
         REQUIRE(triceps.compare(tricepsView) == 0);
 
         REQUIRE(!stream.Read(1).size());
 
-        string cariceps("cariceps");
+        std::string cariceps("cariceps");
         stream.Write(cariceps.c_str(), (size_range)cariceps.size()).Flush();
         const auto caricepsView = stream.Read((size_range)cariceps.size());
         REQUIRE(cariceps.compare(caricepsView) == 0);
@@ -84,7 +84,7 @@ TEST_CASE("Streamable", "[Streamable]")
         StreamWriter streamWriter(stream);
 
         double d = 12.34;
-        string s("cariceps");
+        std::string s("cariceps");
         streamWriter.WriteAll(d, s);
 
         const auto dView = stream.Read(sizeof(d)).data();
@@ -106,11 +106,11 @@ TEST_CASE("Streamable", "[Streamable]")
         StreamReader streamReader(stream);
 
         double d = 12.34;
-        string s("cariceps");
+        std::string s("cariceps");
         streamWriter.WriteAll(d, s);
 
         double dd{};
-        string ss{};
+        std::string ss{};
         streamReader.ReadAll(dd, ss);
 
         REQUIRE(d == dd);
@@ -214,7 +214,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
           public:
             Something() noexcept = default;
 
-            Something(const wstring &aNickname, const size_t aAge) : mNickname(aNickname), mIDK(aAge)
+            Something(const std::wstring &aNickname, const size_t aAge) : mNickname(aNickname), mIDK(aAge)
             {
             }
 
@@ -224,11 +224,11 @@ TEST_CASE("IStreamable", "[IStreamable]")
             }
 
           private:
-            wstring mNickname{};
+            std::wstring mNickname{};
             size_t mIDK{};
         };
 
-        Something smth(L"HBann"s, 1234567890);
+        Something smth(L"HBann", 1234567890);
         Something smthElse{};
         [[maybe_unused]] auto _(smthElse.FromStream(smth.ToStream()));
 
@@ -284,7 +284,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
           public:
             constexpr Context() noexcept = default;
 
-            Context(vector<Shape *> &&aShapes) : mShapes(move(aShapes))
+            Context(std::vector<Shape *> &&aShapes) : mShapes(std::move(aShapes))
             {
             }
 
@@ -312,11 +312,11 @@ TEST_CASE("IStreamable", "[IStreamable]")
             }
 
           private:
-            vector<Shape *> mShapes{};
+            std::vector<Shape *> mShapes{};
         };
 
-        vector<Shape *> shapes{new Circle(3.14156), new Circle(2.4)};
-        Context contextStart(move(shapes));
+        std::vector<Shape *> shapes{new Circle(3.14156), new Circle(2.4)};
+        Context contextStart(std::move(shapes));
 
         Context contextEnd;
         [[maybe_unused]] auto _(contextEnd.FromStream(contextStart.ToStream()));
@@ -356,3 +356,7 @@ int main(int argc, char **argv)
 
     return returnCode;
 }
+
+// class == ""s -> use strcmp_s
+// move -> std::move
+// setp only has 2 params use the one with 2 params and offset the next pointer

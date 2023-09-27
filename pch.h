@@ -4,7 +4,7 @@
 #include <sstream>
 
 // Streamable
-#define STREAMABLE_INTERFACE_NAME "IStreamable"s
+#define STREAMABLE_INTERFACE_NAME "IStreamable"
 
 namespace hbann
 {
