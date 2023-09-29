@@ -231,7 +231,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
 
         Something smth(L"HBann", 1234567890);
         Something smthElse{};
-        [[maybe_unused]] auto _(smthElse.FromStream(smth.ToStream()));
+        DISCARD(smthElse.FromStream(smth.ToStream()));
 
         REQUIRE(smth == smthElse);
     }
@@ -240,7 +240,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
     {
         Shape *circleStart = new Circle(3.14156);
         Shape *circleEnd = new Circle(2.4);
-        [[maybe_unused]] auto _(circleEnd->FromStream(circleStart->ToStream()));
+        DISCARD(circleEnd->FromStream(circleStart->ToStream()));
 
         REQUIRE(*(Circle *)circleStart == *(Circle *)circleEnd);
     }
@@ -271,7 +271,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
 
         Sphere sphereStart(3.14156, true);
         Sphere sphereEnd;
-        [[maybe_unused]] auto _(sphereEnd.FromStream(sphereStart.ToStream()));
+        DISCARD(sphereEnd.FromStream(sphereStart.ToStream()));
 
         REQUIRE(sphereStart == sphereEnd);
     }
@@ -320,7 +320,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
         Context contextStart(std::move(shapes));
 
         Context contextEnd;
-        [[maybe_unused]] auto _(contextEnd.FromStream(contextStart.ToStream()));
+        DISCARD(contextEnd.FromStream(contextStart.ToStream()));
 
         REQUIRE(contextStart == contextEnd);
     }

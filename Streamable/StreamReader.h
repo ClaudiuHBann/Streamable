@@ -23,11 +23,11 @@ class StreamReader
     {
         using TypeRaw = get_raw_t<Type>;
 
-        aObject = Read<TypeRaw>();
+        Read<TypeRaw>(aObject);
 
         if constexpr (sizeof...(aObjects))
         {
-            ReadAll(aObjects...);
+            ReadAll<Types...>(aObjects...);
         }
     }
 
@@ -41,26 +41,20 @@ class StreamReader
   private:
     Stream *mStream{};
 
-    template <typename Type> [[nodiscard]] constexpr decltype(auto) Read()
+    template <typename Type> [[nodiscard]] constexpr void Read(Type &aObject)
     {
         if constexpr (std::is_standard_layout_v<Type> && !std::is_pointer_v<Type>)
         {
-            return ReadObjectOfKnownSize<Type>();
+            ReadObjectOfKnownSize<Type>(aObject);
         }
         else if constexpr (std::is_base_of_v<IStreamable, std::remove_pointer_t<Type>>)
         {
-            if constexpr (std::is_pointer_v<Type>)
-            {
-                return ReadStreamablePtr<Type>();
-            }
-            else
-            {
-                return ReadStreamable<Type>();
-            }
+            ReadStreamableX<Type>(aObject);
         }
         else if constexpr (std::ranges::range<Type>)
         {
-            return ReadRange<Type>();
+            // TODO: can we populate range directly and not create and move another one?
+            aObject = std::move(ReadRange<Type>());
         }
         else
         {
@@ -68,16 +62,26 @@ class StreamReader
         }
     }
 
-    template <typename Type> [[nodiscard]] constexpr Type ReadStreamable() noexcept
+    template <typename Type> [[nodiscard]] constexpr void ReadStreamableX(Type &aStreamable)
+    {
+        if constexpr (std::is_pointer_v<Type>)
+        {
+            ReadStreamablePtr<Type>(aStreamable);
+        }
+        else
+        {
+            ReadStreamable<Type>(aStreamable);
+        }
+    }
+
+    template <typename Type> [[nodiscard]] constexpr void ReadStreamable(Type &aStreamable)
     {
         static_assert(std::is_base_of_v<IStreamable, Type>, "Type is not a streamable!");
 
-        Type streamable{};
-        streamable.FromStream(mStream->Read(ReadCount())); // read streamable size in bytes
-        return streamable;
+        DISCARD(aStreamable.FromStream(mStream->Read(ReadCount()))); // read streamable size in bytes
     }
 
-    template <typename Type> [[nodiscard]] constexpr Type ReadStreamablePtr() noexcept
+    template <typename Type> [[nodiscard]] constexpr void ReadStreamablePtr(Type &aStreamablePtr)
     {
         using TypeNoPtr = std::remove_pointer_t<Type>;
 
@@ -89,15 +93,14 @@ class StreamReader
         TypeNoPtr typeNoPtr{};
         Stream stream(mStream->Read(ReadCount())); // read streamable size in bytes
         StreamReader streamReader(stream);
-        auto streamablePtr(typeNoPtr.FindDerivedStreamable(streamReader));
+        aStreamablePtr = static_cast<Type>(typeNoPtr.FindDerivedStreamable(streamReader));
 
         mStream->SetReadIndex(readIndex);
 
-        [[maybe_unused]] auto _(streamablePtr->FromStream(mStream->Read(ReadCount()))); // read streamable size in bytes
-        return static_cast<Type>(streamablePtr);
+        DISCARD(aStreamablePtr->FromStream(mStream->Read(ReadCount())));
     }
 
-    template <typename Type> [[nodiscard]] constexpr decltype(auto) ReadRange()
+    template <typename Type> [[nodiscard]] constexpr Type ReadRange()
     {
         static_assert(std::ranges::range<Type>, "Type is not a range!");
 
@@ -105,17 +108,7 @@ class StreamReader
 
         Type range{};
         const auto count = ReadCount();
-        if constexpr (has_method_reserve_v<Type>)
-        {
-            if constexpr (std::is_standard_layout_v<TypeValueType> && !std::is_pointer_v<TypeValueType>)
-            {
-                range.reserve(count * sizeof(TypeValueType));
-            }
-            else
-            {
-                range.reserve(count);
-            }
-        }
+        RangeReserve<Type>(range, count);
 
         if constexpr (SizeFinder::FindRangeRank<Type>() > 1)
         {
@@ -126,36 +119,81 @@ class StreamReader
         }
         else
         {
-            if constexpr (std::ranges::contiguous_range<Type> && std::is_standard_layout_v<TypeValueType> &&
-                          !std::is_pointer_v<TypeValueType>)
-            {
-                const auto rangeView = mStream->Read(count * sizeof(TypeValueType));
-                const auto rangePtr = reinterpret_cast<const TypeValueType *>(rangeView.data());
-                range.assign(rangePtr, rangeView.size() / sizeof(TypeValueType));
-            }
-            else
-            {
-                for (size_t i = 0; i < count; i++)
-                {
-                    range.insert(std::ranges::cend(range), Read<TypeValueType>());
-                }
-            }
+            ReadRangeRank1<Type>(range, count);
         }
 
         return range;
     }
 
-    template <typename Type> [[nodiscard]] constexpr decltype(auto) ReadObjectOfKnownSize() noexcept
+    template <typename Type> [[nodiscard]] constexpr void ReadRangeRank1(Type &aRange, const size_t aCount)
+    {
+        static_assert(std::ranges::range<Type>, "Type is not a range!");
+
+        using TypeValueType = typename Type::value_type;
+
+        if constexpr (std::ranges::contiguous_range<Type> && std::is_standard_layout_v<TypeValueType> &&
+                      !std::is_pointer_v<TypeValueType>)
+        {
+            const auto rangeView = mStream->Read(aCount * sizeof(TypeValueType));
+            const auto rangePtr = reinterpret_cast<const TypeValueType *>(rangeView.data());
+            aRange.assign(rangePtr, rangeView.size() / sizeof(TypeValueType));
+        }
+        else
+        {
+            for (size_t i = 0; i < aCount; i++)
+            {
+                TypeValueType object{};
+                Read<TypeValueType>(object);
+                aRange.insert(std::ranges::cend(aRange), object);
+            }
+        }
+    }
+
+    template <typename Type> [[nodiscard]] constexpr void RangeReserve(Type &aRange, const size_t aCount)
+    {
+        static_assert(std::ranges::range<Type>, "Type is not a range!");
+
+        using TypeValueType = typename Type::value_type;
+
+        if constexpr (!has_method_reserve_v<Type>)
+        {
+            return;
+        }
+
+        if constexpr (std::is_standard_layout_v<TypeValueType> && !std::is_pointer_v<TypeValueType>)
+        {
+            aRange.reserve(aCount * sizeof(TypeValueType));
+        }
+        else if constexpr (std::is_base_of_v<IStreamable, std::remove_pointer_t<Type>>)
+        {
+            // TODO: reserve the required memory for streamables
+            if constexpr (std::is_pointer_v<Type>)
+            {
+            }
+            else
+            {
+            }
+        }
+        else
+        {
+            aRange.reserve(aCount);
+        }
+    }
+
+    template <typename Type> [[nodiscard]] constexpr void ReadObjectOfKnownSize(Type &aObject)
     {
         static_assert(std::is_standard_layout_v<Type> && !std::is_pointer_v<Type>,
                       "Type is not an object of known size or it is a pointer!");
 
-        return *reinterpret_cast<const Type *>(mStream->Read(sizeof(Type)).data());
+        const auto view = mStream->Read(sizeof(Type));
+        aObject = *reinterpret_cast<const Type *>(view.data());
     }
 
-    constexpr size_t ReadCount() noexcept
+    constexpr size_t ReadCount()
     {
-        return ReadObjectOfKnownSize<size_range>();
+        size_range size{};
+        ReadObjectOfKnownSize<size_range>(size);
+        return size;
     }
 };
 } // namespace hbann

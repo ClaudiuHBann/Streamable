@@ -19,7 +19,7 @@ class StreamWriter
         *this = std::move(aStreamWriter);
     }
 
-    template <typename Type, typename... Types> constexpr void WriteAll(const Type &aObject, const Types &...aObjects)
+    template <typename Type, typename... Types> constexpr void WriteAll(Type &aObject, Types &...aObjects)
     {
         using TypeRaw = get_raw_t<Type>;
 
@@ -27,7 +27,7 @@ class StreamWriter
 
         if constexpr (sizeof...(aObjects))
         {
-            WriteAll(aObjects...);
+            WriteAll<Types...>(aObjects...);
         }
     }
 
@@ -52,7 +52,7 @@ class StreamWriter
 
     inline void WriteCount(const size_t aSize)
     {
-        WriteObjectOfKnownSize((size_range)aSize);
+        WriteObjectOfKnownSize<size_range>((size_range)aSize);
     }
 
     template <typename Type> void WriteStreamable(Type &aStreamable)
@@ -77,7 +77,7 @@ class StreamWriter
         mStream->Write(streamView.data(), streamView.size());
     }
 
-    template <typename Type> constexpr void WriteRange(const Type &aRange)
+    template <typename Type> constexpr void WriteRange(Type &aRange)
     {
         static_assert(std::ranges::range<Type>, "Type is not a range!");
 
@@ -87,43 +87,52 @@ class StreamWriter
 
         if constexpr (SizeFinder::FindRangeRank<Type>() > 1)
         {
-            for (const auto &object : aRange)
+            for (auto &object : aRange)
             {
-                WriteRange(object);
+                WriteRange<TypeValueType>(object);
             }
         }
         else
         {
-            if constexpr (std::ranges::contiguous_range<Type> && std::is_standard_layout_v<TypeValueType> &&
-                          !std::is_pointer_v<TypeValueType>)
+            WriteRangeRank1<Type>(aRange);
+        }
+    }
+
+    template <typename Type> constexpr void WriteRangeRank1(Type &aRange)
+    {
+        static_assert(std::ranges::range<Type>, "Type is not a range!");
+
+        using TypeValueType = typename Type::value_type;
+
+        if constexpr (std::ranges::contiguous_range<Type> && std::is_standard_layout_v<TypeValueType> &&
+                      !std::is_pointer_v<TypeValueType>)
+        {
+            const auto rangePtr = reinterpret_cast<const char *>(std::ranges::data(aRange));
+            const auto rangeSize = std::ranges::size(aRange) * sizeof(TypeValueType);
+            mStream->Write(rangePtr, rangeSize);
+        }
+        else
+        {
+            for (auto &object : aRange)
             {
-                const auto rangePtr = reinterpret_cast<const char *>(std::ranges::data(aRange));
-                const auto rangeSize = std::ranges::size(aRange) * sizeof(TypeValueType);
-                mStream->Write(rangePtr, rangeSize);
-            }
-            else
-            {
-                for (const auto &object : aRange)
-                {
-                    Write(object);
-                }
+                Write<TypeValueType>(object);
             }
         }
     }
 
-    template <typename Type> constexpr void Write(const Type &aObject)
+    template <typename Type> constexpr void Write(Type &aObject)
     {
         if constexpr (std::is_standard_layout_v<Type> && !std::is_pointer_v<Type>)
         {
-            WriteObjectOfKnownSize(aObject);
+            WriteObjectOfKnownSize<Type>(aObject);
         }
         else if constexpr (std::is_base_of_v<IStreamable, std::remove_pointer_t<Type>>)
         {
-            WriteStreamable(aObject);
+            WriteStreamable<Type>(aObject);
         }
         else if constexpr (std::ranges::range<Type>)
         {
-            WriteRange(aObject);
+            WriteRange<Type>(aObject);
         }
         else
         {
