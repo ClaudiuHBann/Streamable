@@ -43,8 +43,7 @@ class StreamWriter
 
     template <typename Type> inline void WriteObjectOfKnownSize(const Type &aObject)
     {
-        static_assert(std::is_standard_layout_v<Type> && !std::is_pointer_v<Type>,
-                      "Type is not an object of known size or it is a pointer!");
+        static_assert(is_std_lay_no_ptr<Type>, "Type is not an object of known size or it is a pointer!");
 
         const auto objectPtr = reinterpret_cast<const char *>(&aObject);
         mStream->Write(objectPtr, sizeof(aObject));
@@ -57,8 +56,7 @@ class StreamWriter
 
     template <typename Type> void WriteStreamable(Type &aStreamable)
     {
-        static_assert(std::is_base_of_v<IStreamable, std::remove_pointer_t<Type>>,
-                      "Type is not a streamable (pointer)!");
+        static_assert(is_base_of_no_ptr<IStreamable, Type>, "Type is not a streamable (pointer)!");
 
         size_t size{};
         std::string_view streamView{};
@@ -83,7 +81,7 @@ class StreamWriter
 
         using TypeValueType = typename Type::value_type;
 
-        WriteCount(std::ranges::size(aRange));
+        WriteCount(GetRangeCount(aRange));
 
         if constexpr (SizeFinder::FindRangeRank<Type>() > 1)
         {
@@ -104,12 +102,20 @@ class StreamWriter
 
         using TypeValueType = typename Type::value_type;
 
-        if constexpr (std::ranges::contiguous_range<Type> && std::is_standard_layout_v<TypeValueType> &&
-                      !std::is_pointer_v<TypeValueType>)
+        if constexpr (is_range_std_lay<Type>)
         {
-            const auto rangePtr = reinterpret_cast<const char *>(std::ranges::data(aRange));
-            const auto rangeSize = std::ranges::size(aRange) * sizeof(TypeValueType);
-            mStream->Write(rangePtr, rangeSize);
+            if constexpr (is_path<Type>)
+            {
+                const auto rangePtr = reinterpret_cast<const char *>(aRange.native().data());
+                const auto rangeSize = GetRangeCount(aRange) * sizeof(TypeValueType);
+                mStream->Write(rangePtr, rangeSize);
+            }
+            else
+            {
+                const auto rangePtr = reinterpret_cast<const char *>(std::ranges::data(aRange));
+                const auto rangeSize = GetRangeCount(aRange) * sizeof(TypeValueType);
+                mStream->Write(rangePtr, rangeSize);
+            }
         }
         else
         {
@@ -122,11 +128,11 @@ class StreamWriter
 
     template <typename Type> constexpr void Write(Type &aObject)
     {
-        if constexpr (std::is_standard_layout_v<Type> && !std::is_pointer_v<Type>)
+        if constexpr (is_std_lay_no_ptr<Type>)
         {
             WriteObjectOfKnownSize<Type>(aObject);
         }
-        else if constexpr (std::is_base_of_v<IStreamable, std::remove_pointer_t<Type>>)
+        else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
         {
             WriteStreamable<Type>(aObject);
         }

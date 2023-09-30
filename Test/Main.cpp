@@ -215,7 +215,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
           public:
             Something() noexcept = default;
 
-            Something(const std::wstring &aNickname, const size_t aAge) : mNickname(aNickname), mIDK(aAge)
+            Something(const std::filesystem::path &aNickname, const size_t aAge) : mNickname(aNickname), mIDK(aAge)
             {
             }
 
@@ -225,7 +225,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
             }
 
           private:
-            std::wstring mNickname{};
+            std::filesystem::path mNickname{};
             size_t mIDK{};
         };
 

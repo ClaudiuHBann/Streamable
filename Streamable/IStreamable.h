@@ -108,6 +108,26 @@ class IStreamable
         return mStream.Reserve(aSize);
     }
 
+    IStreamable(const IStreamable &aIStreamable) : mStreamWriter(mStream), mStreamReader(mStream)
+    {
+        *this = aIStreamable;
+    }
+
+    IStreamable(IStreamable &&aIStreamable) : mStreamWriter(mStream), mStreamReader(mStream)
+    {
+        *this = std::move(aIStreamable);
+    }
+
+    IStreamable &operator=(const IStreamable &)
+    {
+        return *this;
+    }
+
+    IStreamable &operator=(IStreamable &&)
+    {
+        return *this;
+    }
+
   private:
     Stream mStream;
 };

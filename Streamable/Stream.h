@@ -6,7 +6,6 @@ namespace hbann
 {
 class Stream
 {
-    // TODO: delete after deserialize IStreamable* right
     friend class StreamReader;
 
   public:
@@ -38,7 +37,7 @@ class Stream
         return *this;
     }
 
-    inline auto Read(size_t aSize)
+    [[nodiscard]] inline auto Read(size_t aSize)
     {
         ThrowIfCant(StringBuffer::State::READ);
 
@@ -111,15 +110,11 @@ class Stream
         }
     }
 
-    // TODO: delete after deserialize IStreamable* right
-    constexpr size_t GetReadIndex() const noexcept
+    template <typename FunctionSeek> inline void Seek(const FunctionSeek &aFunctionSeek)
     {
-        return mReadIndex;
-    }
-
-    constexpr void SetReadIndex(const size_t aReadIndex) noexcept
-    {
-        mReadIndex = aReadIndex;
+        const auto readIndex = mReadIndex;
+        aFunctionSeek(readIndex);
+        mReadIndex = readIndex;
     }
 };
 } // namespace hbann
