@@ -1,5 +1,107 @@
 #include "pch.h"
 
+typedef struct _guid
+{
+    unsigned long Data1;
+    unsigned short Data2;
+    unsigned short Data3;
+    unsigned char Data4[8];
+} guid;
+
+std::string to_string(const guid &aGUID)
+{
+    char buffer[40]{};
+    sprintf_s(buffer, "{%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx}", aGUID.Data1, aGUID.Data2,
+              aGUID.Data3, aGUID.Data4[0], aGUID.Data4[1], aGUID.Data4[2], aGUID.Data4[3], aGUID.Data4[4],
+              aGUID.Data4[5], aGUID.Data4[6], aGUID.Data4[7]);
+    return buffer;
+}
+
+guid from_string(const std::string &aGUID)
+{
+    guid guid{};
+    sscanf_s(aGUID.c_str(), "{%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx}", &guid.Data1,
+             &guid.Data2, &guid.Data3, &guid.Data4[0], &guid.Data4[1], &guid.Data4[2], &guid.Data4[3], &guid.Data4[4],
+             &guid.Data4[5], &guid.Data4[6], &guid.Data4[7]);
+    return guid;
+}
+
+class Shape : public hbann::IStreamable
+{
+
+  public:
+    enum class Type : uint8_t
+    {
+        NONE,
+        CIRCLE,
+        RECTANGLE
+    };
+
+  protected:
+    Shape() = default;
+    Shape(const Type aType) : mType(aType)
+    {
+    }
+
+    virtual ~Shape() = default;
+
+    IStreamable *FindDerivedStreamable(hbann::StreamReader &aStreamReader) override;
+
+  private:
+    Type mType = Type::NONE;
+    guid mID{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
+    STREAMABLE_DEFINE(IStreamable, mType, mID);
+};
+
+class Circle : public Shape
+{
+    std::string mSVG{};
+    std::filesystem::path mURL{};
+
+  public:
+    Circle() : Shape(Type::CIRCLE)
+    {
+        mSVG.resize(1'000'000);
+        for (size_t i = 0; i < mSVG.size(); i++)
+        {
+            mSVG[i] = (char)i;
+        }
+    }
+
+    STREAMABLE_DEFINE(Shape, mSVG, mURL);
+};
+
+class Rectangle : public Shape
+{
+    STREAMABLE_DEFINE(Shape, mCells, mCenter);
+
+  public:
+    Rectangle() : Shape(Type::RECTANGLE)
+    {
+        mCells.resize(100, std::vector(100, std::wstring()));
+        for (size_t i = 0; i < mCells.size(); i++)
+        {
+            for (size_t j = 0; j < mCells[i].size(); j++)
+            {
+                mCells[i][j] = L"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
+                               L"tempor incididunt ut "
+                               L"labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud "
+                               L"exercitation ullamco "
+                               L"laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in "
+                               L"reprehenderit in "
+                               L"voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint "
+                               L"occaecat cupidatat "
+                               L"non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+            }
+        }
+    }
+
+  private:
+    Circle mCenter{};
+    std::vector<std::vector<std::wstring>> mCells{};
+};
+
 TEST_CASE("Streamable", "[Streamable]")
 {
     SECTION("SizeFinder")
@@ -121,116 +223,12 @@ TEST_CASE("Streamable", "[Streamable]")
     }
 }
 
-class Shape : public hbann::IStreamable
-{
-    STREAMABLE_DEFINE(IStreamable, mType);
-
-  protected:
-    [[nodiscard]] IStreamable *FindDerivedStreamable(hbann::StreamReader &aStreamReader) override;
-
-  public:
-    enum class Type : uint8_t
-    {
-        UNKNOWN,
-        RECTANGLE,
-        SQUARE,
-        CIRCLE
-    };
-
-    constexpr Shape() noexcept = default;
-
-    Shape(const Type &aType) : mType(aType)
-    {
-    }
-
-    bool operator==(const Shape &aShape) const
-    {
-        return mType == aShape.mType;
-    }
-
-    bool operator!=(const Shape &aShape) const
-    {
-        return !(*this == aShape);
-    }
-
-    const Type &GetType() const
-    {
-        return mType;
-    }
-
-  private:
-    Type mType = Type::UNKNOWN;
-};
-
-class Circle : public Shape
-{
-    STREAMABLE_DEFINE(Shape, mRadius);
-
-  public:
-    Circle() : Shape(Type::CIRCLE)
-    {
-    }
-
-    Circle(const double aRadius) : Shape(Type::CIRCLE), mRadius(aRadius)
-    {
-    }
-
-    bool operator==(const Circle &aCircle) const
-    {
-        return *(Shape *)this == *(Shape *)&aCircle && mRadius == aCircle.mRadius;
-    }
-
-    bool operator!=(const Circle &aCircle) const
-    {
-        return !(*this == aCircle);
-    }
-
-  private:
-    double mRadius{};
-};
-
-[[nodiscard]] hbann::IStreamable *Shape::FindDerivedStreamable(hbann::StreamReader &aStreamReader)
-{
-    Shape::Type type{};
-    aStreamReader.ReadAll(type);
-
-    switch (type)
-    {
-    case Shape::Type::CIRCLE:
-        return new Circle;
-
-    default:
-        return nullptr;
-    }
-}
-
 TEST_CASE("IStreamable", "[IStreamable]")
 {
     SECTION("Simple")
     {
-        class Something : public hbann::IStreamable
-        {
-            STREAMABLE_DEFINE(IStreamable, mNickname, mIDK);
-
-          public:
-            Something() noexcept = default;
-
-            Something(const std::filesystem::path &aNickname, const size_t aAge) : mNickname(aNickname), mIDK(aAge)
-            {
-            }
-
-            bool operator==(const Something &aSomething) const
-            {
-                return mNickname == aSomething.mNickname && mIDK == aSomething.mIDK;
-            }
-
-          private:
-            std::filesystem::path mNickname{};
-            size_t mIDK{};
-        };
-
-        Something smth(L"HBann", 1234567890);
-        Something smthElse{};
+        Shape smth(Shape::Type::SQUARE);
+        Shape smthElse{};
         DISCARD(smthElse.FromStream(smth.ToStream()));
 
         REQUIRE(smth == smthElse);
@@ -283,7 +281,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
             STREAMABLE_DEFINE(IStreamable, mShapes);
 
           public:
-            constexpr Context() noexcept = default;
+            Context() = default;
 
             Context(std::vector<Shape *> &&aShapes) : mShapes(std::move(aShapes))
             {
