@@ -27,8 +27,52 @@ class StringBuffer : public std::stringbuf
         return (uint8_t)mState & (uint8_t)aState;
     }
 
+    inline void Reset() noexcept
+    {
+        setg(nullptr, nullptr, nullptr);
+        setp(nullptr, nullptr);
+    }
+
+    inline StringBuffer &operator=(StringBuffer &&aStringBuffer) noexcept
+    {
+        swap(aStringBuffer);
+        if (!mMovedInPlace)
+        {
+            aStringBuffer.Reset();
+        }
+
+        return *this;
+    }
+
+    inline StringBuffer &swap(StringBuffer &aStringBuffer) noexcept
+    {
+        if (this == std::addressof(aStringBuffer))
+        {
+            mMovedInPlace = true;
+            return *this;
+        }
+
+        // we have just a stream for read and write so we set the pointers for both with the write ptrs
+        const auto pbase = aStringBuffer.pbase();
+        const auto size = static_cast<std::streamsize>(aStringBuffer.epptr() - pbase);
+        setbuf(pbase, size);
+
+        return *this;
+    }
+
+    ~StringBuffer() noexcept override
+    {
+        // when we allocate memory with setbuf we don't change the Allocate flag from the stringbuf
+        // and there is not method for this so we need to clear the memory ourselves
+        if (!mMovedInPlace)
+        {
+            Clear();
+        }
+    }
+
   protected:
     State mState = State::NONE;
+    bool mMovedInPlace{}; // "moved" object in same object
 
     inline std::stringbuf *setbuf(char_type *aData, std::streamsize aSize) noexcept override
     {
@@ -46,6 +90,7 @@ class StringBuffer : public std::stringbuf
             setg(dataStart, dataStart, dataEnd);
 
             setp(dataStart, dataEnd);
+            // sets the internal seekhigh ptr so that view() works properly
             pbump(static_cast<int>(dataNext - dataStart));
         }
         else
@@ -80,11 +125,9 @@ class StringBuffer : public std::stringbuf
         }
 
         // reset internal pointers
-        setg(nullptr, nullptr, nullptr);
-        setp(nullptr, nullptr);
+        Reset();
     }
 };
-
 } // namespace hbann
 
 namespace std

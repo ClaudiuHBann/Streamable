@@ -58,20 +58,18 @@ class StreamWriter
     {
         static_assert(is_base_of_no_ptr<IStreamable, Type>, "Type is not a streamable (pointer)!");
 
-        size_t size{};
-        std::string_view streamView{};
+        Stream stream{};
         if constexpr (std::is_pointer_v<Type>)
         {
-            size = aStreamable->FindParseSize();
-            streamView = aStreamable->ToStream().GetBuffer().view();
+            stream = std::move(aStreamable->ToStream());
         }
         else
         {
-            size = aStreamable.FindParseSize();
-            streamView = aStreamable.ToStream().GetBuffer().view();
+            stream = std::move(aStreamable.ToStream());
         }
+        const auto streamView = stream.GetBuffer().view();
 
-        WriteCount(size); // we write the size in bytes of the stream
+        WriteCount(streamView.size()); // we write the size in bytes of the stream
         mStream->Write(streamView.data(), streamView.size());
     }
 

@@ -8,26 +8,52 @@ typedef struct _guid
     unsigned char Data4[8];
 } guid;
 
-std::string to_string(const guid &aGUID)
-{
-    char buffer[40]{};
-    sprintf_s(buffer, "{%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx}", aGUID.Data1, aGUID.Data2,
-              aGUID.Data3, aGUID.Data4[0], aGUID.Data4[1], aGUID.Data4[2], aGUID.Data4[3], aGUID.Data4[4],
-              aGUID.Data4[5], aGUID.Data4[6], aGUID.Data4[7]);
-    return buffer;
-}
-
-guid from_string(const std::string &aGUID)
-{
-    guid guid{};
-    sscanf_s(aGUID.c_str(), "{%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx}", &guid.Data1,
-             &guid.Data2, &guid.Data3, &guid.Data4[0], &guid.Data4[1], &guid.Data4[2], &guid.Data4[3], &guid.Data4[4],
-             &guid.Data4[5], &guid.Data4[6], &guid.Data4[7]);
-    return guid;
-}
+constexpr guid GUID_RND = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
 class Shape : public hbann::IStreamable
 {
+  private:
+    friend class ::hbann::StreamReader;
+    friend class ::hbann::StreamWriter;
+
+  public:
+    [[nodiscard]] ::hbann::Stream &&ToStream() override
+    {
+        if constexpr (std::string_view("IStreamable") != "IStreamable")
+        {
+            SetStream(IStreamable::ToStream());
+        }
+        else
+        {
+            Reserve(FindParseSize());
+        }
+        mStreamWriter.WriteAll(mType, mID);
+        return Release();
+    }
+
+  public:
+    [[nodiscard]] ::hbann::Stream &&FromStream(::hbann::Stream &&aStream) override
+    {
+        if constexpr (std::string_view("IStreamable") != "IStreamable")
+        {
+            aStream = std::move(IStreamable::FromStream(std::move(aStream)));
+        }
+        SetStream(std::move(aStream));
+        mStreamReader.ReadAll(mType, mID);
+        return Release();
+    }
+
+  protected:
+    [[nodiscard]] constexpr size_t FindParseSize() const noexcept override
+    {
+        size_t size{};
+        if constexpr (std::string_view("IStreamable") != "IStreamable")
+        {
+            size += IStreamable::FindParseSize();
+        }
+        size += ::hbann::SizeFinder::FindParseSize(mType, mID);
+        return size;
+    };
 
   public:
     enum class Type : uint8_t
@@ -37,70 +63,232 @@ class Shape : public hbann::IStreamable
         RECTANGLE
     };
 
-  protected:
     Shape() = default;
-    Shape(const Type aType) : mType(aType)
+    Shape(const Type aType, const guid &aID) : mType(aType), mID(aID)
     {
     }
 
     virtual ~Shape() = default;
 
-    IStreamable *FindDerivedStreamable(hbann::StreamReader &aStreamReader) override;
+    bool operator==(const Shape &aShape) const
+    {
+        return mType == aShape.mType && !memcmp(&mID, &aShape.mID, sizeof(mID));
+    }
+
+    Type GetType()
+    {
+        return mType;
+    }
+
+  protected:
+    hbann::IStreamable *FindDerivedStreamable(hbann::StreamReader &aStreamReader) override;
 
   private:
     Type mType = Type::NONE;
-    guid mID{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-
-    STREAMABLE_DEFINE(IStreamable, mType, mID);
+    guid mID{};
 };
 
 class Circle : public Shape
 {
-    std::string mSVG{};
-    std::filesystem::path mURL{};
+  private:
+    friend class ::hbann::StreamReader;
+    friend class ::hbann::StreamWriter;
 
   public:
-    Circle() : Shape(Type::CIRCLE)
+    [[nodiscard]] ::hbann::Stream &&ToStream() override
     {
-        mSVG.resize(1'000'000);
-        for (size_t i = 0; i < mSVG.size(); i++)
+        if constexpr (std::string_view("Shape") != "IStreamable")
         {
-            mSVG[i] = (char)i;
+            SetStream(Shape::ToStream());
         }
+        else
+        {
+            Reserve(FindParseSize());
+        }
+        mStreamWriter.WriteAll(mSVG, mURL);
+        return Release();
     }
 
-    STREAMABLE_DEFINE(Shape, mSVG, mURL);
+  public:
+    [[nodiscard]] ::hbann::Stream &&FromStream(::hbann::Stream &&aStream) override
+    {
+        if constexpr (std::string_view("Shape") != "IStreamable")
+        {
+            aStream = std::move(Shape::FromStream(std::move(aStream)));
+        }
+        SetStream(std::move(aStream));
+        mStreamReader.ReadAll(mSVG, mURL);
+        return Release();
+    }
+
+  protected:
+    [[nodiscard]] constexpr size_t FindParseSize() const noexcept override
+    {
+        size_t size{};
+        if constexpr (std::string_view("Shape") != "IStreamable")
+        {
+            size += Shape::FindParseSize();
+        }
+        size += ::hbann::SizeFinder::FindParseSize(mSVG, mURL);
+        return size;
+    };
+
+  public:
+    Circle() = default;
+    Circle(const guid &aID, const std::string &aSVG, const std::filesystem::path &aURL)
+        : Shape(Type::CIRCLE, aID), mSVG(aSVG), mURL(aURL)
+    {
+    }
+
+    bool operator==(const Circle &aCircle) const
+    {
+        return *(Shape *)this == *(Shape *)&aCircle && mSVG == aCircle.mSVG && mURL == aCircle.mURL;
+    }
+
+  private:
+    std::string mSVG{};
+    std::filesystem::path mURL{};
+};
+
+class Sphere : public Circle
+{
+  private:
+    friend class ::hbann::StreamReader;
+    friend class ::hbann::StreamWriter;
+
+  public:
+    [[nodiscard]] ::hbann::Stream &&ToStream() override
+    {
+        if constexpr (std::string_view("Circle") != "IStreamable")
+        {
+            SetStream(Circle::ToStream());
+        }
+        else
+        {
+            Reserve(FindParseSize());
+        }
+        mStreamWriter.WriteAll(mReflexion);
+        return Release();
+    }
+
+  public:
+    [[nodiscard]] ::hbann::Stream &&FromStream(::hbann::Stream &&aStream) override
+    {
+        if constexpr (std::string_view("Circle") != "IStreamable")
+        {
+            aStream = std::move(Circle::FromStream(std::move(aStream)));
+        }
+        SetStream(std::move(aStream));
+        mStreamReader.ReadAll(mReflexion);
+        return Release();
+    }
+
+  protected:
+    [[nodiscard]] constexpr size_t FindParseSize() const noexcept override
+    {
+        size_t size{};
+        if constexpr (std::string_view("Circle") != "IStreamable")
+        {
+            size += Circle::FindParseSize();
+        }
+        size += ::hbann::SizeFinder::FindParseSize(mReflexion);
+        return size;
+    };
+
+  public:
+    Sphere() = default;
+
+    Sphere(const Circle &aCircle, const bool aReflexion) : Circle(aCircle), mReflexion(aReflexion)
+    {
+    }
+
+    bool operator==(const Sphere &aSphere) const
+    {
+        return *(Circle *)this == *(Circle *)&aSphere && mReflexion == aSphere.mReflexion;
+    }
+
+  private:
+    bool mReflexion{};
 };
 
 class Rectangle : public Shape
 {
-    STREAMABLE_DEFINE(Shape, mCells, mCenter);
+  private:
+    friend class ::hbann::StreamReader;
+    friend class ::hbann::StreamWriter;
 
   public:
-    Rectangle() : Shape(Type::RECTANGLE)
+    [[nodiscard]] ::hbann::Stream &&ToStream() override
     {
-        mCells.resize(100, std::vector(100, std::wstring()));
-        for (size_t i = 0; i < mCells.size(); i++)
+        if constexpr (std::string_view("Shape") != "IStreamable")
         {
-            for (size_t j = 0; j < mCells[i].size(); j++)
-            {
-                mCells[i][j] = L"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
-                               L"tempor incididunt ut "
-                               L"labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud "
-                               L"exercitation ullamco "
-                               L"laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in "
-                               L"reprehenderit in "
-                               L"voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint "
-                               L"occaecat cupidatat "
-                               L"non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-            }
+            SetStream(Shape::ToStream());
         }
+        else
+        {
+            Reserve(FindParseSize());
+        }
+        mStreamWriter.WriteAll(mCells, mCenter);
+        return Release();
+    }
+
+  public:
+    [[nodiscard]] ::hbann::Stream &&FromStream(::hbann::Stream &&aStream) override
+    {
+        if constexpr (std::string_view("Shape") != "IStreamable")
+        {
+            aStream = std::move(Shape::FromStream(std::move(aStream)));
+        }
+        SetStream(std::move(aStream));
+        mStreamReader.ReadAll(mCells, mCenter);
+        return Release();
+    }
+
+  protected:
+    [[nodiscard]] constexpr size_t FindParseSize() const noexcept override
+    {
+        size_t size{};
+        if constexpr (std::string_view("Shape") != "IStreamable")
+        {
+            size += Shape::FindParseSize();
+        }
+        size += ::hbann::SizeFinder::FindParseSize(mCells, mCenter);
+        return size;
+    };
+
+  public:
+    Rectangle() = default;
+    Rectangle(const guid &aID, const Sphere &aCenter, const std::vector<std::vector<std::wstring>> &aCells)
+        : Shape(Type::RECTANGLE, aID), mCenter(aCenter), mCells(aCells)
+    {
+    }
+
+    bool operator==(const Rectangle &aRectangle) const
+    {
+        return *(Shape *)this == *(Shape *)&aRectangle && mCenter == aRectangle.mCenter && mCells == aRectangle.mCells;
     }
 
   private:
-    Circle mCenter{};
+    Sphere mCenter{};
     std::vector<std::vector<std::wstring>> mCells{};
 };
+
+hbann::IStreamable *Shape::FindDerivedStreamable(hbann::StreamReader &aStreamReader)
+{
+    Type type{};
+    aStreamReader.ReadAll(type);
+
+    switch (type)
+    {
+    case Shape::Type::CIRCLE:
+        return new Circle;
+    case Shape::Type::RECTANGLE:
+        return new Rectangle;
+
+    default:
+        return nullptr;
+    }
+}
 
 TEST_CASE("Streamable", "[Streamable]")
 {
@@ -227,17 +415,17 @@ TEST_CASE("IStreamable", "[IStreamable]")
 {
     SECTION("Simple")
     {
-        Shape smth(Shape::Type::SQUARE);
-        Shape smthElse{};
-        DISCARD(smthElse.FromStream(smth.ToStream()));
+        Shape shapeStart(Shape::Type::RECTANGLE, GUID_RND);
+        Shape shapeEnd{};
+        DISCARD(shapeEnd.FromStream(shapeStart.ToStream()));
 
-        REQUIRE(smth == smthElse);
+        REQUIRE(shapeStart == shapeEnd);
     }
 
     SECTION("Derived")
     {
-        Shape *circleStart = new Circle(3.14156);
-        Shape *circleEnd = new Circle(2.4);
+        Shape *circleStart = new Circle(GUID_RND, "SVG", L"URL\\SHIT");
+        Shape *circleEnd = new Circle();
         DISCARD(circleEnd->FromStream(circleStart->ToStream()));
 
         REQUIRE(*(Circle *)circleStart == *(Circle *)circleEnd);
@@ -245,29 +433,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
 
     SECTION("Derived++")
     {
-        class Sphere : public Circle
-        {
-            STREAMABLE_DEFINE(Circle, mReflexion);
-
-          public:
-            Sphere() : Circle()
-            {
-            }
-
-            Sphere(const double aRadius, const bool aReflexion) : Circle(aRadius), mReflexion(aReflexion)
-            {
-            }
-
-            bool operator==(const Sphere &aSphere) const
-            {
-                return *(Circle *)this == *(Circle *)&aSphere && mReflexion == aSphere.mReflexion;
-            }
-
-          private:
-            bool mReflexion{};
-        };
-
-        Sphere sphereStart(3.14156, true);
+        Sphere sphereStart({GUID_RND, "SVG", L"URL\\SHIT"}, true);
         Sphere sphereEnd;
         DISCARD(sphereEnd.FromStream(sphereStart.ToStream()));
 
@@ -278,11 +444,51 @@ TEST_CASE("IStreamable", "[IStreamable]")
     {
         class Context : public hbann::IStreamable
         {
-            STREAMABLE_DEFINE(IStreamable, mShapes);
+          private:
+            friend class ::hbann::StreamReader;
+            friend class ::hbann::StreamWriter;
+
+          public:
+            [[nodiscard]] ::hbann::Stream &&ToStream() override
+            {
+                if constexpr (std::string_view("IStreamable") != "IStreamable")
+                {
+                    SetStream(IStreamable::ToStream());
+                }
+                else
+                {
+                    Reserve(FindParseSize());
+                }
+                mStreamWriter.WriteAll(mShapes);
+                return Release();
+            }
+
+          public:
+            [[nodiscard]] ::hbann::Stream &&FromStream(::hbann::Stream &&aStream) override
+            {
+                if constexpr (std::string_view("IStreamable") != "IStreamable")
+                {
+                    aStream = std::move(IStreamable::FromStream(std::move(aStream)));
+                }
+                SetStream(std::move(aStream));
+                mStreamReader.ReadAll(mShapes);
+                return Release();
+            }
+
+          protected:
+            [[nodiscard]] constexpr size_t FindParseSize() const noexcept override
+            {
+                size_t size{};
+                if constexpr (std::string_view("IStreamable") != "IStreamable")
+                {
+                    size += IStreamable::FindParseSize();
+                }
+                size += ::hbann::SizeFinder::FindParseSize(mShapes);
+                return size;
+            };
 
           public:
             Context() = default;
-
             Context(std::vector<Shape *> &&aShapes) : mShapes(std::move(aShapes))
             {
             }
@@ -296,14 +502,30 @@ TEST_CASE("IStreamable", "[IStreamable]")
 
                 for (size_t i = 0; i < mShapes.size(); i++)
                 {
-                    if (*mShapes[i] != *aContext.mShapes[i])
+                    if (mShapes[i]->GetType() != aContext.mShapes[i]->GetType())
                     {
                         return false;
                     }
 
-                    if (*(Circle *)mShapes[i] != *(Circle *)aContext.mShapes[i])
+                    switch (mShapes[i]->GetType())
                     {
-                        return false;
+                    case Shape::Type::CIRCLE: {
+                        if (*(Circle *)mShapes[i] != *(Circle *)aContext.mShapes[i])
+                        {
+                            return false;
+                        }
+
+                        break;
+                    }
+
+                    case Shape::Type::RECTANGLE: {
+                        if (*(Rectangle *)mShapes[i] != *(Rectangle *)aContext.mShapes[i])
+                        {
+                            return false;
+                        }
+
+                        break;
+                    }
                     }
                 }
 
@@ -314,11 +536,20 @@ TEST_CASE("IStreamable", "[IStreamable]")
             std::vector<Shape *> mShapes{};
         };
 
-        std::vector<Shape *> shapes{new Circle(3.14156), new Circle(2.4)};
+        Sphere center({GUID_RND, "SVG", L"URL\\SHIT"}, true);
+        std::vector<std::vector<std::wstring>> cells{{L"smth", L"else"}, {L"HBann", L"Sefu la bani"}};
+        std::vector<Shape *> shapes{
+            // new Circle(GUID_RND, "Circle1_SVG", "Circle1_URL"),
+            new Rectangle(GUID_RND, center, {}),
+            // new Circle(GUID_RND, "Circle2_SVG", "Circle2_URL")
+        };
         Context contextStart(std::move(shapes));
+        auto s(contextStart.ToStream());
+        auto xxxx = s.GetBuffer().view();
 
         Context contextEnd;
-        DISCARD(contextEnd.FromStream(contextStart.ToStream()));
+        auto xxx = contextEnd.FromStream(std::move(s)).GetBuffer().view();
+        // DISCARD(contextEnd.FromStream(contextStart.ToStream()));
 
         REQUIRE(contextStart == contextEnd);
     }

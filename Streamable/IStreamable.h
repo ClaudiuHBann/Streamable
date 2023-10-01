@@ -113,7 +113,7 @@ class IStreamable
         *this = aIStreamable;
     }
 
-    IStreamable(IStreamable &&aIStreamable) : mStreamWriter(mStream), mStreamReader(mStream)
+    IStreamable(IStreamable &&aIStreamable) noexcept : mStreamWriter(mStream), mStreamReader(mStream)
     {
         *this = std::move(aIStreamable);
     }
@@ -123,7 +123,7 @@ class IStreamable
         return *this;
     }
 
-    IStreamable &operator=(IStreamable &&)
+    IStreamable &operator=(IStreamable &&) noexcept
     {
         return *this;
     }
