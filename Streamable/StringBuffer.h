@@ -60,6 +60,31 @@ class StringBuffer : public std::stringbuf
         return *this;
     }
 
+    inline void Clear() noexcept
+    {
+        auto streamO(pbase());
+        auto streamI(eback());
+        if (!streamO && !streamI)
+        {
+            return;
+        }
+
+        // at least one pointer exists so delete at lease one
+        // if the pointers were not the same delete the other one
+        if (streamI == streamO)
+        {
+            delete streamI;
+        }
+        else if (streamI != streamO)
+        {
+            delete streamI;
+            delete streamO;
+        }
+
+        // reset internal pointers
+        Reset();
+    }
+
     ~StringBuffer() noexcept override
     {
         // when we allocate memory with setbuf we don't change the Allocate flag from the stringbuf
@@ -100,32 +125,6 @@ class StringBuffer : public std::stringbuf
         }
 
         return this;
-    }
-
-  private:
-    inline void Clear() noexcept
-    {
-        auto streamO(pbase());
-        auto streamI(eback());
-        if (!streamO && !streamI)
-        {
-            return;
-        }
-
-        // at least one pointer exists so delete at lease one
-        // if the pointers were not the same delete the other one
-        if (streamI == streamO)
-        {
-            delete streamI;
-        }
-        else if (streamI != streamO)
-        {
-            delete streamI;
-            delete streamO;
-        }
-
-        // reset internal pointers
-        Reset();
     }
 };
 } // namespace hbann

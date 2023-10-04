@@ -5,26 +5,23 @@
 
 #define STREAMABLE_DEFINE_FROM_STREAM(baseClass, ...)                                                                  \
   public:                                                                                                              \
-    [[nodiscard]] ::hbann::Stream &&FromStream(::hbann::Stream &&aStream) override                                     \
+    [[nodiscard]] void FromStream() override                                                                           \
     {                                                                                                                  \
         if constexpr (std::string_view(#baseClass) != STREAMABLE_INTERFACE_NAME)                                       \
         {                                                                                                              \
-            aStream = std::move(baseClass::FromStream(std::move(aStream)));                                            \
+            baseClass::FromStream();                                                                                   \
         }                                                                                                              \
                                                                                                                        \
-        SetStream(std::move(aStream));                                                                                 \
         mStreamReader.ReadAll(__VA_ARGS__);                                                                            \
-                                                                                                                       \
-        return Release();                                                                                              \
     }
 
 #define STREAMABLE_DEFINE_TO_STREAM(baseClass, ...)                                                                    \
   public:                                                                                                              \
-    [[nodiscard]] ::hbann::Stream &&ToStream() override                                                                \
+    [[nodiscard]] void ToStream() override                                                                             \
     {                                                                                                                  \
         if constexpr (std::string_view(#baseClass) != STREAMABLE_INTERFACE_NAME)                                       \
         {                                                                                                              \
-            SetStream(baseClass::ToStream());                                                                          \
+            baseClass::ToStream();                                                                                     \
         }                                                                                                              \
         else                                                                                                           \
         {                                                                                                              \
@@ -32,8 +29,6 @@
         }                                                                                                              \
                                                                                                                        \
         mStreamWriter.WriteAll(__VA_ARGS__);                                                                           \
-                                                                                                                       \
-        return Release();                                                                                              \
     }
 
 #define STREAMABLE_DEFINE_FIND_PARSE_SIZE(baseClass, ...)                                                              \
@@ -71,30 +66,47 @@ class IStreamable
     friend class StreamReader;
 
   public:
-    [[nodiscard]] virtual Stream &&ToStream() = 0;
-    [[nodiscard]] virtual Stream &&FromStream(Stream &&aStream) = 0;
+    [[nodiscard]] Stream &&Serialize()
+    {
+        ToStream();
+        return Release();
+    }
+
+    void Deserialize(Stream &&aStream, const bool aClear = true)
+    {
+        SetStream(std::move(aStream));
+        FromStream();
+
+        if (aClear)
+        {
+            mStream.Clear();
+        }
+    }
 
   protected:
     StreamWriter mStreamWriter;
     StreamReader mStreamReader;
 
-    inline IStreamable() : mStreamWriter(mStream), mStreamReader(mStream)
+    inline IStreamable() noexcept : mStreamWriter(mStream), mStreamReader(mStream)
     {
     }
 
+    virtual void ToStream() = 0;
+    virtual void FromStream() = 0;
+
     [[nodiscard]] virtual constexpr size_t FindParseSize() const noexcept = 0;
 
-    [[nodiscard]] virtual inline IStreamable *FindDerivedStreamable(StreamReader &)
+    [[nodiscard]] virtual constexpr IStreamable *FindDerivedStreamable(StreamReader &)
     {
         return nullptr;
     }
 
-    [[nodiscard]] constexpr decltype(auto) Release()
+    [[nodiscard]] constexpr decltype(auto) Release() noexcept
     {
         return std::move(mStream);
     }
 
-    inline Stream &SetStream(Stream &&aStream)
+    inline Stream &SetStream(Stream &&aStream) noexcept
     {
         mStream = std::move(aStream);
         mStreamWriter = StreamWriter(mStream);
@@ -108,22 +120,22 @@ class IStreamable
         return mStream.Reserve(aSize);
     }
 
-    IStreamable(const IStreamable &aIStreamable) : mStreamWriter(mStream), mStreamReader(mStream)
+    inline IStreamable(const IStreamable &aIStreamable) noexcept : IStreamable()
     {
         *this = aIStreamable;
     }
 
-    IStreamable(IStreamable &&aIStreamable) noexcept : mStreamWriter(mStream), mStreamReader(mStream)
+    inline IStreamable(IStreamable &&aIStreamable) noexcept : IStreamable()
     {
         *this = std::move(aIStreamable);
     }
 
-    IStreamable &operator=(const IStreamable &)
+    constexpr IStreamable &operator=(const IStreamable &) noexcept
     {
         return *this;
     }
 
-    IStreamable &operator=(IStreamable &&) noexcept
+    constexpr IStreamable &operator=(IStreamable &&) noexcept
     {
         return *this;
     }

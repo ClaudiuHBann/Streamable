@@ -77,7 +77,7 @@ class StreamReader
     {
         static_assert(std::is_base_of_v<IStreamable, Type>, "Type is not a streamable!");
 
-        DISCARD(aStreamable.FromStream(mStream->Read(ReadCount()))); // read streamable size in bytes
+        aStreamable.Deserialize(mStream->Read(ReadCount()), false); // read streamable size in bytes
     }
 
     template <typename Type> [[nodiscard]] constexpr void ReadStreamablePtr(Type &aStreamablePtr)
@@ -94,7 +94,7 @@ class StreamReader
             aStreamablePtr = static_cast<Type>(typeNoPtr.FindDerivedStreamable(streamReader));
         });
 
-        DISCARD(aStreamablePtr->FromStream(mStream->Read(ReadCount())));
+        aStreamablePtr->Deserialize(mStream->Read(ReadCount()), false);
     }
 
     template <typename Type> [[nodiscard]] constexpr Type ReadRange()

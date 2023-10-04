@@ -61,11 +61,11 @@ class StreamWriter
         Stream stream{};
         if constexpr (std::is_pointer_v<Type>)
         {
-            stream = std::move(aStreamable->ToStream());
+            stream = std::move(aStreamable->Serialize());
         }
         else
         {
-            stream = std::move(aStreamable.ToStream());
+            stream = std::move(aStreamable.Serialize());
         }
         const auto streamView = stream.GetBuffer().view();
 

@@ -77,6 +77,12 @@ class Stream
         return *this;
     }
 
+    inline decltype(auto) Clear() noexcept
+    {
+        mStream.Clear();
+        return *this;
+    }
+
   private:
     StringBuffer mStream;
 
