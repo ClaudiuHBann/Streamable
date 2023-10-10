@@ -17,9 +17,6 @@
       <Filter>Streamable</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="Streamable\StringBuffer.cpp">
-      <Filter>Streamable</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Streamable\Stream.h">
@@ -38,9 +35,6 @@
       <Filter>Streamable</Filter>
     </ClInclude>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Streamable\StringBuffer.h">
-      <Filter>Streamable</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Streamable">
