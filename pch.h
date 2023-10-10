@@ -9,7 +9,9 @@ class path;
 #ifdef __GNUC__
 #include <cstdint>
 #endif // __GNUC__
-#include <sstream>
+#include <span>
+#include <variant>
+#include <vector>
 
 // Streamable
 #define STREAMABLE_INTERFACE_NAME "IStreamable"
@@ -42,26 +44,13 @@ concept is_range_std_lay =
 template <typename Container>
 concept has_method_size = requires(Container &aContainer) { std::ranges::size(aContainer); };
 
-template <std::ranges::range Range> constexpr size_t GetRangeCount(const Range &aRange)
+constexpr bool static_equal(char const *aString1, char const *aString2)
 {
-    if constexpr (has_method_size<Range>)
-    {
-        return std::ranges::size(aRange);
-    }
-    else if constexpr (is_path<Range>)
-    {
-        return aRange.native().size();
-    }
-    else
-    {
-        static_assert(always_false<Range>, "Implement your own size getter bitch, sorry :(");
-    }
+    return *aString1 == *aString2 && (!*aString1 || static_equal(aString1 + 1, aString2 + 1));
 }
 } // namespace hbann
 
 /*
     TODO:
-         - create our own exception class for more specific info
-         - throw an exception for any copy that is made for any of our classes (we just MOVE objects)
-         - check the reserve method
+         -
 */

@@ -18,4 +18,3 @@ using namespace Catch;
 // Test
 #include <filesystem>
 #include <list>
-#include <vector>

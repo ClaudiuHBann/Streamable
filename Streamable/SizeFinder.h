@@ -29,6 +29,23 @@ class SizeFinder
         }
     }
 
+    template <std::ranges::range Range>
+    [[nodiscard]] static constexpr size_t GetRangeCount(const Range &aRange) noexcept
+    {
+        if constexpr (has_method_size<Range>)
+        {
+            return std::ranges::size(aRange);
+        }
+        else if constexpr (is_path<Range>)
+        {
+            return aRange.native().size();
+        }
+        else
+        {
+            static_assert(always_false<Range>, "Implement your own size getter bitch, sorry :(");
+        }
+    }
+
   private:
     template <typename Type> [[nodiscard]] static constexpr size_t FindObjectSize(const Type &aObject) noexcept
     {

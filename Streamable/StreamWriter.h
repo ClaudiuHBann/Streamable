@@ -67,7 +67,7 @@ class StreamWriter
         {
             stream = std::move(aStreamable.Serialize());
         }
-        const auto streamView = stream.GetBuffer().view();
+        const auto streamView = stream.View();
 
         WriteCount(streamView.size()); // we write the size in bytes of the stream
         mStream->Write(streamView.data(), streamView.size());
@@ -79,7 +79,7 @@ class StreamWriter
 
         using TypeValueType = typename Type::value_type;
 
-        WriteCount(GetRangeCount(aRange));
+        WriteCount(SizeFinder::GetRangeCount(aRange));
 
         if constexpr (SizeFinder::FindRangeRank<Type>() > 1)
         {
@@ -105,13 +105,13 @@ class StreamWriter
             if constexpr (is_path<Type>)
             {
                 const auto rangePtr = reinterpret_cast<const char *>(aRange.native().data());
-                const auto rangeSize = GetRangeCount(aRange) * sizeof(TypeValueType);
+                const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
                 mStream->Write(rangePtr, rangeSize);
             }
             else
             {
                 const auto rangePtr = reinterpret_cast<const char *>(std::ranges::data(aRange));
-                const auto rangeSize = GetRangeCount(aRange) * sizeof(TypeValueType);
+                const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
                 mStream->Write(rangePtr, rangeSize);
             }
         }

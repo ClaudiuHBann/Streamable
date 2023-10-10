@@ -7,7 +7,7 @@
   public:                                                                                                              \
     [[nodiscard]] void FromStream() override                                                                           \
     {                                                                                                                  \
-        if constexpr (std::string_view(#baseClass) != STREAMABLE_INTERFACE_NAME)                                       \
+        if constexpr (!::hbann::static_equal(#baseClass, STREAMABLE_INTERFACE_NAME))                                   \
         {                                                                                                              \
             baseClass::FromStream();                                                                                   \
         }                                                                                                              \
@@ -19,7 +19,7 @@
   public:                                                                                                              \
     [[nodiscard]] void ToStream() override                                                                             \
     {                                                                                                                  \
-        if constexpr (std::string_view(#baseClass) != STREAMABLE_INTERFACE_NAME)                                       \
+        if constexpr (!::hbann::static_equal(#baseClass, STREAMABLE_INTERFACE_NAME))                                   \
         {                                                                                                              \
             baseClass::ToStream();                                                                                     \
         }                                                                                                              \
@@ -36,7 +36,7 @@
     [[nodiscard]] constexpr size_t FindParseSize() const noexcept override                                             \
     {                                                                                                                  \
         size_t size{};                                                                                                 \
-        if constexpr (std::string_view(#baseClass) != STREAMABLE_INTERFACE_NAME)                                       \
+        if constexpr (!::hbann::static_equal(#baseClass, STREAMABLE_INTERFACE_NAME))                                   \
         {                                                                                                              \
             size += baseClass::FindParseSize();                                                                        \
         }                                                                                                              \
