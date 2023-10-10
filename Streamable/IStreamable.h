@@ -74,7 +74,7 @@ class IStreamable
 
     void Deserialize(Stream &&aStream, const bool aClear = true)
     {
-        SetStream(std::move(aStream));
+        Swap(std::move(aStream));
         FromStream();
 
         if (aClear)
@@ -87,7 +87,7 @@ class IStreamable
     StreamWriter mStreamWriter;
     StreamReader mStreamReader;
 
-    inline IStreamable() noexcept : mStreamWriter(mStream), mStreamReader(mStream)
+    constexpr IStreamable() noexcept : mStreamWriter(mStream), mStreamReader(mStream)
     {
     }
 
@@ -106,7 +106,7 @@ class IStreamable
         return std::move(mStream);
     }
 
-    inline Stream &SetStream(Stream &&aStream) noexcept
+    constexpr Stream &Swap(Stream &&aStream) noexcept
     {
         mStream = std::move(aStream);
         mStreamWriter = StreamWriter(mStream);
@@ -115,17 +115,17 @@ class IStreamable
         return mStream;
     }
 
-    inline decltype(auto) Reserve(const size_t aSize)
+    constexpr decltype(auto) Reserve(const size_t aSize)
     {
         return mStream.Reserve(aSize);
     }
 
-    inline IStreamable(const IStreamable &aIStreamable) noexcept : IStreamable()
+    constexpr IStreamable(const IStreamable &aIStreamable) noexcept : IStreamable()
     {
         *this = aIStreamable;
     }
 
-    inline IStreamable(IStreamable &&aIStreamable) noexcept : IStreamable()
+    constexpr IStreamable(IStreamable &&aIStreamable) noexcept : IStreamable()
     {
         *this = std::move(aIStreamable);
     }
@@ -135,8 +135,9 @@ class IStreamable
         return *this;
     }
 
-    constexpr IStreamable &operator=(IStreamable &&) noexcept
+    constexpr IStreamable &operator=(IStreamable &&aIStreamable) noexcept
     {
+        Swap(std::move(aIStreamable.mStream));
         return *this;
     }
 

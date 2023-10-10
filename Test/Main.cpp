@@ -185,23 +185,23 @@ TEST_CASE("Streamable", "[Streamable]")
         stream.Reserve(21);
 
         std::string biceps("biceps");
-        stream.Write(biceps.c_str(), biceps.size()).Flush();
+        stream.Write(biceps.c_str(), biceps.size());
         const auto bicepsView = stream.Read(biceps.size());
-        REQUIRE(biceps.compare(bicepsView) == 0);
+        REQUIRE(biceps.compare(0, biceps.size(), bicepsView.data(), bicepsView.size()) == 0);
 
         REQUIRE(!stream.Read(1).size());
 
         std::string triceps("triceps");
-        stream.Write(triceps.c_str(), triceps.size()).Flush();
+        stream.Write(triceps.c_str(), triceps.size());
         const auto tricepsView = stream.Read(triceps.size());
-        REQUIRE(triceps.compare(tricepsView) == 0);
+        REQUIRE(triceps.compare(0, triceps.size(), tricepsView.data(), tricepsView.size()) == 0);
 
         REQUIRE(!stream.Read(1).size());
 
         std::string cariceps("cariceps");
-        stream.Write(cariceps.c_str(), cariceps.size()).Flush();
+        stream.Write(cariceps.c_str(), cariceps.size());
         const auto caricepsView = stream.Read(cariceps.size());
-        REQUIRE(cariceps.compare(caricepsView) == 0);
+        REQUIRE(cariceps.compare(0, cariceps.size(), caricepsView.data(), caricepsView.size()) == 0);
     }
 
     SECTION("StreamWriter")
@@ -220,7 +220,7 @@ TEST_CASE("Streamable", "[Streamable]")
         const auto sSize = *reinterpret_cast<const hbann::size_range *>(sSizeView);
         REQUIRE(s.size() == sSize);
         const auto sView = stream.Read(sSize);
-        REQUIRE(s.compare(sView) == 0);
+        REQUIRE(s.compare(0, s.size(), sView.data(), sView.size()) == 0);
 
         // TODO: add IStreamable StreamWriter test
     }
@@ -332,18 +332,13 @@ TEST_CASE("IStreamable", "[IStreamable]")
 
         Sphere center({GUID_RND, "SVG", L"URL\\SHIT"}, true);
         std::vector<std::vector<std::wstring>> cells{{L"smth", L"else"}, {L"HBann", L"Sefu la bani"}};
-        std::vector<Shape *> shapes{
-            // new Circle(GUID_RND, "Circle1_SVG", "Circle1_URL"),
-            new Rectangle(GUID_RND, center, {}),
-            // new Circle(GUID_RND, "Circle2_SVG", "Circle2_URL")
-        };
+        std::vector<Shape *> shapes{new Circle(GUID_RND, "Circle1_SVG", "Circle1_URL"),
+                                    new Rectangle(GUID_RND, center, {}),
+                                    new Circle(GUID_RND, "Circle2_SVG", "Circle2_URL")};
         Context contextStart(std::move(shapes));
-        auto s(contextStart.Serialize());
-        auto xxxx = s.GetBuffer().view();
 
         Context contextEnd;
-        contextEnd.Deserialize(std::move(s));
-        // contextEnd.Deserialize(contextStart.Serialize());
+        contextEnd.Deserialize(contextStart.Serialize());
 
         REQUIRE(contextStart == contextEnd);
     }
