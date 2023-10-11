@@ -31,7 +31,7 @@ class StreamReader
         }
     }
 
-    constexpr StreamReader &operator=(StreamReader &&aStreamReader) noexcept
+    constexpr decltype(auto) operator=(StreamReader && aStreamReader) noexcept
     {
         mStream = aStreamReader.mStream;
 
@@ -41,19 +41,20 @@ class StreamReader
   private:
     Stream *mStream{};
 
-    template <typename Type> [[nodiscard]] constexpr void Read(Type &aObject)
+    template <typename Type> [[nodiscard]] constexpr decltype(auto) Read(Type &aObject)
     {
         if constexpr (is_std_lay_no_ptr<Type>)
         {
-            ReadObjectOfKnownSize<Type>(aObject);
+            return ReadObjectOfKnownSize<Type>(aObject);
         }
         else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
         {
-            ReadStreamableX<Type>(aObject);
+            return ReadStreamableX<Type>(aObject);
         }
         else if constexpr (std::ranges::range<Type>)
         {
             aObject = std::move(ReadRange<Type>());
+            return *this;
         }
         else
         {
@@ -61,26 +62,27 @@ class StreamReader
         }
     }
 
-    template <typename Type> [[nodiscard]] constexpr void ReadStreamableX(Type &aStreamable)
+    template <typename Type> constexpr decltype(auto) ReadStreamableX(Type &aStreamable)
     {
         if constexpr (std::is_pointer_v<Type>)
         {
-            ReadStreamablePtr<Type>(aStreamable);
+            return ReadStreamablePtr<Type>(aStreamable);
         }
         else
         {
-            ReadStreamable<Type>(aStreamable);
+            return ReadStreamable<Type>(aStreamable);
         }
     }
 
-    template <typename Type> [[nodiscard]] constexpr void ReadStreamable(Type &aStreamable)
+    template <typename Type> constexpr decltype(auto) ReadStreamable(Type &aStreamable)
     {
         static_assert(std::is_base_of_v<IStreamable, Type>, "Type is not a streamable!");
 
         aStreamable.Deserialize(mStream->Read(ReadCount()), false); // read streamable size in bytes
+        return *this;
     }
 
-    template <typename Type> [[nodiscard]] constexpr void ReadStreamablePtr(Type &aStreamablePtr)
+    template <typename Type> constexpr decltype(auto) ReadStreamablePtr(Type &aStreamablePtr)
     {
         using TypeNoPtr = std::remove_pointer_t<Type>;
 
@@ -95,6 +97,7 @@ class StreamReader
         });
 
         aStreamablePtr->Deserialize(mStream->Read(ReadCount()), false);
+        return *this;
     }
 
     template <typename Type> [[nodiscard]] constexpr Type ReadRange()
@@ -122,7 +125,7 @@ class StreamReader
         return range;
     }
 
-    template <typename Type> [[nodiscard]] constexpr void ReadRangeRank1(Type &aRange, const size_t aCount)
+    template <typename Type> constexpr decltype(auto) ReadRangeRank1(Type &aRange, const size_t aCount)
     {
         static_assert(std::ranges::range<Type>, "Type is not a range!");
 
@@ -143,9 +146,11 @@ class StreamReader
                 aRange.insert(std::ranges::cend(aRange), object);
             }
         }
+
+        return *this;
     }
 
-    template <typename Type> [[nodiscard]] constexpr void RangeReserve(Type &aRange, const size_t aCount)
+    template <typename Type> constexpr decltype(auto) RangeReserve(Type &aRange, const size_t aCount)
     {
         static_assert(std::ranges::range<Type>, "Type is not a range!");
 
@@ -178,14 +183,18 @@ class StreamReader
                 aRange.reserve(aCount);
             }
         }
+
+        return *this;
     }
 
-    template <typename Type> [[nodiscard]] constexpr void ReadObjectOfKnownSize(Type &aObject)
+    template <typename Type> constexpr decltype(auto) ReadObjectOfKnownSize(Type &aObject)
     {
         static_assert(is_std_lay_no_ptr<Type>, "Type is not an object of known size or it is a pointer!");
 
         const auto view = mStream->Read(sizeof(Type));
         aObject = *reinterpret_cast<const Type *>(view.data());
+
+        return *this;
     }
 
     constexpr size_t ReadCount()

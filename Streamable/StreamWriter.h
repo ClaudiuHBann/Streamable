@@ -31,7 +31,7 @@ class StreamWriter
         }
     }
 
-    constexpr StreamWriter &operator=(StreamWriter &&aStreamWriter) noexcept
+    constexpr decltype(auto) operator=(StreamWriter && aStreamWriter) noexcept
     {
         mStream = aStreamWriter.mStream;
 
@@ -41,20 +41,22 @@ class StreamWriter
   private:
     Stream *mStream{};
 
-    template <typename Type> inline void WriteObjectOfKnownSize(const Type &aObject)
+    template <typename Type> constexpr decltype(auto) WriteObjectOfKnownSize(const Type &aObject)
     {
         static_assert(is_std_lay_no_ptr<Type>, "Type is not an object of known size or it is a pointer!");
 
         const auto objectPtr = reinterpret_cast<const char *>(&aObject);
-        mStream->Write(objectPtr, sizeof(aObject));
+        mStream->Write({objectPtr, sizeof(aObject)});
+
+        return *this;
     }
 
-    inline void WriteCount(const size_t aSize)
+    constexpr decltype(auto) WriteCount(const size_t aSize)
     {
-        WriteObjectOfKnownSize<size_range>((size_range)aSize);
+        return WriteObjectOfKnownSize<size_range>((size_range)aSize);
     }
 
-    template <typename Type> void WriteStreamable(Type &aStreamable)
+    template <typename Type> constexpr decltype(auto) WriteStreamable(Type &aStreamable)
     {
         static_assert(is_base_of_no_ptr<IStreamable, Type>, "Type is not a streamable (pointer)!");
 
@@ -67,13 +69,13 @@ class StreamWriter
         {
             stream = std::move(aStreamable.Serialize());
         }
-        const auto streamView = stream.View();
 
-        WriteCount(streamView.size()); // we write the size in bytes of the stream
-        mStream->Write(streamView.data(), streamView.size());
+        const auto streamView = stream.View();
+        // we write the size in bytes of the stream
+        return WriteCount(streamView.size()).Write(streamView);
     }
 
-    template <typename Type> constexpr void WriteRange(Type &aRange)
+    template <typename Type> constexpr decltype(auto) WriteRange(Type &aRange)
     {
         static_assert(std::ranges::range<Type>, "Type is not a range!");
 
@@ -92,9 +94,11 @@ class StreamWriter
         {
             WriteRangeRank1<Type>(aRange);
         }
+
+        return *this;
     }
 
-    template <typename Type> constexpr void WriteRangeRank1(Type &aRange)
+    template <typename Type> constexpr decltype(auto) WriteRangeRank1(Type &aRange)
     {
         static_assert(std::ranges::range<Type>, "Type is not a range!");
 
@@ -113,7 +117,7 @@ class StreamWriter
             }
 
             const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
-            mStream->Write(rangePtr, rangeSize);
+            mStream->Write({rangePtr, rangeSize});
         }
         else
         {
@@ -122,21 +126,23 @@ class StreamWriter
                 Write<TypeValueType>(object);
             }
         }
+
+        return *this;
     }
 
-    template <typename Type> constexpr void Write(Type &aObject)
+    template <typename Type> constexpr decltype(auto) Write(Type &aObject)
     {
         if constexpr (is_std_lay_no_ptr<Type>)
         {
-            WriteObjectOfKnownSize<Type>(aObject);
+            return WriteObjectOfKnownSize<Type>(aObject);
         }
         else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
         {
-            WriteStreamable<Type>(aObject);
+            return WriteStreamable<Type>(aObject);
         }
         else if constexpr (std::ranges::range<Type>)
         {
-            WriteRange<Type>(aObject);
+            return WriteRange<Type>(aObject);
         }
         else
         {

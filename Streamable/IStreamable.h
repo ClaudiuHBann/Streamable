@@ -33,7 +33,7 @@
 
 #define STREAMABLE_DEFINE_FIND_PARSE_SIZE(baseClass, ...)                                                              \
   protected:                                                                                                           \
-    [[nodiscard]] constexpr size_t FindParseSize() const noexcept override                                             \
+    [[nodiscard]] constexpr size_t FindParseSize() override                                                            \
     {                                                                                                                  \
         size_t size{};                                                                                                 \
         if constexpr (!::hbann::static_equal(#baseClass, STREAMABLE_INTERFACE_NAME))                                   \

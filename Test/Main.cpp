@@ -185,21 +185,21 @@ TEST_CASE("Streamable", "[Streamable]")
         stream.Reserve(21);
 
         std::string biceps("biceps");
-        stream.Write(biceps.c_str(), biceps.size());
+        stream.Write({biceps.c_str(), biceps.size()});
         const auto bicepsView = stream.Read(biceps.size());
         REQUIRE(biceps.compare(0, biceps.size(), bicepsView.data(), bicepsView.size()) == 0);
 
         REQUIRE(!stream.Read(1).size());
 
         std::string triceps("triceps");
-        stream.Write(triceps.c_str(), triceps.size());
+        stream.Write({triceps.c_str(), triceps.size()});
         const auto tricepsView = stream.Read(triceps.size());
         REQUIRE(triceps.compare(0, triceps.size(), tricepsView.data(), tricepsView.size()) == 0);
 
         REQUIRE(!stream.Read(1).size());
 
         std::string cariceps("cariceps");
-        stream.Write(cariceps.c_str(), cariceps.size());
+        stream.Write({cariceps.c_str(), cariceps.size()});
         const auto caricepsView = stream.Read(cariceps.size());
         REQUIRE(cariceps.compare(0, cariceps.size(), caricepsView.data(), caricepsView.size()) == 0);
     }

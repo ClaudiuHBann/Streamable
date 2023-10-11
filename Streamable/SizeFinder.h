@@ -10,7 +10,7 @@ class SizeFinder
 {
   public:
     template <typename Type, typename... Types>
-    [[nodiscard]] static constexpr size_t FindParseSize(const Type &aObject, const Types &...aObjects) noexcept
+    [[nodiscard]] static constexpr size_t FindParseSize(Type &aObject, Types &...aObjects) noexcept
     {
         return FindObjectSize<get_raw_t<Type>>(aObject) + FindParseSize(aObjects...);
     }
@@ -47,7 +47,7 @@ class SizeFinder
     }
 
   private:
-    template <typename Type> [[nodiscard]] static constexpr size_t FindObjectSize(const Type &aObject) noexcept
+    template <typename Type> [[nodiscard]] static constexpr size_t FindObjectSize(Type &aObject) noexcept
     {
         if constexpr (is_std_lay_no_ptr<Type>)
         {
@@ -57,11 +57,11 @@ class SizeFinder
         {
             if constexpr (std::is_pointer_v<Type>)
             {
-                return static_cast<const IStreamable *>(aObject)->FindParseSize();
+                return static_cast<IStreamable *>(aObject)->FindParseSize();
             }
             else
             {
-                return static_cast<const IStreamable *>(&aObject)->FindParseSize();
+                return static_cast<IStreamable *>(&aObject)->FindParseSize();
             }
         }
         else if constexpr (std::ranges::range<Type>)
@@ -74,7 +74,7 @@ class SizeFinder
         }
     }
 
-    template <typename Type> [[nodiscard]] static constexpr size_t FindRangeSize(const Type &aRange) noexcept
+    template <typename Type> [[nodiscard]] static constexpr size_t FindRangeSize(Type &aRange) noexcept
     {
         using TypeValueType = typename Type::value_type;
 
@@ -82,7 +82,7 @@ class SizeFinder
         if constexpr (FindRangeRank<Type>() > 1)
         {
             size += sizeof(size_range);
-            for (const auto &object : aRange)
+            for (auto &object : aRange)
             {
                 size += FindRangeSize(object);
             }
@@ -96,7 +96,7 @@ class SizeFinder
             }
             else
             {
-                for (const auto &object : aRange)
+                for (auto &object : aRange)
                 {
                     size += FindObjectSize(object);
                 }

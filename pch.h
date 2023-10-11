@@ -56,4 +56,5 @@ constexpr bool static_equal(char const *aString1, char const *aString2) noexcept
          - when finding derived class from base class pointer, add a tuple representing the types that can be read and
         make the user access the objects by index so can't read a bad object
          - inspect stream writer and reader for improvements
+         - concept to check at compile time if static FindDerivedStreamable method exists
 */

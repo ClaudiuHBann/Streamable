@@ -19,19 +19,19 @@ class Stream
     {
     }
 
-    constexpr Stream &Reserve(const size_t aSize)
+    constexpr decltype(auto) Reserve(const size_t aSize)
     {
         GetStream().reserve(aSize);
         return *this;
     }
 
-    [[nodiscard]] constexpr span View() noexcept
+    [[nodiscard]] constexpr auto View() noexcept
     {
         const auto spen = std::get_if<span>(&mStream);
         return spen ? *spen : GetStream();
     }
 
-    [[nodiscard]] constexpr span Read(size_t aSize) noexcept
+    [[nodiscard]] constexpr auto Read(size_t aSize) noexcept
     {
         const auto view = View();
 
@@ -45,13 +45,13 @@ class Stream
         return span{view.data() + (mReadIndex - aSize), aSize};
     }
 
-    constexpr Stream &Write(const char *aData, const size_t aSize)
+    constexpr decltype(auto) Write(const span &aSpan)
     {
-        GetStream().insert(GetStream().end(), aData, aData + aSize);
+        GetStream().insert(GetStream().end(), aSpan.data(), aSpan.data() + aSpan.size());
         return *this;
     }
 
-    constexpr Stream &operator=(Stream &&aStream) noexcept
+    constexpr decltype(auto) operator=(Stream && aStream) noexcept
     {
         mStream = std::move(aStream.mStream);
         mReadIndex = aStream.mReadIndex;
@@ -59,7 +59,7 @@ class Stream
         return *this;
     }
 
-    constexpr Stream &Clear() noexcept
+    constexpr decltype(auto) Clear() noexcept
     {
         GetStream().clear();
         return *this;
@@ -69,22 +69,19 @@ class Stream
     stream mStream{};
     size_t mReadIndex{};
 
-    constexpr decltype(auto) GetStream() noexcept
+    constexpr vector &GetStream() noexcept
     {
         // if crashed here --> it's read only (span)
         return std::get<vector>(mStream);
     }
 
-    constexpr decltype(auto) GetSpan() noexcept
-    {
-        return std::get<span>(mStream);
-    }
-
-    template <typename FunctionSeek> inline void Seek(const FunctionSeek &aFunctionSeek)
+    template <typename FunctionSeek> inline decltype(auto) Seek(const FunctionSeek &aFunctionSeek)
     {
         const auto readIndex = mReadIndex;
         aFunctionSeek(readIndex);
         mReadIndex = readIndex;
+
+        return *this;
     }
 };
 } // namespace hbann
