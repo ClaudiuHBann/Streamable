@@ -25,7 +25,8 @@ template <typename> constexpr auto always_false = false;
 template <typename Type> using get_raw_t = std::remove_const_t<std::remove_reference_t<Type>>;
 
 template <typename Container>
-concept has_method_reserve = requires(Container &aContainer) { aContainer.reserve(size_t(0)); };
+concept has_method_reserve =
+    std::ranges::contiguous_range<Container> && requires(Container &aContainer) { aContainer.reserve(size_t(0)); };
 
 template <typename Type>
 concept is_std_lay_no_ptr = std::is_standard_layout_v<Type> && !std::is_pointer_v<Type>;
@@ -44,7 +45,7 @@ concept is_range_std_lay =
 template <typename Container>
 concept has_method_size = requires(Container &aContainer) { std::ranges::size(aContainer); };
 
-constexpr bool static_equal(char const *aString1, char const *aString2)
+constexpr bool static_equal(char const *aString1, char const *aString2) noexcept
 {
     return *aString1 == *aString2 && (!*aString1 || static_equal(aString1 + 1, aString2 + 1));
 }
@@ -52,5 +53,7 @@ constexpr bool static_equal(char const *aString1, char const *aString2)
 
 /*
     TODO:
-         -
+         - when finding derived class from base class pointer, add a tuple representing the types that can be read and
+        make the user access the objects by index so can't read a bad object
+         - inspect stream writer and reader for improvements
 */

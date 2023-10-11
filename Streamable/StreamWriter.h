@@ -102,18 +102,18 @@ class StreamWriter
 
         if constexpr (is_range_std_lay<Type>)
         {
+            const char *rangePtr{};
             if constexpr (is_path<Type>)
             {
-                const auto rangePtr = reinterpret_cast<const char *>(aRange.native().data());
-                const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
-                mStream->Write(rangePtr, rangeSize);
+                rangePtr = reinterpret_cast<const char *>(aRange.native().data());
             }
             else
             {
-                const auto rangePtr = reinterpret_cast<const char *>(std::ranges::data(aRange));
-                const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
-                mStream->Write(rangePtr, rangeSize);
+                rangePtr = reinterpret_cast<const char *>(std::ranges::data(aRange));
             }
+
+            const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
+            mStream->Write(rangePtr, rangeSize);
         }
         else
         {

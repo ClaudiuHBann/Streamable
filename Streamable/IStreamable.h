@@ -66,13 +66,13 @@ class IStreamable
     friend class StreamReader;
 
   public:
-    [[nodiscard]] Stream &&Serialize()
+    [[nodiscard]] inline decltype(auto) Serialize()
     {
         ToStream();
         return Release();
     }
 
-    void Deserialize(Stream &&aStream, const bool aClear = true)
+    inline void Deserialize(Stream &&aStream, const bool aClear = true)
     {
         Swap(std::move(aStream));
         FromStream();
@@ -94,14 +94,14 @@ class IStreamable
     virtual void ToStream() = 0;
     virtual void FromStream() = 0;
 
-    [[nodiscard]] virtual constexpr size_t FindParseSize() const noexcept = 0;
+    [[nodiscard]] virtual size_t FindParseSize() = 0;
 
     [[nodiscard]] virtual constexpr IStreamable *FindDerivedStreamable(StreamReader &)
     {
         return nullptr;
     }
 
-    [[nodiscard]] constexpr decltype(auto) Release() noexcept
+    [[nodiscard]] constexpr Stream &&Release() noexcept
     {
         return std::move(mStream);
     }

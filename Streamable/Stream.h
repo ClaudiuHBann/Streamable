@@ -21,23 +21,14 @@ class Stream
 
     constexpr Stream &Reserve(const size_t aSize)
     {
-        // if crashed here --> it's read only (span)
-        std::get<vector>(mStream).reserve(aSize);
+        GetStream().reserve(aSize);
         return *this;
     }
 
-    [[nodiscard]] constexpr span View() const noexcept
+    [[nodiscard]] constexpr span View() noexcept
     {
-        const auto s = std::get_if<span>(&mStream);
-        if (s)
-        {
-            return *s;
-        }
-        else
-        {
-            const auto &v = std::get<vector>(mStream);
-            return span(v.data(), v.size());
-        }
+        const auto spen = std::get_if<span>(&mStream);
+        return spen ? *spen : GetStream();
     }
 
     [[nodiscard]] constexpr span Read(size_t aSize) noexcept
@@ -56,9 +47,7 @@ class Stream
 
     constexpr Stream &Write(const char *aData, const size_t aSize)
     {
-        // if crashed here --> it's read only (span)
-        auto &v = std::get<vector>(mStream);
-        v.insert(v.end(), aData, aData + aSize);
+        GetStream().insert(GetStream().end(), aData, aData + aSize);
         return *this;
     }
 
@@ -72,14 +61,24 @@ class Stream
 
     constexpr Stream &Clear() noexcept
     {
-        // if crashed here --> it's read only (span)
-        std::get<vector>(mStream).clear();
+        GetStream().clear();
         return *this;
     }
 
   private:
     stream mStream{};
     size_t mReadIndex{};
+
+    constexpr decltype(auto) GetStream() noexcept
+    {
+        // if crashed here --> it's read only (span)
+        return std::get<vector>(mStream);
+    }
+
+    constexpr decltype(auto) GetSpan() noexcept
+    {
+        return std::get<span>(mStream);
+    }
 
     template <typename FunctionSeek> inline void Seek(const FunctionSeek &aFunctionSeek)
     {

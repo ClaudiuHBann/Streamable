@@ -42,7 +42,7 @@ class SizeFinder
         }
         else
         {
-            static_assert(always_false<Range>, "Implement your own size getter bitch, sorry :(");
+            static_assert(always_false<Range>, "Tried to get the range count from an unknown object!");
         }
     }
 
