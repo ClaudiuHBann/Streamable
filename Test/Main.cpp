@@ -40,7 +40,7 @@ class Shape : public hbann::IStreamable
     }
 
   protected:
-    hbann::IStreamable *FindDerivedStreamable(hbann::StreamReader &aStreamReader) override;
+    static hbann::IStreamable *FindDerivedStreamable(hbann::StreamReader &aStreamReader);
 
   private:
     Type mType = Type::NONE;
@@ -333,7 +333,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
         Sphere center({GUID_RND, "SVG", L"URL\\SHIT"}, true);
         std::vector<std::vector<std::wstring>> cells{{L"smth", L"else"}, {L"HBann", L"Sefu la bani"}};
         std::vector<Shape *> shapes{new Circle(GUID_RND, "Circle1_SVG", "Circle1_URL"),
-                                    new Rectangle(GUID_RND, center, {}),
+                                    new Rectangle(GUID_RND, center, cells),
                                     new Circle(GUID_RND, "Circle2_SVG", "Circle2_URL")};
         Context contextStart(std::move(shapes));
 

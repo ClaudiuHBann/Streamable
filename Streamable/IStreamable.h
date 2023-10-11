@@ -65,6 +65,8 @@ class IStreamable
     friend class StreamWriter;
     friend class StreamReader;
 
+    Stream mStream;
+
   public:
     [[nodiscard]] inline decltype(auto) Serialize()
     {
@@ -95,11 +97,6 @@ class IStreamable
     virtual void FromStream() = 0;
 
     [[nodiscard]] virtual size_t FindParseSize() = 0;
-
-    [[nodiscard]] virtual constexpr IStreamable *FindDerivedStreamable(StreamReader &)
-    {
-        return nullptr;
-    }
 
     [[nodiscard]] constexpr Stream &&Release() noexcept
     {
@@ -140,8 +137,5 @@ class IStreamable
         Swap(std::move(aIStreamable.mStream));
         return *this;
     }
-
-  private:
-    Stream mStream;
 };
 } // namespace hbann

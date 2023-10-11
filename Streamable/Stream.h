@@ -6,17 +6,22 @@ class Stream
 {
     friend class StreamReader;
 
+  public:
     using vector = std::vector<char>;
     using span = std::span<const char>;
     using stream = std::variant<vector, span>;
 
-  public:
     constexpr Stream() noexcept : mStream(vector())
     {
     }
 
     constexpr Stream(const span &aSpan) noexcept : mStream(aSpan)
     {
+    }
+
+    constexpr Stream(Stream &&aStream) noexcept
+    {
+        *this = std::move(aStream);
     }
 
     constexpr decltype(auto) Reserve(const size_t aSize)
@@ -51,7 +56,7 @@ class Stream
         return *this;
     }
 
-    constexpr decltype(auto) operator=(Stream && aStream) noexcept
+    constexpr Stream &operator=(Stream &&aStream) noexcept
     {
         mStream = std::move(aStream.mStream);
         mReadIndex = aStream.mReadIndex;

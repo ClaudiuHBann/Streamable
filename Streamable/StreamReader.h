@@ -41,7 +41,7 @@ class StreamReader
   private:
     Stream *mStream{};
 
-    template <typename Type> [[nodiscard]] constexpr decltype(auto) Read(Type &aObject)
+    template <typename Type> constexpr decltype(auto) Read(Type &aObject)
     {
         if constexpr (is_std_lay_no_ptr<Type>)
         {
@@ -87,13 +87,14 @@ class StreamReader
         using TypeNoPtr = std::remove_pointer_t<Type>;
 
         static_assert(std::is_base_of_v<IStreamable, TypeNoPtr>, "Type is not a streamable pointer!");
+        static_assert(!has_method_find_derived_streamable<TypeNoPtr>,
+                      "Type doesn't have method `static IStreamable* FindDerivedStreamable(StreamReader &)` !");
 
         mStream->Seek([&](auto) {
-            TypeNoPtr typeNoPtr{};
             Stream stream(mStream->Read(ReadCount())); // read streamable size in bytes
             StreamReader streamReader(stream);
             // TODO: we let the user read n objects after wich we read again... fix it
-            aStreamablePtr = static_cast<Type>(typeNoPtr.FindDerivedStreamable(streamReader));
+            aStreamablePtr = static_cast<Type>(TypeNoPtr::FindDerivedStreamable(streamReader));
         });
 
         aStreamablePtr->Deserialize(mStream->Read(ReadCount()), false);

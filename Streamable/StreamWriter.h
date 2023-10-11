@@ -69,10 +69,11 @@ class StreamWriter
         {
             stream = std::move(aStreamable.Serialize());
         }
-
         const auto streamView = stream.View();
+
         // we write the size in bytes of the stream
-        return WriteCount(streamView.size()).Write(streamView);
+        WriteCount(streamView.size());
+        return mStream->Write(streamView);
     }
 
     template <typename Type> constexpr decltype(auto) WriteRange(Type &aRange)

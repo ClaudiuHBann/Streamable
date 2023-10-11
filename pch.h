@@ -5,16 +5,19 @@ namespace std::filesystem
 class path;
 } // namespace std::filesystem
 
+namespace hbann
+{
+class IStreamable;
+class StreamReader;
+} // namespace hbann
+
 // std
-#ifdef __GNUC__
-#include <cstdint>
-#endif // __GNUC__
 #include <span>
 #include <variant>
 #include <vector>
 
 // Streamable
-#define STREAMABLE_INTERFACE_NAME "IStreamable"
+constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
 
 namespace hbann
 {
@@ -45,6 +48,13 @@ concept is_range_std_lay =
 template <typename Container>
 concept has_method_size = requires(Container &aContainer) { std::ranges::size(aContainer); };
 
+template <typename Class>
+concept has_method_find_derived_streamable = requires(StreamReader &aStreamReader) {
+    {
+        Class::FindDerivedStreamable(aStreamReader)
+    } -> std::convertible_to<IStreamable *>;
+};
+
 constexpr bool static_equal(char const *aString1, char const *aString2) noexcept
 {
     return *aString1 == *aString2 && (!*aString1 || static_equal(aString1 + 1, aString2 + 1));
@@ -55,6 +65,4 @@ constexpr bool static_equal(char const *aString1, char const *aString2) noexcept
     TODO:
          - when finding derived class from base class pointer, add a tuple representing the types that can be read and
         make the user access the objects by index so can't read a bad object
-         - inspect stream writer and reader for improvements
-         - concept to check at compile time if static FindDerivedStreamable method exists
 */
