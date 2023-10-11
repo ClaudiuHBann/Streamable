@@ -2,6 +2,8 @@
 
 typedef struct _guid
 {
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(_guid, Data1, Data2, Data3, Data4);
+
     unsigned long Data1;
     unsigned short Data2;
     unsigned short Data3;
@@ -15,6 +17,8 @@ class Shape : public hbann::IStreamable
     STREAMABLE_DEFINE(IStreamable, mType, mID);
 
   public:
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Shape, mType, mID);
+
     enum class Type : uint8_t
     {
         NONE,
@@ -52,6 +56,8 @@ class Circle : public Shape
     STREAMABLE_DEFINE(Shape, mSVG, mURL);
 
   public:
+    NLOHMANN_DEFINE_DERIVED_TYPE_INTRUSIVE(Circle, Shape, mSVG, mURL);
+
     Circle() = default;
     Circle(const guid &aID, const std::string &aSVG, const std::filesystem::path &aURL)
         : Shape(Type::CIRCLE, aID), mSVG(aSVG), mURL(aURL)
@@ -73,6 +79,8 @@ class Sphere : public Circle
     STREAMABLE_DEFINE(Circle, mReflexion);
 
   public:
+    NLOHMANN_DEFINE_DERIVED_TYPE_INTRUSIVE(Sphere, Circle, mReflexion);
+
     Sphere() = default;
     Sphere(const Circle &aCircle, const bool aReflexion) : Circle(aCircle), mReflexion(aReflexion)
     {
@@ -92,6 +100,8 @@ class Rectangle : public Shape
     STREAMABLE_DEFINE(Shape, mCenter, mCells);
 
   public:
+    NLOHMANN_DEFINE_DERIVED_TYPE_INTRUSIVE(Rectangle, Shape, mCenter, mCells);
+
     Rectangle() = default;
     Rectangle(const guid &aID, const Sphere &aCenter, const std::vector<std::vector<std::wstring>> &aCells)
         : Shape(Type::RECTANGLE, aID), mCenter(aCenter), mCells(aCells)
@@ -124,6 +134,97 @@ hbann::IStreamable *Shape::FindDerivedStreamable(hbann::StreamReader &aStreamRea
         return nullptr;
     }
 }
+
+class Context : public hbann::IStreamable
+{
+    STREAMABLE_DEFINE(IStreamable, mShapes);
+
+  public:
+    friend void to_json(nlohmann::json &nlohmann_json_j, const Context &nlohmann_json_t)
+    {
+        json jsonArray = json::array();
+        for (auto shape : nlohmann_json_t.mShapes)
+        {
+            json json;
+            switch (shape->GetType())
+            {
+            case Shape::Type::CIRCLE:
+                to_json(json, *(Circle *)shape);
+                break;
+            case Shape::Type::RECTANGLE:
+                to_json(json, *(Rectangle *)shape);
+                break;
+            }
+            jsonArray.push_back(json);
+        }
+        nlohmann_json_j["mShapes"] = jsonArray;
+    }
+
+    friend void from_json(const nlohmann::json &nlohmann_json_j, Context &nlohmann_json_t)
+    {
+        for (auto &shapeJSON : nlohmann_json_j.at("mShapes"))
+        {
+            Shape *shapeDerived{};
+            switch (shapeJSON.at("mType").get<Shape::Type>())
+            {
+            case Shape::Type::CIRCLE:
+                from_json(shapeJSON, *(Circle *)(shapeDerived = new Circle));
+                break;
+            case Shape::Type::RECTANGLE:
+                from_json(shapeJSON, *(Rectangle *)(shapeDerived = new Rectangle));
+                break;
+            }
+            nlohmann_json_t.mShapes.push_back(shapeDerived);
+        }
+    }
+
+    Context() = default;
+    Context(std::vector<Shape *> &&aShapes) : mShapes(std::move(aShapes))
+    {
+    }
+
+    bool operator==(const Context &aContext) const
+    {
+        if (mShapes.size() != aContext.mShapes.size())
+        {
+            return false;
+        }
+
+        for (size_t i = 0; i < mShapes.size(); i++)
+        {
+            if (mShapes[i]->GetType() != aContext.mShapes[i]->GetType())
+            {
+                return false;
+            }
+
+            switch (mShapes[i]->GetType())
+            {
+            case Shape::Type::CIRCLE: {
+                if (*(Circle *)mShapes[i] != *(Circle *)aContext.mShapes[i])
+                {
+                    return false;
+                }
+
+                break;
+            }
+
+            case Shape::Type::RECTANGLE: {
+                if (*(Rectangle *)mShapes[i] != *(Rectangle *)aContext.mShapes[i])
+                {
+                    return false;
+                }
+
+                break;
+            }
+            }
+        }
+
+        return true;
+    }
+
+  private:
+    std::vector<Shape *> mShapes{};
+};
 
 TEST_CASE("Streamable", "[Streamable]")
 {
@@ -277,71 +378,68 @@ TEST_CASE("IStreamable", "[IStreamable]")
 
     SECTION("BaseClass*")
     {
-        class Context : public hbann::IStreamable
-        {
-            STREAMABLE_DEFINE(IStreamable, mShapes);
-
-          public:
-            Context() = default;
-            Context(std::vector<Shape *> &&aShapes) : mShapes(std::move(aShapes))
-            {
-            }
-
-            bool operator==(const Context &aContext) const
-            {
-                if (mShapes.size() != aContext.mShapes.size())
-                {
-                    return false;
-                }
-
-                for (size_t i = 0; i < mShapes.size(); i++)
-                {
-                    if (mShapes[i]->GetType() != aContext.mShapes[i]->GetType())
-                    {
-                        return false;
-                    }
-
-                    switch (mShapes[i]->GetType())
-                    {
-                    case Shape::Type::CIRCLE: {
-                        if (*(Circle *)mShapes[i] != *(Circle *)aContext.mShapes[i])
-                        {
-                            return false;
-                        }
-
-                        break;
-                    }
-
-                    case Shape::Type::RECTANGLE: {
-                        if (*(Rectangle *)mShapes[i] != *(Rectangle *)aContext.mShapes[i])
-                        {
-                            return false;
-                        }
-
-                        break;
-                    }
-                    }
-                }
-
-                return true;
-            }
-
-          private:
-            std::vector<Shape *> mShapes{};
-        };
-
         Sphere center({GUID_RND, "SVG", L"URL\\SHIT"}, true);
         std::vector<std::vector<std::wstring>> cells{{L"smth", L"else"}, {L"HBann", L"Sefu la bani"}};
         std::vector<Shape *> shapes{new Circle(GUID_RND, "Circle1_SVG", "Circle1_URL"),
                                     new Rectangle(GUID_RND, center, cells),
                                     new Circle(GUID_RND, "Circle2_SVG", "Circle2_URL")};
-        Context contextStart(std::move(shapes));
+        ::Context contextStart(std::move(shapes));
 
-        Context contextEnd;
+        ::Context contextEnd;
         contextEnd.Deserialize(contextStart.Serialize());
 
         REQUIRE(contextStart == contextEnd);
     }
+}
+
+TEST_CASE("Benchmarks", "[Benchmarks]")
+{
+    std::string circleSVG{};
+    for (size_t i = 0; i < 999; i++)
+    {
+        circleSVG += "SVGSVGSVG";
+    }
+
+    std::wstring circleURL{};
+    for (size_t i = 0; i < 666; i++)
+    {
+        circleURL += L"URL\\SHIT\\";
+    }
+
+    std::vector<std::vector<std::wstring>> cells{};
+    for (size_t i = 0; i < 333; i++)
+    {
+        cells.push_back({L"smth", L"else"});
+        cells.push_back({L"HBann", L"Sefu la bani"});
+    }
+
+    Sphere center({GUID_RND, circleSVG, circleURL}, true);
+    std::vector<Shape *> shapes{
+        new Circle(GUID_RND, circleSVG, circleURL),
+        new Rectangle(GUID_RND, center, cells),
+    };
+    ::Context contextStart(std::move(shapes));
+
+#ifndef _DEBUG
+    BENCHMARK("Streamable")
+    {
+        ::Context contextEnd;
+        contextEnd.Deserialize(contextStart.Serialize());
+
+        REQUIRE(contextStart == contextEnd);
+    };
+
+    BENCHMARK("JSON")
+    {
+        json json;
+        to_json(json, contextStart);
+
+        ::Context contextEnd;
+        from_json(json, contextEnd);
+
+        REQUIRE(contextStart == contextEnd);
+    };
+#endif // RELEASE
 }
 
 int main(int argc, char **argv)

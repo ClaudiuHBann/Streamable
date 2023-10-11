@@ -15,6 +15,11 @@
 
 using namespace Catch;
 
+// nlohmann JSON
+#include <Shared/JSON/json.hpp>
+
+using namespace nlohmann;
+
 // Test
 #include <filesystem>
 #include <list>

@@ -88,7 +88,7 @@ class StreamReader
 
         static_assert(std::is_base_of_v<IStreamable, TypeNoPtr>, "Type is not a streamable pointer!");
         static_assert(!has_method_find_derived_streamable<TypeNoPtr>,
-                      "Type doesn't have method `static IStreamable* FindDerivedStreamable(StreamReader &)` !");
+                      "Type doesn't have method 'static IStreamable* FindDerivedStreamable(StreamReader &)' !");
 
         mStream->Seek([&](auto) {
             Stream stream(mStream->Read(ReadCount())); // read streamable size in bytes

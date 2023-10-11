@@ -65,4 +65,5 @@ constexpr bool static_equal(char const *aString1, char const *aString2) noexcept
     TODO:
          - when finding derived class from base class pointer, add a tuple representing the types that can be read and
         make the user access the objects by index so can't read a bad object
+         - add separated examples
 */
