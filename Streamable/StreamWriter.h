@@ -61,7 +61,7 @@ class StreamWriter
         static_assert(is_base_of_no_ptr<IStreamable, Type>, "Type is not a streamable (pointer)!");
 
         Stream stream{};
-        if constexpr (std::is_pointer_v<Type>)
+        if constexpr (is_pointer<Type>)
         {
             stream = std::move(aStreamable->Serialize());
         }

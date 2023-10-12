@@ -55,7 +55,7 @@ class SizeFinder
         }
         else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
         {
-            if constexpr (std::is_pointer_v<Type>)
+            if constexpr (is_pointer<Type>)
             {
                 return static_cast<IStreamable *>(aObject)->FindParseSize();
             }

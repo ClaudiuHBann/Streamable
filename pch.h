@@ -12,6 +12,7 @@ class StreamReader;
 } // namespace hbann
 
 // std
+#include <memory>
 #include <span>
 #include <variant>
 #include <vector>
@@ -32,7 +33,16 @@ concept has_method_reserve =
     std::ranges::contiguous_range<Container> && requires(Container &aContainer) { aContainer.reserve(size_t(0)); };
 
 template <typename Type>
-concept is_std_lay_no_ptr = std::is_standard_layout_v<Type> && !std::is_pointer_v<Type>;
+concept is_pointer_unique = std::is_same_v<get_raw_t<Type>, std::unique_ptr<typename Type::value_type>>;
+
+template <typename Type>
+concept is_pointer_shared = std::is_same_v<get_raw_t<Type>, std::shared_ptr<typename Type::value_type>>;
+
+template <typename Type>
+concept is_pointer = std::is_pointer_v<Type> || is_pointer_unique<Type> || is_pointer_shared<Type>;
+
+template <typename Type>
+concept is_std_lay_no_ptr = std::is_standard_layout_v<Type> && !is_pointer<Type>;
 
 template <typename Base, typename Derived>
 concept is_base_of_no_ptr = std::is_base_of_v<Base, std::remove_pointer_t<Derived>>;
@@ -66,4 +76,5 @@ constexpr bool static_equal(char const *aString1, char const *aString2) noexcept
          - when finding derived class from base class pointer, add a tuple representing the types that can be read and
         make the user access the objects by index so can't read a bad object
          - add separated examples
+         - add support for unique_ptr and shared_ptr
 */

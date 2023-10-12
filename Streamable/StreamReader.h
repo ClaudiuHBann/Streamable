@@ -64,7 +64,7 @@ class StreamReader
 
     template <typename Type> constexpr decltype(auto) ReadStreamableX(Type &aStreamable)
     {
-        if constexpr (std::is_pointer_v<Type>)
+        if constexpr (is_pointer<Type>)
         {
             return ReadStreamablePtr<Type>(aStreamable);
         }
