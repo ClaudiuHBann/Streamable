@@ -269,9 +269,9 @@ class Context : public hbann::IStreamable
 
     ~Context()
     {
-        for ([[maybe_unused]] auto &shape : mShapes)
+        for (auto &shape : mShapes)
         {
-            // delete shape;
+            delete (shape);
         }
     }
 
