@@ -77,6 +77,8 @@ constexpr bool static_equal(char const *aString1, char const *aString2) noexcept
         make the user access the objects by index so can't read a bad object
          - add separated examples
          - add support for unique_ptr and shared_ptr
+         - encode string in utf-8 to save space
+         - FindRangeSize should not check for contiguous range when finding size of a range
          - don't add a 4 byte for every range add a byte if the most significant bit is true than we have a full 4 byte
         else we have just a byte
 */

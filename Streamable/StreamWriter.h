@@ -31,7 +31,7 @@ class StreamWriter
         }
     }
 
-    constexpr decltype(auto) operator=(StreamWriter && aStreamWriter) noexcept
+    constexpr StreamWriter &operator=(StreamWriter &&aStreamWriter) noexcept
     {
         mStream = aStreamWriter.mStream;
 
@@ -133,17 +133,17 @@ class StreamWriter
 
     template <typename Type> constexpr decltype(auto) Write(Type &aObject)
     {
-        if constexpr (is_std_lay_no_ptr<Type>)
+        if constexpr (std::ranges::range<Type>)
         {
-            return WriteObjectOfKnownSize<Type>(aObject);
+            return WriteRange<Type>(aObject);
         }
         else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
         {
             return WriteStreamable<Type>(aObject);
         }
-        else if constexpr (std::ranges::range<Type>)
+        else if constexpr (is_std_lay_no_ptr<Type>)
         {
-            return WriteRange<Type>(aObject);
+            return WriteObjectOfKnownSize<Type>(aObject);
         }
         else
         {

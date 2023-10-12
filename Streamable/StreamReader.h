@@ -31,7 +31,7 @@ class StreamReader
         }
     }
 
-    constexpr decltype(auto) operator=(StreamReader && aStreamReader) noexcept
+    constexpr StreamReader &operator=(StreamReader &&aStreamReader) noexcept
     {
         mStream = aStreamReader.mStream;
 
@@ -43,18 +43,18 @@ class StreamReader
 
     template <typename Type> constexpr decltype(auto) Read(Type &aObject)
     {
-        if constexpr (is_std_lay_no_ptr<Type>)
+        if constexpr (std::ranges::range<Type>)
         {
-            return ReadObjectOfKnownSize<Type>(aObject);
+            aObject = std::move(ReadRange<Type>());
+            return *this;
         }
         else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
         {
             return ReadStreamableX<Type>(aObject);
         }
-        else if constexpr (std::ranges::range<Type>)
+        else if constexpr (is_std_lay_no_ptr<Type>)
         {
-            aObject = std::move(ReadRange<Type>());
-            return *this;
+            return ReadObjectOfKnownSize<Type>(aObject);
         }
         else
         {
@@ -144,7 +144,7 @@ class StreamReader
             {
                 TypeValueType object{};
                 Read<TypeValueType>(object);
-                aRange.insert(std::ranges::cend(aRange), object);
+                aRange.insert(std::ranges::cend(aRange), std::move(object));
             }
         }
 
@@ -160,11 +160,7 @@ class StreamReader
         // TODO: handle range multiple ranks
         if constexpr (has_method_reserve<Type>)
         {
-            if constexpr (is_std_lay_no_ptr<TypeValueType>)
-            {
-                aRange.reserve(aCount * sizeof(TypeValueType));
-            }
-            else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
+            if constexpr (is_base_of_no_ptr<IStreamable, Type>)
             {
                 size_t sizeTotal{};
 
@@ -173,11 +169,15 @@ class StreamReader
                     {
                         const auto sizeCurrent = ReadCount();
                         sizeTotal += sizeCurrent;
-                        mStream->Read(sizeCurrent);
+                        [[maybe_unsed]] auto seek = mStream->Read(sizeCurrent);
                     }
                 });
 
                 aRange.reserve(sizeTotal);
+            }
+            else if constexpr (is_std_lay_no_ptr<TypeValueType>)
+            {
+                aRange.reserve(aCount * sizeof(TypeValueType));
             }
             else
             {

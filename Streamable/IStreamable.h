@@ -5,7 +5,7 @@
 
 #define STREAMABLE_DEFINE_FROM_STREAM(baseClass, ...)                                                                  \
   public:                                                                                                              \
-    [[nodiscard]] void FromStream() override                                                                           \
+    constexpr void FromStream() override                                                                               \
     {                                                                                                                  \
         if constexpr (!::hbann::static_equal(#baseClass, STREAMABLE_INTERFACE_NAME))                                   \
         {                                                                                                              \
@@ -17,7 +17,7 @@
 
 #define STREAMABLE_DEFINE_TO_STREAM(baseClass, ...)                                                                    \
   public:                                                                                                              \
-    [[nodiscard]] void ToStream() override                                                                             \
+    constexpr void ToStream() override                                                                                 \
     {                                                                                                                  \
         if constexpr (!::hbann::static_equal(#baseClass, STREAMABLE_INTERFACE_NAME))                                   \
         {                                                                                                              \

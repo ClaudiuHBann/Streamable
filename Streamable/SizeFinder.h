@@ -49,9 +49,9 @@ class SizeFinder
   private:
     template <typename Type> [[nodiscard]] static constexpr size_t FindObjectSize(Type &aObject) noexcept
     {
-        if constexpr (is_std_lay_no_ptr<Type>)
+        if constexpr (std::ranges::range<Type>)
         {
-            return sizeof(Type);
+            return FindRangeSize(aObject);
         }
         else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
         {
@@ -64,9 +64,9 @@ class SizeFinder
                 return static_cast<IStreamable *>(&aObject)->FindParseSize();
             }
         }
-        else if constexpr (std::ranges::range<Type>)
+        else if constexpr (is_std_lay_no_ptr<Type>)
         {
-            return FindRangeSize(aObject);
+            return sizeof(Type);
         }
         else
         {
@@ -78,10 +78,9 @@ class SizeFinder
     {
         using TypeValueType = typename Type::value_type;
 
-        size_t size{};
+        size_t size = sizeof(size_range);
         if constexpr (FindRangeRank<Type>() > 1)
         {
-            size += sizeof(size_range);
             for (auto &object : aRange)
             {
                 size += FindRangeSize(object);
@@ -89,7 +88,6 @@ class SizeFinder
         }
         else
         {
-            size += sizeof(size_range);
             if constexpr (is_range_std_lay<Type>)
             {
                 size += GetRangeCount(aRange) * sizeof(TypeValueType);
