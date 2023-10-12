@@ -269,7 +269,7 @@ class Context : public hbann::IStreamable
 
     ~Context()
     {
-        for (auto &shape : mShapes)
+        for ([[maybe_unused]] auto &shape : mShapes)
         {
             // delete shape;
         }
@@ -504,8 +504,8 @@ TEST_CASE("Benchmarks", "[Benchmarks]")
     std::vector<std::vector<std::wstring>> cells{};
     for (size_t i = 0; i < 333; i++)
     {
-        cells.push_back({L"smth", L"else"});
-        cells.push_back({L"HBann", L"Sefu la bani"});
+        cells.push_back({L"Streamable e sefu la bani!", L"penguinz0 - Goofy evening"});
+        cells.push_back({L"Parazitii - Standarde (nr.42)", L"Parazitii - Asa cum vreau (nr.92)"});
     }
 
     Sphere center({GUID_RND, circleSVG, circleURL}, true);
@@ -515,7 +515,6 @@ TEST_CASE("Benchmarks", "[Benchmarks]")
     };
     ::Context contextStart(std::move(shapes));
 
-#ifndef _DEBUG
     BENCHMARK("Streamable")
     {
         ::Context contextEnd;
@@ -523,6 +522,9 @@ TEST_CASE("Benchmarks", "[Benchmarks]")
 
         REQUIRE(contextStart == contextEnd);
     };
+
+    const auto view = contextStart.Serialize().View();
+    std::cout << std::endl << std::format("Streamable stream had {} bytes.", view.size()) << std::endl;
 
     BENCHMARK("JSON")
     {
@@ -535,6 +537,10 @@ TEST_CASE("Benchmarks", "[Benchmarks]")
         REQUIRE(contextStart == contextEnd);
     };
 
+    json json;
+    to_json(json, contextStart);
+    std::cout << std::endl << std::format("JSON stream had {} bytes.", to_string(json).size()) << std::endl;
+
     BENCHMARK("MsgPack")
     {
         sbuffer stream;
@@ -545,7 +551,10 @@ TEST_CASE("Benchmarks", "[Benchmarks]")
 
         REQUIRE(contextStart == contextEnd);
     };
-#endif // !_DEBUG
+
+    sbuffer stream;
+    pack(stream, contextStart);
+    std::cout << std::endl << std::format("MsgPack stream had {} bytes.", stream.size()) << std::endl;
 }
 
 int main(int argc, char **argv)
@@ -555,7 +564,7 @@ int main(int argc, char **argv)
         Session session;
 
 #if _DEBUG
-        ConfigData configData{.showSuccessfulTests = true,
+        ConfigData configData{.showSuccessfulTests = false,
                               .shouldDebugBreak = true,
                               .noThrow = true,
                               .showInvisibles = true,
