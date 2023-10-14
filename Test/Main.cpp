@@ -409,9 +409,10 @@ TEST_CASE("Streamable", "[Streamable]")
         const auto dView = stream.Read(sizeof(d)).data();
         REQUIRE(d == *reinterpret_cast<const decltype(d) *>(dView));
 
-        const auto sSizeView = stream.Read(sizeof(hbann::Size::size_max)).data();
-        const auto sSize = *reinterpret_cast<const hbann::Size::size_max *>(sSizeView);
+        const auto requiredBytes = hbann::Size::FindRequiredBytes(stream.Current());
+        const auto sSize = hbann::Size::MakeSize(stream.Read(requiredBytes));
         REQUIRE(s.size() == sSize);
+
         const auto sView = stream.Read(sSize);
         REQUIRE(s.compare(0, s.size(), sView.data(), sView.size()) == 0);
 

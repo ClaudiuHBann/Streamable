@@ -76,6 +76,7 @@ constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
          - add separated examples
          - add support for unique_ptr and shared_ptr
          - encode string in utf-8 to save space
+         - add hbann::Size tests
          - FindRangeSize should not check for contiguous range when finding size of a range
          - don't add a 4 byte for every range add a byte if the most significant bit is true than we have a full 4 byte
         else we have just a byte

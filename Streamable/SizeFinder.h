@@ -11,12 +11,12 @@ class SizeFinder
 {
   public:
     template <typename Type, typename... Types>
-    [[nodiscard]] static constexpr size_t FindParseSize(Type &aObject, Types &...aObjects) noexcept
+    [[nodiscard]] static constexpr uint64_t FindParseSize(Type &aObject, Types &...aObjects) noexcept
     {
         return FindObjectSize<std::remove_cvref_t<Type>>(aObject) + FindParseSize(aObjects...);
     }
 
-    template <typename Type> [[nodiscard]] static constexpr size_t FindRangeRank() noexcept
+    template <typename Type> [[nodiscard]] static constexpr uint64_t FindRangeRank() noexcept
     {
         using TypeRaw = std::remove_cvref_t<Type>;
 
@@ -31,7 +31,7 @@ class SizeFinder
     }
 
     template <std::ranges::range Range>
-    [[nodiscard]] static constexpr size_t GetRangeCount(const Range &aRange) noexcept
+    [[nodiscard]] static constexpr uint64_t GetRangeCount(const Range &aRange) noexcept
     {
         using RangeRaw = std::remove_cvref_t<Range>;
 
@@ -50,7 +50,7 @@ class SizeFinder
     }
 
   private:
-    template <typename Type> [[nodiscard]] static constexpr size_t FindObjectSize(Type &aObject) noexcept
+    template <typename Type> [[nodiscard]] static constexpr uint64_t FindObjectSize(Type &aObject) noexcept
     {
         if constexpr (std::ranges::range<Type>)
         {
@@ -77,11 +77,11 @@ class SizeFinder
         }
     }
 
-    template <typename Type> [[nodiscard]] static constexpr size_t FindRangeSize(Type &aRange) noexcept
+    template <typename Type> [[nodiscard]] static constexpr uint64_t FindRangeSize(Type &aRange) noexcept
     {
         using TypeValueType = typename Type::value_type;
 
-        size_t size = sizeof(Size::size_max);
+        uint64_t size = sizeof(Size::size_max);
         if constexpr (FindRangeRank<Type>() > 1)
         {
             for (auto &object : aRange)
@@ -107,7 +107,7 @@ class SizeFinder
         return size;
     }
 
-    static constexpr size_t FindParseSize() noexcept
+    static constexpr uint64_t FindParseSize() noexcept
     {
         return 0;
     }

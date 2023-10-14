@@ -126,7 +126,7 @@ class StreamReader
         return range;
     }
 
-    template <typename Type> constexpr decltype(auto) ReadRangeRank1(Type &aRange, const size_t aCount)
+    template <typename Type> constexpr decltype(auto) ReadRangeRank1(Type &aRange, const uint64_t aCount)
     {
         static_assert(std::ranges::range<Type>, "Type is not a range!");
 
@@ -151,38 +151,38 @@ class StreamReader
         return *this;
     }
 
-    template <typename Type> constexpr decltype(auto) RangeReserve(Type &aRange, const size_t aCount)
+    template <typename Type> constexpr decltype(auto) RangeReserve(Type &aRange, const uint64_t aCount)
     {
         static_assert(std::ranges::range<Type>, "Type is not a range!");
 
         using TypeValueType = typename Type::value_type;
+
+        uint64_t size{};
 
         // TODO: handle range multiple ranks
         if constexpr (has_method_reserve<Type>)
         {
             if constexpr (is_base_of_no_ptr<IStreamable, Type>)
             {
-                size_t sizeTotal{};
-
                 mStream->Seek([&](auto) {
                     for (size_t i = 0; i < aCount; i++)
                     {
                         const auto sizeCurrent = ReadCount();
-                        sizeTotal += sizeCurrent;
+                        size += sizeCurrent;
                         [[maybe_unsed]] auto seek = mStream->Read(sizeCurrent);
                     }
                 });
-
-                aRange.reserve(sizeTotal);
             }
             else if constexpr (is_std_lay_no_ptr<TypeValueType>)
             {
-                aRange.reserve(aCount * sizeof(TypeValueType));
+                size = aCount * sizeof(TypeValueType);
             }
             else
             {
-                aRange.reserve(aCount);
+                size = aCount;
             }
+
+            aRange.reserve(static_cast<size_t>(size));
         }
 
         return *this;
@@ -198,11 +198,10 @@ class StreamReader
         return *this;
     }
 
-    constexpr size_t ReadCount()
+    inline uint64_t ReadCount() noexcept
     {
-        Size::size_max size{};
-        ReadObjectOfKnownSize<Size::size_max>(size);
-        return size;
+        const auto size = Size::FindRequiredBytes(mStream->Current());
+        return Size::MakeSize(mStream->Read(size));
     }
 };
 } // namespace hbann

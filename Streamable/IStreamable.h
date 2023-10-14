@@ -33,9 +33,9 @@
 
 #define STREAMABLE_DEFINE_FIND_PARSE_SIZE(baseClass, ...)                                                              \
   protected:                                                                                                           \
-    [[nodiscard]] constexpr size_t FindParseSize() override                                                            \
+    [[nodiscard]] constexpr uint64_t FindParseSize() override                                                          \
     {                                                                                                                  \
-        size_t size{};                                                                                                 \
+        uint64_t size{};                                                                                               \
         if constexpr (!::hbann::static_equal(#baseClass, STREAMABLE_INTERFACE_NAME))                                   \
         {                                                                                                              \
             size += baseClass::FindParseSize();                                                                        \
@@ -100,7 +100,7 @@ class IStreamable
     virtual void ToStream() = 0;
     virtual void FromStream() = 0;
 
-    [[nodiscard]] virtual size_t FindParseSize() = 0;
+    [[nodiscard]] virtual uint64_t FindParseSize() = 0;
 
     [[nodiscard]] constexpr Stream &&Release() noexcept
     {
@@ -116,7 +116,7 @@ class IStreamable
         return mStream;
     }
 
-    constexpr decltype(auto) Reserve(const size_t aSize)
+    constexpr decltype(auto) Reserve(const uint64_t aSize)
     {
         return mStream.Reserve(aSize);
     }

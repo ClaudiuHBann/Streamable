@@ -51,9 +51,10 @@ class StreamWriter
         return *this;
     }
 
-    constexpr decltype(auto) WriteCount(const size_t aSize)
+    constexpr decltype(auto) WriteCount(const uint64_t aSize)
     {
-        return WriteObjectOfKnownSize<Size::size_max>((Size::size_max)aSize);
+        mStream->Write(Size::MakeSize(static_cast<Size::size_max>(aSize)));
+        return *this;
     }
 
     template <typename Type> constexpr decltype(auto) WriteStreamable(Type &aStreamable)
@@ -118,7 +119,7 @@ class StreamWriter
             }
 
             const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
-            mStream->Write({rangePtr, rangeSize});
+            mStream->Write({rangePtr, static_cast<size_t>(rangeSize)});
         }
         else
         {
