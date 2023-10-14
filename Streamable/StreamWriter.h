@@ -53,7 +53,7 @@ class StreamWriter
 
     constexpr decltype(auto) WriteCount(const size_t aSize)
     {
-        return WriteObjectOfKnownSize<size_range>((size_range)aSize);
+        return WriteObjectOfKnownSize<Size::size_max>((Size::size_max)aSize);
     }
 
     template <typename Type> constexpr decltype(auto) WriteStreamable(Type &aStreamable)

@@ -200,8 +200,8 @@ class StreamReader
 
     constexpr size_t ReadCount()
     {
-        size_range size{};
-        ReadObjectOfKnownSize<size_range>(size);
+        Size::size_max size{};
+        ReadObjectOfKnownSize<Size::size_max>(size);
         return size;
     }
 };

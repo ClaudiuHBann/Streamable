@@ -149,6 +149,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Streamable\Size.cpp" />
     <ClCompile Include="Streamable\SizeFinder.cpp" />
     <ClCompile Include="Streamable\IStreamable.cpp" />
     <ClCompile Include="Streamable\Stream.cpp" />
@@ -157,6 +158,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Streamable\Size.h" />
     <ClInclude Include="Streamable\SizeFinder.h" />
     <ClInclude Include="Streamable\IStreamable.h" />
     <ClInclude Include="Streamable\Stream.h" />

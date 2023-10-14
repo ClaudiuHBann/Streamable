@@ -12,6 +12,8 @@ class StreamReader;
 } // namespace hbann
 
 // std
+#include <bit>
+#include <cmath>
 #include <memory>
 #include <span>
 #include <variant>
@@ -22,8 +24,6 @@ constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
 
 namespace hbann
 {
-using size_range = uint32_t;
-
 template <typename> constexpr auto always_false = false;
 
 template <typename Container>

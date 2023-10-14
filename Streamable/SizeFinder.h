@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Size.h"
 #include "Stream.h"
 
 namespace hbann
@@ -80,7 +81,7 @@ class SizeFinder
     {
         using TypeValueType = typename Type::value_type;
 
-        size_t size = sizeof(size_range);
+        size_t size = sizeof(Size::size_max);
         if constexpr (FindRangeRank<Type>() > 1)
         {
             for (auto &object : aRange)
