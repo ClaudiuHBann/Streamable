@@ -51,7 +51,11 @@
     friend class ::hbann::StreamReader;                                                                                \
     friend class ::hbann::StreamWriter;
 
+#define STATIC_ASSERT_HAS_ISTREAMABLE_BASE(baseClass)                                                                  \
+    static_assert(std::is_base_of_v<::hbann::IStreamable, baseClass>, "The class must inherit a streamable!");
+
 #define STREAMABLE_DEFINE(baseClass, ...)                                                                              \
+    STATIC_ASSERT_HAS_ISTREAMABLE_BASE(baseClass)                                                                      \
     STREAMABLE_DEFINE_INTRUSIVE                                                                                        \
     STREAMABLE_DEFINE_TO_STREAM(baseClass, __VA_ARGS__)                                                                \
     STREAMABLE_DEFINE_FROM_STREAM(baseClass, __VA_ARGS__)                                                              \

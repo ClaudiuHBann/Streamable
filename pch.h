@@ -26,17 +26,15 @@ using size_range = uint32_t;
 
 template <typename> constexpr auto always_false = false;
 
-template <typename Type> using get_raw_t = std::remove_const_t<std::remove_reference_t<Type>>;
-
 template <typename Container>
 concept has_method_reserve =
     std::ranges::contiguous_range<Container> && requires(Container &aContainer) { aContainer.reserve(size_t(0)); };
 
 template <typename Type>
-concept is_pointer_unique = std::is_same_v<get_raw_t<Type>, std::unique_ptr<typename Type::value_type>>;
+concept is_pointer_unique = std::is_same_v<std::remove_cvref_t<Type>, std::unique_ptr<typename Type::value_type>>;
 
 template <typename Type>
-concept is_pointer_shared = std::is_same_v<get_raw_t<Type>, std::shared_ptr<typename Type::value_type>>;
+concept is_pointer_shared = std::is_same_v<std::remove_cvref_t<Type>, std::shared_ptr<typename Type::value_type>>;
 
 template <typename Type>
 concept is_pointer = std::is_pointer_v<Type> || is_pointer_unique<Type> || is_pointer_shared<Type>;
@@ -48,7 +46,7 @@ template <typename Base, typename Derived>
 concept is_base_of_no_ptr = std::is_base_of_v<Base, std::remove_pointer_t<Derived>>;
 
 template <typename Type>
-concept is_path = std::is_same_v<get_raw_t<Type>, std::filesystem::path>;
+concept is_path = std::is_same_v<std::remove_cvref_t<Type>, std::filesystem::path>;
 
 template <typename Container>
 concept is_range_std_lay =
@@ -65,7 +63,7 @@ concept has_method_find_derived_streamable = requires(StreamReader &aStreamReade
     } -> std::convertible_to<IStreamable *>;
 };
 
-constexpr bool static_equal(char const *aString1, char const *aString2) noexcept
+constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
 {
     return *aString1 == *aString2 && (!*aString1 || static_equal(aString1 + 1, aString2 + 1));
 }

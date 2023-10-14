@@ -21,7 +21,7 @@ class StreamWriter
 
     template <typename Type, typename... Types> constexpr void WriteAll(Type &aObject, Types &...aObjects)
     {
-        using TypeRaw = get_raw_t<Type>;
+        using TypeRaw = std::remove_cvref_t<Type>;
 
         Write<TypeRaw>(aObject);
 

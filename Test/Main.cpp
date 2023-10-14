@@ -364,7 +364,7 @@ TEST_CASE("Streamable", "[Streamable]")
             for (const auto &sItem : vsItem)
             {
                 vvsSize +=
-                    sizeof(hbann::size_range) + sItem.size() * sizeof(hbann::get_raw_t<decltype(sItem)>::value_type);
+                    sizeof(hbann::size_range) + sItem.size() * sizeof(std::remove_cvref_t<decltype(sItem)>::value_type);
             }
         }
         REQUIRE(hbann::SizeFinder::FindParseSize(vvs) == vvsSize);

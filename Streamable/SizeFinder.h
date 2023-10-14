@@ -12,12 +12,12 @@ class SizeFinder
     template <typename Type, typename... Types>
     [[nodiscard]] static constexpr size_t FindParseSize(Type &aObject, Types &...aObjects) noexcept
     {
-        return FindObjectSize<get_raw_t<Type>>(aObject) + FindParseSize(aObjects...);
+        return FindObjectSize<std::remove_cvref_t<Type>>(aObject) + FindParseSize(aObjects...);
     }
 
     template <typename Type> [[nodiscard]] static constexpr size_t FindRangeRank() noexcept
     {
-        using TypeRaw = get_raw_t<Type>;
+        using TypeRaw = std::remove_cvref_t<Type>;
 
         if constexpr (std::ranges::range<TypeRaw>)
         {
@@ -32,17 +32,19 @@ class SizeFinder
     template <std::ranges::range Range>
     [[nodiscard]] static constexpr size_t GetRangeCount(const Range &aRange) noexcept
     {
-        if constexpr (has_method_size<Range>)
+        using RangeRaw = std::remove_cvref_t<Range>;
+
+        if constexpr (has_method_size<RangeRaw>)
         {
             return std::ranges::size(aRange);
         }
-        else if constexpr (is_path<Range>)
+        else if constexpr (is_path<RangeRaw>)
         {
             return aRange.native().size();
         }
         else
         {
-            static_assert(always_false<Range>, "Tried to get the range count from an unknown object!");
+            static_assert(always_false<RangeRaw>, "Tried to get the range count from an unknown object!");
         }
     }
 
