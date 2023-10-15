@@ -1,3 +1,9 @@
+/*
+    Copyright (c) 2023 Claudiu HBann
+
+    See LICENSE for the full terms of the MIT License.
+*/
+
 #pragma once
 
 #include "SizeFinder.h"
@@ -51,9 +57,9 @@ class StreamWriter
         return *this;
     }
 
-    constexpr decltype(auto) WriteCount(const uint64_t aSize)
+    constexpr decltype(auto) WriteCount(const Size::size_max aSize)
     {
-        mStream->Write(Size::MakeSize(static_cast<Size::size_max>(aSize)));
+        mStream->Write(Size::MakeSize(aSize));
         return *this;
     }
 
@@ -119,7 +125,7 @@ class StreamWriter
             }
 
             const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
-            mStream->Write({rangePtr, static_cast<size_t>(rangeSize)});
+            mStream->Write({rangePtr, rangeSize});
         }
         else
         {

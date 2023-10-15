@@ -1,3 +1,9 @@
+/*
+    Copyright (c) 2023 Claudiu HBann
+
+    See LICENSE for the full terms of the MIT License.
+*/
+
 #pragma once
 
 namespace std::filesystem
@@ -78,6 +84,4 @@ constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
          - encode string in utf-8 to save space
          - add hbann::Size tests
          - FindRangeSize should not check for contiguous range when finding size of a range
-         - don't add a 4 byte for every range add a byte if the most significant bit is true than we have a full 4 byte
-        else we have just a byte
 */

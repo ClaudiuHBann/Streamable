@@ -347,7 +347,7 @@ TEST_CASE("Streamable", "[Streamable]")
                                                  {enumClassTest::NOTHING, enumClassTest::NADA}};
         REQUIRE(hbann::SizeFinder::FindRangeRank<decltype(lv)>() == 2);
 
-        size_t lvSize = sizeof(hbann::Size::size_max);
+        auto lvSize = sizeof(hbann::Size::size_max);
         for (const auto &lvItem : lv)
         {
             lvSize += sizeof(hbann::Size::size_max) + lvItem.size() * sizeof(decltype(lv)::value_type::value_type);
@@ -357,7 +357,7 @@ TEST_CASE("Streamable", "[Streamable]")
         std::vector<std::vector<std::string>> vvs{{"gsbbbawf", "hbann", "1fwah10"}, {"palelica", "t43hachhew"}};
         REQUIRE(hbann::SizeFinder::FindRangeRank<decltype(vvs)>() == 3); // the string is a range itself
 
-        size_t vvsSize = sizeof(hbann::Size::size_max);
+        auto vvsSize = sizeof(hbann::Size::size_max);
         for (const auto &vsItem : vvs)
         {
             vvsSize += sizeof(hbann::Size::size_max);

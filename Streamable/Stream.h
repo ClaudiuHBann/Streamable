@@ -1,4 +1,12 @@
+/*
+    Copyright (c) 2023 Claudiu HBann
+
+    See LICENSE for the full terms of the MIT License.
+*/
+
 #pragma once
+
+#include "Size.h"
 
 namespace hbann
 {
@@ -24,9 +32,9 @@ class Stream
         *this = std::move(aStream);
     }
 
-    constexpr decltype(auto) Reserve(const uint64_t aSize)
+    constexpr decltype(auto) Reserve(const Size::size_max aSize)
     {
-        GetStream().reserve(static_cast<size_t>(aSize));
+        GetStream().reserve(aSize);
         return *this;
     }
 
@@ -36,7 +44,7 @@ class Stream
         return spen ? *spen : GetStream();
     }
 
-    [[nodiscard]] constexpr auto Read(uint64_t aSize) noexcept
+    [[nodiscard]] constexpr auto Read(Size::size_max aSize) noexcept
     {
         const auto view = View();
 
@@ -47,12 +55,12 @@ class Stream
         }
 
         mReadIndex += aSize;
-        return span{view.data() + (mReadIndex - aSize), static_cast<size_t>(aSize)};
+        return span{view.data() + (mReadIndex - aSize), aSize};
     }
 
     [[nodiscard]] constexpr auto Current() noexcept
     {
-        return View()[static_cast<size_t>(mReadIndex)];
+        return View()[mReadIndex];
     }
 
     constexpr decltype(auto) Write(const span &aSpan)
@@ -77,7 +85,7 @@ class Stream
 
   private:
     stream mStream{};
-    uint64_t mReadIndex{};
+    Size::size_max mReadIndex{};
 
     constexpr vector &GetStream() noexcept
     {

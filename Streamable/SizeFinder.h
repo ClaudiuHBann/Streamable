@@ -1,3 +1,9 @@
+/*
+    Copyright (c) 2023 Claudiu HBann
+
+    See LICENSE for the full terms of the MIT License.
+*/
+
 #pragma once
 
 #include "Size.h"
@@ -11,12 +17,12 @@ class SizeFinder
 {
   public:
     template <typename Type, typename... Types>
-    [[nodiscard]] static constexpr uint64_t FindParseSize(Type &aObject, Types &...aObjects) noexcept
+    [[nodiscard]] static constexpr Size::size_max FindParseSize(Type &aObject, Types &...aObjects) noexcept
     {
         return FindObjectSize<std::remove_cvref_t<Type>>(aObject) + FindParseSize(aObjects...);
     }
 
-    template <typename Type> [[nodiscard]] static constexpr uint64_t FindRangeRank() noexcept
+    template <typename Type> [[nodiscard]] static constexpr Size::size_max FindRangeRank() noexcept
     {
         using TypeRaw = std::remove_cvref_t<Type>;
 
@@ -31,7 +37,7 @@ class SizeFinder
     }
 
     template <std::ranges::range Range>
-    [[nodiscard]] static constexpr uint64_t GetRangeCount(const Range &aRange) noexcept
+    [[nodiscard]] static constexpr Size::size_max GetRangeCount(const Range &aRange) noexcept
     {
         using RangeRaw = std::remove_cvref_t<Range>;
 
@@ -50,7 +56,7 @@ class SizeFinder
     }
 
   private:
-    template <typename Type> [[nodiscard]] static constexpr uint64_t FindObjectSize(Type &aObject) noexcept
+    template <typename Type> [[nodiscard]] static constexpr Size::size_max FindObjectSize(Type &aObject) noexcept
     {
         if constexpr (std::ranges::range<Type>)
         {
@@ -58,14 +64,17 @@ class SizeFinder
         }
         else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
         {
+            Size::size_max size{};
             if constexpr (is_pointer<Type>)
             {
-                return static_cast<IStreamable *>(aObject)->FindParseSize();
+                size = static_cast<IStreamable *>(aObject)->FindParseSize();
             }
             else
             {
-                return static_cast<IStreamable *>(&aObject)->FindParseSize();
+                size = static_cast<IStreamable *>(&aObject)->FindParseSize();
             }
+
+            return Size::FindRequiredBytes(size);
         }
         else if constexpr (is_std_lay_no_ptr<Type>)
         {
@@ -77,11 +86,11 @@ class SizeFinder
         }
     }
 
-    template <typename Type> [[nodiscard]] static constexpr uint64_t FindRangeSize(Type &aRange) noexcept
+    template <typename Type> [[nodiscard]] static constexpr Size::size_max FindRangeSize(Type &aRange) noexcept
     {
         using TypeValueType = typename Type::value_type;
 
-        uint64_t size = sizeof(Size::size_max);
+        Size::size_max size = Size::FindRequiredBytes(GetRangeCount(aRange));
         if constexpr (FindRangeRank<Type>() > 1)
         {
             for (auto &object : aRange)
@@ -107,7 +116,7 @@ class SizeFinder
         return size;
     }
 
-    static constexpr uint64_t FindParseSize() noexcept
+    static constexpr Size::size_max FindParseSize() noexcept
     {
         return 0;
     }

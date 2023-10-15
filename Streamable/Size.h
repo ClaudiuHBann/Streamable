@@ -1,3 +1,9 @@
+/*
+    Copyright (c) 2023 Claudiu HBann
+
+    See LICENSE for the full terms of the MIT License.
+*/
+
 #pragma once
 
 namespace hbann
@@ -19,7 +25,7 @@ class Size
 
     [[nodiscard]] static constexpr auto FindRequiredBytes(const char aSize) noexcept
     {
-        return static_cast<uint8_t>(aSize >> 5);
+        return static_cast<size_max>(aSize >> 5);
     }
 
     [[nodiscard]] static inline auto MakeSize(const size_max aSize) noexcept
@@ -47,7 +53,7 @@ class Size
         // clear the last size
         *SIZE = 0;
 
-        const uint8_t requiredBytes = aSize.front() >> 5;
+        const auto requiredBytes = static_cast<size_max>(aSize.front() >> 5);
         auto SIZE_AS_CHARS_START = SIZE_AS_CHARS + (SIZE_MAX_IN_BYTES - requiredBytes);
 
         // trim the garbage
@@ -61,19 +67,19 @@ class Size
   private:
     static constexpr auto SIZE_MAX_IN_BYTES = sizeof(size_max);
 
-    [[nodiscard]] static constexpr uint8_t FindRequiredBytes(const size_max aSize) noexcept
+    [[nodiscard]] static constexpr auto FindRequiredBytes(const size_max aSize) noexcept
     {
-        uint8_t requiredBits{};
+        size_max requiredBits{};
         if (aSize)
         {
             // add the bits required to represent the size
-            requiredBits += static_cast<uint8_t>(std::log2(aSize)) + 1;
+            requiredBits += static_cast<size_max>(std::log2(aSize)) + 1;
         }
         // add the bits required to represent the required bytes to store the final value
         requiredBits += 3;
 
         // add 7 bits to round the final value up
-        return static_cast<uint8_t>((requiredBits + (SIZE_MAX_IN_BYTES - 1)) / SIZE_MAX_IN_BYTES);
+        return (requiredBits + (SIZE_MAX_IN_BYTES - 1)) / SIZE_MAX_IN_BYTES;
     }
 
     template <typename AF = bool> [[nodiscard]] static constexpr size_max ToBigEndian(const size_max aSize) noexcept
@@ -99,12 +105,17 @@ class Size
 class Size
 {
   public:
-    using size_max = uint32_t; // UINT32_MAX
+    using size_max = size_t; // UINT32_MAX
     using span = std::span<const char>;
 
     [[nodiscard]] static constexpr auto FindRequiredBytes(const char) noexcept
     {
-        return static_cast<uint8_t>(sizeof(size_max));
+        return sizeof(size_max);
+    }
+
+    [[nodiscard]] static constexpr auto FindRequiredBytes(const size_max) noexcept
+    {
+        return sizeof(size_max);
     }
 
     [[nodiscard]] static inline auto MakeSize(const size_max &aSize) noexcept

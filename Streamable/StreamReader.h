@@ -1,3 +1,9 @@
+/*
+    Copyright (c) 2023 Claudiu HBann
+
+    See LICENSE for the full terms of the MIT License.
+*/
+
 #pragma once
 
 #include "SizeFinder.h"
@@ -126,7 +132,7 @@ class StreamReader
         return range;
     }
 
-    template <typename Type> constexpr decltype(auto) ReadRangeRank1(Type &aRange, const uint64_t aCount)
+    template <typename Type> constexpr decltype(auto) ReadRangeRank1(Type &aRange, const Size::size_max aCount)
     {
         static_assert(std::ranges::range<Type>, "Type is not a range!");
 
@@ -151,13 +157,13 @@ class StreamReader
         return *this;
     }
 
-    template <typename Type> constexpr decltype(auto) RangeReserve(Type &aRange, const uint64_t aCount)
+    template <typename Type> constexpr decltype(auto) RangeReserve(Type &aRange, const Size::size_max aCount)
     {
         static_assert(std::ranges::range<Type>, "Type is not a range!");
 
         using TypeValueType = typename Type::value_type;
 
-        uint64_t size{};
+        Size::size_max size{};
 
         // TODO: handle range multiple ranks
         if constexpr (has_method_reserve<Type>)
@@ -182,7 +188,7 @@ class StreamReader
                 size = aCount;
             }
 
-            aRange.reserve(static_cast<size_t>(size));
+            aRange.reserve(size);
         }
 
         return *this;
@@ -198,7 +204,7 @@ class StreamReader
         return *this;
     }
 
-    inline uint64_t ReadCount() noexcept
+    inline Size::size_max ReadCount() noexcept
     {
         const auto size = Size::FindRequiredBytes(mStream->Current());
         return Size::MakeSize(mStream->Read(size));
