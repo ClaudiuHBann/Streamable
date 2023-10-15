@@ -83,5 +83,6 @@ constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
          - add support for unique_ptr and shared_ptr
          - encode string in utf-8 to save space
          - add hbann::Size tests
+         - add the config to the start of the serialized stream (make it a runtime thing ?)
          - FindRangeSize should not check for contiguous range when finding size of a range
 */

@@ -20,6 +20,9 @@
     <ClCompile Include="Streamable\Size.cpp">
       <Filter>Streamable</Filter>
     </ClCompile>
+    <ClCompile Include="Streamable\Config.cpp">
+      <Filter>Streamable</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Streamable\Stream.h">
@@ -39,6 +42,9 @@
     </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Streamable\Size.h">
+      <Filter>Streamable</Filter>
+    </ClInclude>
+    <ClInclude Include="Streamable\Config.h">
       <Filter>Streamable</Filter>
     </ClInclude>
   </ItemGroup>
