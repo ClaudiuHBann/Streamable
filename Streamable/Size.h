@@ -8,7 +8,6 @@
 
 namespace hbann
 {
-#ifdef STREAMABLE_USE_RESIZEABLE_SIZE
 /*
     Format: first 3 bits + the actual size at last
 
@@ -20,12 +19,27 @@ namespace hbann
 class Size
 {
   public:
-    using size_max = uint64_t; // UINT64_MAX / 8
+    using size_max = size_t; // size_t / 8
     using span = std::span<const char>;
 
     [[nodiscard]] static constexpr auto FindRequiredBytes(const char aSize) noexcept
     {
         return static_cast<size_max>(aSize >> 5);
+    }
+
+    [[nodiscard]] static constexpr size_max FindRequiredBytes(const size_max aSize) noexcept
+    {
+        size_max requiredBits{};
+        if (aSize)
+        {
+            // add the bits required to represent the size
+            requiredBits += static_cast<size_max>(std::log2(aSize)) + 1;
+        }
+        // add the bits required to represent the required bytes to store the final value
+        requiredBits += 3;
+
+        // add 7 bits to round the final value up
+        return (requiredBits + (SIZE_MAX_IN_BYTES - 1)) / SIZE_MAX_IN_BYTES;
     }
 
     [[nodiscard]] static inline auto MakeSize(const size_max aSize) noexcept
@@ -67,29 +81,22 @@ class Size
   private:
     static constexpr auto SIZE_MAX_IN_BYTES = sizeof(size_max);
 
-    [[nodiscard]] static constexpr auto FindRequiredBytes(const size_max aSize) noexcept
-    {
-        size_max requiredBits{};
-        if (aSize)
-        {
-            // add the bits required to represent the size
-            requiredBits += static_cast<size_max>(std::log2(aSize)) + 1;
-        }
-        // add the bits required to represent the required bytes to store the final value
-        requiredBits += 3;
-
-        // add 7 bits to round the final value up
-        return (requiredBits + (SIZE_MAX_IN_BYTES - 1)) / SIZE_MAX_IN_BYTES;
-    }
-
     template <typename AF = bool> [[nodiscard]] static constexpr size_max ToBigEndian(const size_max aSize) noexcept
     {
         if constexpr (std::endian::native == std::endian::little)
         {
-            return ((aSize & 0xFF00000000000000) >> 56) | ((aSize & 0x00FF000000000000) >> 40) |
-                   ((aSize & 0x0000FF0000000000) >> 24) | ((aSize & 0x000000FF00000000) >> 8) |
-                   ((aSize & 0x00000000FF000000) << 8) | ((aSize & 0x0000000000FF0000) << 24) |
-                   ((aSize & 0x000000000000FF00) << 40) | ((aSize & 0x00000000000000FF) << 56);
+            if constexpr (sizeof(size_max) == 4)
+            {
+                return ((aSize & 0xFF000000) >> 24) | ((aSize & 0x00FF000000) >> 16) | ((aSize & 0x0000FF00) << 16) |
+                       ((aSize & 0x00000000FF) << 24);
+            }
+            else
+            {
+                return ((aSize & 0xFF00000000000000) >> 56) | ((aSize & 0x00FF000000000000) >> 40) |
+                       ((aSize & 0x0000FF0000000000) >> 24) | ((aSize & 0x000000FF00000000) >> 8) |
+                       ((aSize & 0x00000000FF000000) << 8) | ((aSize & 0x0000000000FF0000) << 24) |
+                       ((aSize & 0x000000000000FF00) << 40) | ((aSize & 0x00000000000000FF) << 56);
+            }
         }
         else if constexpr (std::endian::native == std::endian::big)
         {
@@ -101,32 +108,4 @@ class Size
         }
     }
 };
-#else
-class Size
-{
-  public:
-    using size_max = size_t; // UINT32_MAX
-    using span = std::span<const char>;
-
-    [[nodiscard]] static constexpr auto FindRequiredBytes(const char) noexcept
-    {
-        return sizeof(size_max);
-    }
-
-    [[nodiscard]] static constexpr auto FindRequiredBytes(const size_max) noexcept
-    {
-        return sizeof(size_max);
-    }
-
-    [[nodiscard]] static inline auto MakeSize(const size_max &aSize) noexcept
-    {
-        return span{reinterpret_cast<const char *>(&aSize), sizeof(size_max)};
-    }
-
-    [[nodiscard]] static inline auto MakeSize(const span &aSize) noexcept
-    {
-        return *reinterpret_cast<const size_max *>(aSize.data());
-    }
-};
-#endif // STREAMABLE_USE_RESIZEABLE_SIZE
 } // namespace hbann

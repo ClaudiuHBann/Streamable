@@ -328,13 +328,11 @@ TEST_CASE("Streamable", "[Streamable]")
 
         std::list<std::pair<int, float>> l{{22, 14.f}, {93, 32.f}};
         REQUIRE(hbann::SizeFinder::FindRangeRank<decltype(l)>() == 1);
-        REQUIRE(hbann::SizeFinder::FindParseSize(l) ==
-                sizeof(hbann::Size::size_max) + l.size() * sizeof(decltype(l)::value_type));
+        REQUIRE(hbann::SizeFinder::FindParseSize(l) == 1 + l.size() * sizeof(decltype(l)::value_type));
 
         std::vector<double> v{512., 52., 77., 42321.};
         REQUIRE(hbann::SizeFinder::FindRangeRank<decltype(v)>() == 1);
-        REQUIRE(hbann::SizeFinder::FindParseSize(v) ==
-                sizeof(hbann::Size::size_max) + v.size() * sizeof(decltype(v)::value_type));
+        REQUIRE(hbann::SizeFinder::FindParseSize(v) == 1 + v.size() * sizeof(decltype(v)::value_type));
 
         enum class enumClassTest : uint8_t
         {
@@ -347,24 +345,23 @@ TEST_CASE("Streamable", "[Streamable]")
                                                  {enumClassTest::NOTHING, enumClassTest::NADA}};
         REQUIRE(hbann::SizeFinder::FindRangeRank<decltype(lv)>() == 2);
 
-        auto lvSize = sizeof(hbann::Size::size_max);
+        size_t lvSize = 1;
         for (const auto &lvItem : lv)
         {
-            lvSize += sizeof(hbann::Size::size_max) + lvItem.size() * sizeof(decltype(lv)::value_type::value_type);
+            lvSize += 1 + lvItem.size() * sizeof(decltype(lv)::value_type::value_type);
         }
         REQUIRE(hbann::SizeFinder::FindParseSize(lv) == lvSize);
 
         std::vector<std::vector<std::string>> vvs{{"gsbbbawf", "hbann", "1fwah10"}, {"palelica", "t43hachhew"}};
         REQUIRE(hbann::SizeFinder::FindRangeRank<decltype(vvs)>() == 3); // the string is a range itself
 
-        auto vvsSize = sizeof(hbann::Size::size_max);
+        size_t vvsSize = 1;
         for (const auto &vsItem : vvs)
         {
-            vvsSize += sizeof(hbann::Size::size_max);
+            vvsSize += 1;
             for (const auto &sItem : vsItem)
             {
-                vvsSize += sizeof(hbann::Size::size_max) +
-                           sItem.size() * sizeof(std::remove_cvref_t<decltype(sItem)>::value_type);
+                vvsSize += 1 + sItem.size() * sizeof(std::remove_cvref_t<decltype(sItem)>::value_type);
             }
         }
         REQUIRE(hbann::SizeFinder::FindParseSize(vvs) == vvsSize);
