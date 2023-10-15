@@ -22,8 +22,19 @@ class StreamReader;
 #include <cmath>
 #include <memory>
 #include <span>
+#include <string>
 #include <variant>
 #include <vector>
+
+// OS specific
+#if defined(_WIN32) || defined(_WIN64)
+#define NOMINMAX
+#include <Windows.h>
+#elif defined(__linux__)
+#error "Not implemented yet!"
+#else
+#error "Unknown OS"
+#endif
 
 // Streamable
 constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
@@ -80,6 +91,7 @@ constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
          - when finding derived class from base class pointer, add a tuple representing the types that can be read and
         make the user access the objects by index so can't read a bad object
          - add separated examples
+         - add tests for converter
          - add support for unique_ptr and shared_ptr
          - encode string in utf-8 to save space
          - add hbann::Size tests
