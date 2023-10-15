@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "Converter.h"
 #include "SizeFinder.h"
 #include "Stream.h"
 
@@ -138,7 +139,11 @@ class StreamReader
 
         using TypeValueType = typename Type::value_type;
 
-        if constexpr (is_range_std_lay<Type>)
+        if constexpr (std::is_same_v<Type, std::wstring>)
+        {
+            aRange.assign(Converter::FromUTF8(mStream->Read(aCount)));
+        }
+        else if constexpr (is_range_std_lay<Type>)
         {
             const auto rangeView = mStream->Read(aCount * sizeof(TypeValueType));
             const auto rangePtr = reinterpret_cast<const TypeValueType *>(rangeView.data());

@@ -28,6 +28,7 @@ class StreamReader;
 
 // OS specific
 #if defined(_WIN32) || defined(_WIN64)
+#define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
 #elif defined(__linux__)
@@ -92,6 +93,8 @@ constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
         make the user access the objects by index so can't read a bad object
          - add separated examples
          - add tests for converter
+         - Size should have 2 bits taken not 3 when on x32
+         - find size of utf8 string and add it to SizeFinder
          - add support for unique_ptr and shared_ptr
          - encode string in utf-8 to save space
          - add hbann::Size tests

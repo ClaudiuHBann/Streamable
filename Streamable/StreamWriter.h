@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "Converter.h"
 #include "SizeFinder.h"
 #include "Stream.h"
 
@@ -89,10 +90,9 @@ class StreamWriter
 
         using TypeValueType = typename Type::value_type;
 
-        WriteCount(SizeFinder::GetRangeCount(aRange));
-
         if constexpr (SizeFinder::FindRangeRank<Type>() > 1)
         {
+            WriteCount(SizeFinder::GetRangeCount(aRange));
             for (auto &object : aRange)
             {
                 WriteRange<TypeValueType>(object);
@@ -114,21 +114,32 @@ class StreamWriter
 
         if constexpr (is_range_std_lay<Type>)
         {
-            const char *rangePtr{};
-            if constexpr (is_path<Type>)
+            if constexpr (std::is_same_v<Type, std::wstring>)
             {
-                rangePtr = reinterpret_cast<const char *>(aRange.native().data());
+                const auto stringUTF8 = Converter::ToUTF8(aRange);
+                WriteCount(SizeFinder::GetRangeCount(stringUTF8));
+                mStream->Write(stringUTF8);
+            }
+            else if constexpr (is_path<Type>)
+            {
+                WriteCount(SizeFinder::GetRangeCount(aRange));
+
+                const auto rangePtr = reinterpret_cast<const char *>(aRange.native().data());
+                const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
+                mStream->Write({rangePtr, rangeSize});
             }
             else
             {
-                rangePtr = reinterpret_cast<const char *>(std::ranges::data(aRange));
-            }
+                WriteCount(SizeFinder::GetRangeCount(aRange));
 
-            const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
-            mStream->Write({rangePtr, rangeSize});
+                const auto rangePtr = reinterpret_cast<const char *>(std::ranges::data(aRange));
+                const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
+                mStream->Write({rangePtr, rangeSize});
+            }
         }
         else
         {
+            WriteCount(SizeFinder::GetRangeCount(aRange));
             for (auto &object : aRange)
             {
                 Write<TypeValueType>(object);

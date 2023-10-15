@@ -30,7 +30,7 @@ class Converter
         return stringUTF8;
     }
 
-    [[nodiscard]] static inline std::wstring FromUTF8(const std::span<char> &aStringUTF8) noexcept
+    [[nodiscard]] static inline std::wstring FromUTF8(const std::span<const char> &aStringUTF8) noexcept
     {
         const auto requiredSize =
             MultiByteToWideChar(CP_UTF8, 0, aStringUTF8.data(), (int)aStringUTF8.size(), nullptr, 0);
@@ -46,6 +46,11 @@ class Converter
         }
 
         return string;
+    }
+
+    [[nodiscard]] static inline auto FromUTF8(const std::string &aStringUTF8) noexcept
+    {
+        return FromUTF8(std::span<const char>{aStringUTF8});
     }
 };
 } // namespace hbann
