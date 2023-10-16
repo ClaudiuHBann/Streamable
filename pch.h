@@ -40,6 +40,64 @@ class StreamReader;
 // Streamable
 constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
 
+#define STREAMABLE_DEFINE_FROM_STREAM(baseClass, ...)                                                                  \
+  public:                                                                                                              \
+    constexpr void FromStream() override                                                                               \
+    {                                                                                                                  \
+        if constexpr (!::hbann::static_equal(#baseClass, STREAMABLE_INTERFACE_NAME))                                   \
+        {                                                                                                              \
+            baseClass::FromStream();                                                                                   \
+        }                                                                                                              \
+                                                                                                                       \
+        mStreamReader.ReadAll(__VA_ARGS__);                                                                            \
+    }
+
+#define STREAMABLE_DEFINE_TO_STREAM(baseClass, ...)                                                                    \
+  public:                                                                                                              \
+    constexpr void ToStream() override                                                                                 \
+    {                                                                                                                  \
+        if constexpr (!::hbann::static_equal(#baseClass, STREAMABLE_INTERFACE_NAME))                                   \
+        {                                                                                                              \
+            baseClass::ToStream();                                                                                     \
+        }                                                                                                              \
+        else                                                                                                           \
+        {                                                                                                              \
+            Reserve(FindParseSize());                                                                                  \
+        }                                                                                                              \
+                                                                                                                       \
+        mStreamWriter.WriteAll(__VA_ARGS__);                                                                           \
+    }
+
+#define STREAMABLE_DEFINE_FIND_PARSE_SIZE(baseClass, ...)                                                              \
+  protected:                                                                                                           \
+    [[nodiscard]] constexpr ::hbann::Size::size_max FindParseSize() override                                           \
+    {                                                                                                                  \
+        ::hbann::Size::size_max size{};                                                                                \
+        if constexpr (!::hbann::static_equal(#baseClass, STREAMABLE_INTERFACE_NAME))                                   \
+        {                                                                                                              \
+            size += baseClass::FindParseSize();                                                                        \
+        }                                                                                                              \
+                                                                                                                       \
+        size += ::hbann::SizeFinder::FindParseSize(__VA_ARGS__);                                                       \
+                                                                                                                       \
+        return size;                                                                                                   \
+    }
+
+#define STREAMABLE_DEFINE_INTRUSIVE                                                                                    \
+  private:                                                                                                             \
+    friend class ::hbann::StreamReader;                                                                                \
+    friend class ::hbann::StreamWriter;
+
+#define STATIC_ASSERT_HAS_ISTREAMABLE_BASE(baseClass)                                                                  \
+    static_assert(std::is_base_of_v<::hbann::IStreamable, baseClass>, "The class must inherit a streamable!");
+
+#define STREAMABLE_DEFINE(baseClass, ...)                                                                              \
+    STATIC_ASSERT_HAS_ISTREAMABLE_BASE(baseClass)                                                                      \
+    STREAMABLE_DEFINE_INTRUSIVE                                                                                        \
+    STREAMABLE_DEFINE_TO_STREAM(baseClass, __VA_ARGS__)                                                                \
+    STREAMABLE_DEFINE_FROM_STREAM(baseClass, __VA_ARGS__)                                                              \
+    STREAMABLE_DEFINE_FIND_PARSE_SIZE(baseClass, __VA_ARGS__)
+
 namespace hbann
 {
 template <typename> constexpr auto always_false = false;
@@ -89,14 +147,13 @@ constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
 
 /*
     TODO:
+         - Size should have 2 bits taken not 3 when on x32
+         - find size of utf8 string and add it to SizeFinder
+         - FindRangeSize should not check for contiguous range when finding size of a range
          - when finding derived class from base class pointer, add a tuple representing the types that can be read and
         make the user access the objects by index so can't read a bad object
          - add separated examples
          - add tests for converter
-         - Size should have 2 bits taken not 3 when on x32
-         - find size of utf8 string and add it to SizeFinder
          - add support for unique_ptr and shared_ptr
-         - encode string in utf-8 to save space
          - add hbann::Size tests
-         - FindRangeSize should not check for contiguous range when finding size of a range
 */
