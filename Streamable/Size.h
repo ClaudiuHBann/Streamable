@@ -24,7 +24,14 @@ class Size
 
     [[nodiscard]] static constexpr auto FindRequiredBytes(const char aSize) noexcept
     {
-        return static_cast<size_max>(aSize >> 5);
+        if constexpr (sizeof(size_max) == 4)
+        {
+            return static_cast<size_max>(aSize >> 6);
+        }
+        else
+        {
+            return static_cast<size_max>(aSize >> 5);
+        }
     }
 
     [[nodiscard]] static constexpr size_max FindRequiredBytes(const size_max aSize) noexcept
@@ -36,7 +43,14 @@ class Size
             requiredBits += static_cast<size_max>(std::log2(aSize)) + 1;
         }
         // add the bits required to represent the required bytes to store the final value
-        requiredBits += 3;
+        if constexpr (sizeof(size_max) == 4)
+        {
+            requiredBits += 2;
+        }
+        else
+        {
+            requiredBits += 3;
+        }
 
         // add 7 bits to round the final value up
         return (requiredBits + (SIZE_MAX_IN_BYTES - 1)) / SIZE_MAX_IN_BYTES;
@@ -53,7 +67,14 @@ class Size
         // write the size itself
         *SIZE = ToBigEndian(aSize);
         // write the 3 bits representing the bytes required
-        *SIZE_AS_CHARS_START |= requiredBytes << 5;
+        if constexpr (sizeof(size_max) == 4)
+        {
+            *SIZE_AS_CHARS_START |= requiredBytes << 6;
+        }
+        else
+        {
+            *SIZE_AS_CHARS_START |= requiredBytes << 5;
+        }
 
         // return the last 'requiredBytes' from SIZE
         return span{SIZE_AS_CHARS_START, requiredBytes};
@@ -67,13 +88,28 @@ class Size
         // clear the last size
         *SIZE = 0;
 
-        const auto requiredBytes = static_cast<size_max>(aSize.front() >> 5);
+        size_max requiredBytes{};
+        if constexpr (sizeof(size_max) == 4)
+        {
+            requiredBytes = static_cast<size_max>(aSize.front() >> 6);
+        }
+        else
+        {
+            requiredBytes = static_cast<size_max>(aSize.front() >> 5);
+        }
         auto SIZE_AS_CHARS_START = SIZE_AS_CHARS + (SIZE_MAX_IN_BYTES - requiredBytes);
 
         // trim the garbage
         std::memcpy(SIZE_AS_CHARS_START, aSize.data(), requiredBytes);
         // clear the required bytes
-        *SIZE_AS_CHARS_START &= 0b00011111;
+        if constexpr (sizeof(size_max) == 4)
+        {
+            *SIZE_AS_CHARS_START &= 0b00111111;
+        }
+        else
+        {
+            *SIZE_AS_CHARS_START &= 0b00011111;
+        }
 
         return ToBigEndian(*SIZE);
     }
