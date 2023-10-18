@@ -24,23 +24,24 @@ class Size
 
     [[nodiscard]] static constexpr auto FindRequiredBytes(const char aSize) noexcept
     {
+        const auto size = static_cast<uint8_t>(aSize);
         if constexpr (sizeof(size_max) == 4)
         {
-            return static_cast<size_max>(aSize >> 6);
+            return static_cast<size_max>(size >> 6);
         }
         else
         {
-            return static_cast<size_max>(aSize >> 5);
+            return static_cast<size_max>(size >> 5);
         }
     }
 
     [[nodiscard]] static constexpr size_max FindRequiredBytes(const size_max aSize) noexcept
     {
-        size_max requiredBits{};
+        size_max requiredBits{1};
         if (aSize)
         {
             // add the bits required to represent the size
-            requiredBits += static_cast<size_max>(std::log2(aSize)) + 1;
+            requiredBits += static_cast<size_max>(std::log2(aSize));
         }
         // add the bits required to represent the required bytes to store the final value
         if constexpr (sizeof(size_max) == 4)
@@ -53,7 +54,7 @@ class Size
         }
 
         // add 7 bits to round the final value up
-        return (requiredBits + (SIZE_MAX_IN_BYTES - 1)) / SIZE_MAX_IN_BYTES;
+        return (requiredBits + 7) / 8;
     }
 
     [[nodiscard]] static inline auto MakeSize(const size_max aSize) noexcept
@@ -89,17 +90,18 @@ class Size
         *SIZE = 0;
 
         size_max requiredBytes{};
+        const auto size = static_cast<uint8_t>(aSize.front());
         if constexpr (sizeof(size_max) == 4)
         {
-            requiredBytes = static_cast<size_max>(aSize.front() >> 6);
+            requiredBytes = static_cast<size_max>(size >> 6);
         }
         else
         {
-            requiredBytes = static_cast<size_max>(aSize.front() >> 5);
+            requiredBytes = static_cast<size_max>(size >> 5);
         }
         auto SIZE_AS_CHARS_START = SIZE_AS_CHARS + (SIZE_MAX_IN_BYTES - requiredBytes);
 
-        // trim the garbage
+        // copy only the resizeable size
         std::memcpy(SIZE_AS_CHARS_START, aSize.data(), requiredBytes);
         // clear the required bytes
         if constexpr (sizeof(size_max) == 4)
