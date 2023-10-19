@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "Converter.h"
 #include "Size.h"
 #include "Stream.h"
 
@@ -88,8 +89,6 @@ class SizeFinder
 
     template <typename Type> [[nodiscard]] static constexpr Size::size_max FindRangeSize(Type &aRange) noexcept
     {
-        using TypeValueType = typename Type::value_type;
-
         Size::size_max size = Size::FindRequiredBytes(GetRangeCount(aRange));
         if constexpr (FindRangeRank<Type>() > 1)
         {
@@ -100,16 +99,35 @@ class SizeFinder
         }
         else
         {
-            if constexpr (is_range_std_lay<Type>)
+            size += FindRangeRank1Size(aRange);
+        }
+
+        return size;
+    }
+
+    template <typename Type> [[nodiscard]] static constexpr Size::size_max FindRangeRank1Size(Type &aRange) noexcept
+    {
+        static_assert(std::ranges::range<Type>, "Type is not a range!");
+
+        using TypeValueType = typename Type::value_type;
+
+        Size::size_max size{};
+        if constexpr (is_range_std_lay<Type>)
+        {
+            if constexpr (std::is_same_v<Type, std::wstring>)
             {
-                size += GetRangeCount(aRange) * sizeof(TypeValueType);
+                size += Converter::FindUTF8Size(aRange);
             }
             else
             {
-                for (auto &object : aRange)
-                {
-                    size += FindObjectSize(object);
-                }
+                size += GetRangeCount(aRange) * sizeof(TypeValueType);
+            }
+        }
+        else
+        {
+            for (auto &object : aRange)
+            {
+                size += FindObjectSize(object);
             }
         }
 
