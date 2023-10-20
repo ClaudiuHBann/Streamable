@@ -28,6 +28,5 @@ using namespace nlohmann;
 using namespace msgpack;
 
 // Test
-#include <filesystem>
 #include <iostream>
 #include <list>

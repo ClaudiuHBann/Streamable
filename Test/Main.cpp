@@ -45,7 +45,7 @@ class Shape : public hbann::IStreamable
         return mType;
     }
 
-  protected:
+  public:
     static hbann::IStreamable *FindDerivedStreamable(hbann::StreamReader &aStreamReader);
 
   private:

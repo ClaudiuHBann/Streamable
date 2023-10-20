@@ -94,7 +94,7 @@ class StreamReader
         using TypeNoPtr = std::remove_pointer_t<Type>;
 
         static_assert(std::is_base_of_v<IStreamable, TypeNoPtr>, "Type is not a streamable pointer!");
-        static_assert(!has_method_find_derived_streamable<TypeNoPtr>,
+        static_assert(has_method_find_derived_streamable<TypeNoPtr>,
                       "Type doesn't have method 'static IStreamable* FindDerivedStreamable(StreamReader &)' !");
 
         mStream->Seek([&](auto) {
@@ -180,7 +180,8 @@ class StreamReader
                     {
                         const auto sizeCurrent = ReadCount();
                         size += sizeCurrent;
-                        [[maybe_unsed]] auto seek = mStream->Read(sizeCurrent);
+                        auto seek = mStream->Read(sizeCurrent);
+                        seek;
                     }
                 });
             }

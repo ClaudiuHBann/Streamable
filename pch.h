@@ -6,11 +6,6 @@
 
 #pragma once
 
-namespace std::filesystem
-{
-class path;
-} // namespace std::filesystem
-
 namespace hbann
 {
 class IStreamable;
@@ -23,6 +18,8 @@ class StreamReader;
 #include <bit>
 #include <cmath>
 #include <codecvt>
+#include <cstring>
+#include <filesystem>
 #include <memory>
 #include <span>
 #include <string>
@@ -139,6 +136,7 @@ constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
 
 /*
     TODO:
+         - can FindDerivedStreamable be protected or even private?
          - when reserving size for wstrings that have been encoded we reserve more (worst case x2)
          - FindRangeSize should not check for contiguous range when finding size of a range
          - when finding derived class from base class pointer, add a tuple representing the types that can be read and
