@@ -101,7 +101,7 @@ class StreamReader
         static_assert(has_method_find_derived_streamable<TypeNoPtr>,
                       "Type doesn't have method 'static IStreamable* FindDerivedStreamable(StreamReader &)' !");
 
-        mStream->Seek([&](auto) {
+        mStream->Peek([&](auto) {
             Stream stream(mStream->Read(ReadCount())); // read streamable size in bytes
             StreamReader streamReader(stream);
             // TODO: we let the user read n objects after wich we read again... fix it
@@ -179,7 +179,7 @@ class StreamReader
         {
             if constexpr (is_base_of_no_ptr<IStreamable, Type>)
             {
-                mStream->Seek([&](auto) {
+                mStream->Peek([&](auto) {
                     for (size_t i = 0; i < aCount; i++)
                     {
                         const auto sizeCurrent = ReadCount();

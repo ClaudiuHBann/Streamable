@@ -37,6 +37,17 @@ class Stream
         return std::move(GetStream());
     }
 
+    template <typename FunctionSeek>
+    inline decltype(auto) Peek(const FunctionSeek &aFunctionSeek, const Size::size_max aOffset = 0)
+    {
+        const auto readIndex = mReadIndex;
+        mReadIndex += aOffset;
+        aFunctionSeek(readIndex);
+        mReadIndex = readIndex;
+
+        return *this;
+    }
+
     constexpr decltype(auto) Reserve(const Size::size_max aSize)
     {
         GetStream().reserve(aSize);
@@ -96,15 +107,6 @@ class Stream
     {
         // if crashed here --> it's read only (span)
         return std::get<vector>(mStream);
-    }
-
-    template <typename FunctionSeek> inline decltype(auto) Seek(const FunctionSeek &aFunctionSeek)
-    {
-        const auto readIndex = mReadIndex;
-        aFunctionSeek(readIndex);
-        mReadIndex = readIndex;
-
-        return *this;
     }
 };
 } // namespace hbann
