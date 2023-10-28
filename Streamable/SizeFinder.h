@@ -23,6 +23,11 @@ class SizeFinder
         return FindObjectSize<std::remove_cvref_t<Type>>(aObject) + FindParseSize(aObjects...);
     }
 
+    static constexpr Size::size_max FindParseSize() noexcept
+    {
+        return 0;
+    }
+
     template <typename Type> [[nodiscard]] static constexpr Size::size_max FindRangeRank() noexcept
     {
         using TypeRaw = std::remove_cvref_t<Type>;
@@ -132,11 +137,6 @@ class SizeFinder
         }
 
         return size;
-    }
-
-    static constexpr Size::size_max FindParseSize() noexcept
-    {
-        return 0;
     }
 };
 } // namespace hbann

@@ -38,6 +38,10 @@ class StreamReader
         }
     }
 
+    constexpr void ReadAll()
+    {
+    }
+
     constexpr StreamReader &operator=(StreamReader &&aStreamReader) noexcept
     {
         mStream = aStreamReader.mStream;

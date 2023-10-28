@@ -38,6 +38,10 @@ class StreamWriter
         }
     }
 
+    constexpr void WriteAll()
+    {
+    }
+
     constexpr StreamWriter &operator=(StreamWriter &&aStreamWriter) noexcept
     {
         mStream = aStreamWriter.mStream;
