@@ -32,6 +32,11 @@ class Stream
         *this = std::move(aStream);
     }
 
+    constexpr vector &&Release() noexcept
+    {
+        return std::move(GetStream());
+    }
+
     constexpr decltype(auto) Reserve(const Size::size_max aSize)
     {
         GetStream().reserve(aSize);

@@ -140,7 +140,7 @@ constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
          - make the user choose the data type for the stream
          - make the tostream and fromstream private or protected
          - add a seek method for streamreader and an offset to read from
-         - release method for the Stream to get the vector (or operator)
+         - can Streamable call the intermediate class's FindDerivedStreamable automatically?
          - when reserving size for wstrings that have been encoded we reserve more (worst case x2)
          - FindRangeSize should not check for contiguous range when finding size of a range
          - when finding derived class from base class pointer, add a tuple representing the types that can be read and
