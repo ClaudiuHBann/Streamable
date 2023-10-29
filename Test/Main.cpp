@@ -375,23 +375,23 @@ TEST_CASE("Streamable", "[Streamable]")
         stream.Reserve(21);
 
         std::string biceps("biceps");
-        stream.Write({biceps.c_str(), biceps.size()});
+        stream.Write({reinterpret_cast<const uint8_t *>(biceps.c_str()), biceps.size()});
         const auto bicepsView = stream.Read(biceps.size());
-        REQUIRE(biceps.compare(0, biceps.size(), bicepsView.data(), bicepsView.size()) == 0);
+        REQUIRE(!std::memcmp(biceps.c_str(), bicepsView.data(), bicepsView.size()));
 
         REQUIRE(!stream.Read(1).size());
 
         std::string triceps("triceps");
-        stream.Write({triceps.c_str(), triceps.size()});
+        stream.Write({reinterpret_cast<const uint8_t *>(triceps.c_str()), triceps.size()});
         const auto tricepsView = stream.Read(triceps.size());
-        REQUIRE(triceps.compare(0, triceps.size(), tricepsView.data(), tricepsView.size()) == 0);
+        REQUIRE(!std::memcmp(triceps.c_str(), tricepsView.data(), tricepsView.size()));
 
         REQUIRE(!stream.Read(1).size());
 
         std::string cariceps("cariceps");
-        stream.Write({cariceps.c_str(), cariceps.size()});
+        stream.Write({reinterpret_cast<const uint8_t *>(cariceps.c_str()), cariceps.size()});
         const auto caricepsView = stream.Read(cariceps.size());
-        REQUIRE(cariceps.compare(0, cariceps.size(), caricepsView.data(), caricepsView.size()) == 0);
+        REQUIRE(!std::memcmp(cariceps.c_str(), caricepsView.data(), caricepsView.size()));
     }
 
     SECTION("StreamWriter")
@@ -411,7 +411,7 @@ TEST_CASE("Streamable", "[Streamable]")
         REQUIRE(s.size() == sSize);
 
         const auto sView = stream.Read(sSize);
-        REQUIRE(s.compare(0, s.size(), sView.data(), sView.size()) == 0);
+        REQUIRE(!std::memcmp(s.c_str(), sView.data(), sView.size()));
 
         // TODO: add IStreamable StreamWriter test
     }

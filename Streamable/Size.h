@@ -20,9 +20,9 @@ class Size
 {
   public:
     using size_max = size_t; // size_t / 8
-    using span = std::span<const char>;
+    using span = std::span<const uint8_t>;
 
-    [[nodiscard]] static constexpr auto FindRequiredBytes(const char aSize) noexcept
+    [[nodiscard]] static constexpr auto FindRequiredBytes(const uint8_t aSize) noexcept
     {
         const auto size = static_cast<uint8_t>(aSize);
         if constexpr (sizeof(size_max) == 4)
@@ -59,7 +59,7 @@ class Size
 
     [[nodiscard]] static inline auto MakeSize(const size_max aSize) noexcept
     {
-        static char SIZE_AS_CHARS[SIZE_MAX_IN_BYTES]{};
+        static uint8_t SIZE_AS_CHARS[SIZE_MAX_IN_BYTES]{};
         static auto SIZE = reinterpret_cast<size_max *>(SIZE_AS_CHARS);
 
         const auto requiredBytes = FindRequiredBytes(aSize);
@@ -83,7 +83,7 @@ class Size
 
     [[nodiscard]] static inline auto MakeSize(const span &aSize) noexcept
     {
-        static char SIZE_AS_CHARS[SIZE_MAX_IN_BYTES]{};
+        static uint8_t SIZE_AS_CHARS[SIZE_MAX_IN_BYTES]{};
         static auto SIZE = reinterpret_cast<size_max *>(SIZE_AS_CHARS);
 
         // clear the last size

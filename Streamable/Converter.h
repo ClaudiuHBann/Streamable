@@ -40,8 +40,8 @@ class Converter
     // TODO: delete me in the future if I am useless
     [[nodiscard]] static auto FindUTF16Size(const std::wstring &aString) noexcept
     {
-        const auto string = std::span<const char>{reinterpret_cast<const char *>(aString.data()),
-                                                  aString.size() * sizeof(std::wstring::value_type)};
+        const auto string = std::span<const uint8_t>{reinterpret_cast<const uint8_t *>(aString.data()),
+                                                     aString.size() * sizeof(std::wstring::value_type)};
 
         size_t size{};
         for (size_t i = 0; i < string.size(); i++)
@@ -69,9 +69,10 @@ class Converter
         return mConverter.to_bytes(aString);
     }
 
-    [[nodiscard]] static inline std::wstring FromUTF8(const std::span<const char> &aString)
+    [[nodiscard]] static inline std::wstring FromUTF8(const std::span<const uint8_t> &aString)
     {
-        return mConverter.from_bytes(aString.data(), aString.data() + aString.size());
+        auto aStringChar = reinterpret_cast<const char *>(aString.data());
+        return mConverter.from_bytes(aStringChar, aStringChar + aString.size());
     }
 
   private:

@@ -56,7 +56,7 @@ class StreamWriter
     {
         static_assert(is_std_lay_no_ptr<Type>, "Type is not an object of known size or it is a pointer!");
 
-        const auto objectPtr = reinterpret_cast<const char *>(&aObject);
+        const auto objectPtr = reinterpret_cast<const uint8_t *>(&aObject);
         mStream->Write({objectPtr, sizeof(aObject)});
 
         return *this;
@@ -122,13 +122,13 @@ class StreamWriter
             {
                 const auto stringUTF8 = Converter::ToUTF8(aRange);
                 WriteCount(SizeFinder::GetRangeCount(stringUTF8));
-                mStream->Write(stringUTF8);
+                mStream->Write({reinterpret_cast<const uint8_t *>(stringUTF8.data()), stringUTF8.size()});
             }
             else if constexpr (is_path<Type>)
             {
                 WriteCount(SizeFinder::GetRangeCount(aRange));
 
-                const auto rangePtr = reinterpret_cast<const char *>(aRange.native().data());
+                const auto rangePtr = reinterpret_cast<const uint8_t *>(aRange.native().data());
                 const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
                 mStream->Write({rangePtr, rangeSize});
             }
@@ -136,7 +136,7 @@ class StreamWriter
             {
                 WriteCount(SizeFinder::GetRangeCount(aRange));
 
-                const auto rangePtr = reinterpret_cast<const char *>(std::ranges::data(aRange));
+                const auto rangePtr = reinterpret_cast<const uint8_t *>(std::ranges::data(aRange));
                 const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
                 mStream->Write({rangePtr, rangeSize});
             }

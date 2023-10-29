@@ -15,8 +15,8 @@ class Stream
     friend class StreamReader;
 
   public:
-    using vector = std::vector<char>;
-    using span = std::span<const char>;
+    using vector = std::vector<uint8_t>;
+    using span = std::span<const uint8_t>;
     using stream = std::variant<vector, span>;
 
     constexpr Stream() noexcept : mStream(vector())
