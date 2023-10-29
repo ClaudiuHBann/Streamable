@@ -161,9 +161,9 @@ class Size
 {
   public:
     using size_max = size_t; // size_t / 8
-    using span = std::span<const char>;
+    using span = std::span<const uint8_t>;
 
-    [[nodiscard]] static constexpr auto FindRequiredBytes(const char aSize) noexcept
+    [[nodiscard]] static constexpr auto FindRequiredBytes(const uint8_t aSize) noexcept
     {
         const auto size = static_cast<uint8_t>(aSize);
         if constexpr (sizeof(size_max) == 4)
@@ -200,7 +200,7 @@ class Size
 
     [[nodiscard]] static inline auto MakeSize(const size_max aSize) noexcept
     {
-        static char SIZE_AS_CHARS[SIZE_MAX_IN_BYTES]{};
+        static uint8_t SIZE_AS_CHARS[SIZE_MAX_IN_BYTES]{};
         static auto SIZE = reinterpret_cast<size_max *>(SIZE_AS_CHARS);
 
         const auto requiredBytes = FindRequiredBytes(aSize);
@@ -224,7 +224,7 @@ class Size
 
     [[nodiscard]] static inline auto MakeSize(const span &aSize) noexcept
     {
-        static char SIZE_AS_CHARS[SIZE_MAX_IN_BYTES]{};
+        static uint8_t SIZE_AS_CHARS[SIZE_MAX_IN_BYTES]{};
         static auto SIZE = reinterpret_cast<size_max *>(SIZE_AS_CHARS);
 
         // clear the last size
@@ -326,9 +326,10 @@ class Converter
         return mConverter.to_bytes(aString);
     }
 
-    [[nodiscard]] static inline std::wstring FromUTF8(const std::span<const char> &aString)
+    [[nodiscard]] static inline std::wstring FromUTF8(const std::span<const uint8_t> &aString)
     {
-        return mConverter.from_bytes(aString.data(), aString.data() + aString.size());
+        auto aStringChar = reinterpret_cast<const char *>(aString.data());
+        return mConverter.from_bytes(aStringChar, aStringChar + aString.size());
     }
 
   private:
@@ -340,8 +341,8 @@ class Stream
     friend class StreamReader;
 
   public:
-    using vector = std::vector<char>;
-    using span = std::span<const char>;
+    using vector = std::vector<uint8_t>;
+    using span = std::span<const uint8_t>;
     using stream = std::variant<vector, span>;
 
     constexpr Stream() noexcept : mStream(vector())
@@ -355,6 +356,22 @@ class Stream
     constexpr Stream(Stream &&aStream) noexcept
     {
         *this = std::move(aStream);
+    }
+
+    constexpr vector &&Release() noexcept
+    {
+        return std::move(GetStream());
+    }
+
+    template <typename FunctionSeek>
+    inline decltype(auto) Peek(const FunctionSeek &aFunctionSeek, const Size::size_max aOffset = 0)
+    {
+        const auto readIndex = mReadIndex;
+        mReadIndex += aOffset;
+        aFunctionSeek(readIndex);
+        mReadIndex = readIndex;
+
+        return *this;
     }
 
     constexpr decltype(auto) Reserve(const Size::size_max aSize)
@@ -417,16 +434,9 @@ class Stream
         // if crashed here --> it's read only (span)
         return std::get<vector>(mStream);
     }
-
-    template <typename FunctionSeek> inline decltype(auto) Seek(const FunctionSeek &aFunctionSeek)
-    {
-        const auto readIndex = mReadIndex;
-        aFunctionSeek(readIndex);
-        mReadIndex = readIndex;
-
-        return *this;
-    }
 };
+
+class IStreamable;
 
 class SizeFinder
 {
@@ -435,6 +445,11 @@ class SizeFinder
     [[nodiscard]] static constexpr Size::size_max FindParseSize(Type &aObject, Types &...aObjects) noexcept
     {
         return FindObjectSize<std::remove_cvref_t<Type>>(aObject) + FindParseSize(aObjects...);
+    }
+
+    static constexpr Size::size_max FindParseSize() noexcept
+    {
+        return 0;
     }
 
     template <typename Type> [[nodiscard]] static constexpr Size::size_max FindRangeRank() noexcept
@@ -547,12 +562,9 @@ class SizeFinder
 
         return size;
     }
-
-    static constexpr Size::size_max FindParseSize() noexcept
-    {
-        return 0;
-    }
 };
+
+class IStreamable;
 
 class StreamWriter
 {
@@ -578,6 +590,10 @@ class StreamWriter
         }
     }
 
+    constexpr void WriteAll()
+    {
+    }
+
     constexpr StreamWriter &operator=(StreamWriter &&aStreamWriter) noexcept
     {
         mStream = aStreamWriter.mStream;
@@ -592,7 +608,7 @@ class StreamWriter
     {
         static_assert(is_std_lay_no_ptr<Type>, "Type is not an object of known size or it is a pointer!");
 
-        const auto objectPtr = reinterpret_cast<const char *>(&aObject);
+        const auto objectPtr = reinterpret_cast<const uint8_t *>(&aObject);
         mStream->Write({objectPtr, sizeof(aObject)});
 
         return *this;
@@ -658,13 +674,13 @@ class StreamWriter
             {
                 const auto stringUTF8 = Converter::ToUTF8(aRange);
                 WriteCount(SizeFinder::GetRangeCount(stringUTF8));
-                mStream->Write(stringUTF8);
+                mStream->Write({reinterpret_cast<const uint8_t *>(stringUTF8.data()), stringUTF8.size()});
             }
             else if constexpr (is_path<Type>)
             {
                 WriteCount(SizeFinder::GetRangeCount(aRange));
 
-                const auto rangePtr = reinterpret_cast<const char *>(aRange.native().data());
+                const auto rangePtr = reinterpret_cast<const uint8_t *>(aRange.native().data());
                 const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
                 mStream->Write({rangePtr, rangeSize});
             }
@@ -672,7 +688,7 @@ class StreamWriter
             {
                 WriteCount(SizeFinder::GetRangeCount(aRange));
 
-                const auto rangePtr = reinterpret_cast<const char *>(std::ranges::data(aRange));
+                const auto rangePtr = reinterpret_cast<const uint8_t *>(std::ranges::data(aRange));
                 const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
                 mStream->Write({rangePtr, rangeSize});
             }
@@ -710,6 +726,8 @@ class StreamWriter
     }
 };
 
+class IStreamable;
+
 class StreamReader
 {
   public:
@@ -732,6 +750,17 @@ class StreamReader
         {
             ReadAll<Types...>(aObjects...);
         }
+    }
+
+    constexpr void ReadAll()
+    {
+    }
+
+    template <typename FunctionSeek>
+    inline decltype(auto) Peek(const FunctionSeek &aFunctionSeek, const Size::size_max aOffset = 0)
+    {
+        mStream->Peek(aFunctionSeek, aOffset);
+        return *this;
     }
 
     constexpr StreamReader &operator=(StreamReader &&aStreamReader) noexcept
@@ -793,7 +822,7 @@ class StreamReader
         static_assert(has_method_find_derived_streamable<TypeNoPtr>,
                       "Type doesn't have method 'static IStreamable* FindDerivedStreamable(StreamReader &)' !");
 
-        mStream->Seek([&](auto) {
+        Peek([&](auto) {
             Stream stream(mStream->Read(ReadCount())); // read streamable size in bytes
             StreamReader streamReader(stream);
             // TODO: we let the user read n objects after wich we read again... fix it
@@ -871,7 +900,7 @@ class StreamReader
         {
             if constexpr (is_base_of_no_ptr<IStreamable, Type>)
             {
-                mStream->Seek([&](auto) {
+                Peek([&](auto) {
                     for (size_t i = 0; i < aCount; i++)
                     {
                         const auto sizeCurrent = ReadCount();
