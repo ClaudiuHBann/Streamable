@@ -92,19 +92,41 @@ class StreamWriter
     {
         static_assert(std::ranges::range<Type>, "Type is not a range!");
 
-        using TypeValueType = typename Type::value_type;
-
         if constexpr (SizeFinder::FindRangeRank<Type>() > 1)
         {
             WriteCount(SizeFinder::GetRangeCount(aRange));
             for (auto &object : aRange)
             {
-                WriteRange<TypeValueType>(object);
+                WriteRange(object);
             }
         }
         else
         {
-            WriteRangeRank1<Type>(aRange);
+            WriteRangeRank1(aRange);
+        }
+
+        return *this;
+    }
+
+    template <typename Type> constexpr decltype(auto) WriteRangeStandardLayout(const Type &aRange)
+    {
+        static_assert(is_range_std_lay<Type>, "Type is not a standard layout range!");
+
+        if constexpr (std::is_same_v<Type, std::wstring>)
+        {
+            WriteRangeStandardLayout(Converter::ToUTF8(aRange));
+        }
+        else if constexpr (is_path<Type>)
+        {
+            WriteRangeStandardLayout(aRange.native());
+        }
+        else
+        {
+            WriteCount(SizeFinder::GetRangeCount(aRange));
+
+            const auto rangePtr = reinterpret_cast<const uint8_t *>(std::ranges::data(aRange));
+            const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(typename Type::value_type);
+            mStream->Write({rangePtr, rangeSize});
         }
 
         return *this;
@@ -112,41 +134,18 @@ class StreamWriter
 
     template <typename Type> constexpr decltype(auto) WriteRangeRank1(Type &aRange)
     {
-        static_assert(std::ranges::range<Type>, "Type is not a range!");
-
-        using TypeValueType = typename Type::value_type;
+        static_assert(SizeFinder::FindRangeRank<Type>() == 1, "Type is not a rank 1 range!");
 
         if constexpr (is_range_std_lay<Type>)
         {
-            if constexpr (std::is_same_v<Type, std::wstring>)
-            {
-                const auto stringUTF8 = Converter::ToUTF8(aRange);
-                WriteCount(SizeFinder::GetRangeCount(stringUTF8));
-                mStream->Write({reinterpret_cast<const uint8_t *>(stringUTF8.data()), stringUTF8.size()});
-            }
-            else if constexpr (is_path<Type>)
-            {
-                WriteCount(SizeFinder::GetRangeCount(aRange));
-
-                const auto rangePtr = reinterpret_cast<const uint8_t *>(aRange.native().data());
-                const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
-                mStream->Write({rangePtr, rangeSize});
-            }
-            else
-            {
-                WriteCount(SizeFinder::GetRangeCount(aRange));
-
-                const auto rangePtr = reinterpret_cast<const uint8_t *>(std::ranges::data(aRange));
-                const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
-                mStream->Write({rangePtr, rangeSize});
-            }
+            WriteRangeStandardLayout(aRange);
         }
         else
         {
             WriteCount(SizeFinder::GetRangeCount(aRange));
             for (auto &object : aRange)
             {
-                Write<TypeValueType>(object);
+                Write(object);
             }
         }
 
@@ -157,15 +156,15 @@ class StreamWriter
     {
         if constexpr (std::ranges::range<Type>)
         {
-            return WriteRange<Type>(aObject);
+            return WriteRange(aObject);
         }
         else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
         {
-            return WriteStreamable<Type>(aObject);
+            return WriteStreamable(aObject);
         }
         else if constexpr (is_std_lay_no_ptr<Type>)
         {
-            return WriteObjectOfKnownSize<Type>(aObject);
+            return WriteObjectOfKnownSize(aObject);
         }
         else
         {

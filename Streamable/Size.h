@@ -19,7 +19,7 @@ namespace hbann
 class Size
 {
   public:
-    using size_max = size_t; // size_t / 8
+    using size_max = size_t; // size_t / (4/8)
     using span = std::span<const uint8_t>;
 
     [[nodiscard]] static constexpr auto FindRequiredBytes(const uint8_t aSize) noexcept

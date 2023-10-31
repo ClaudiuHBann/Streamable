@@ -68,11 +68,11 @@ class StreamReader
         }
         else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
         {
-            return ReadStreamableX<Type>(aObject);
+            return ReadStreamableX(aObject);
         }
         else if constexpr (is_std_lay_no_ptr<Type>)
         {
-            return ReadObjectOfKnownSize<Type>(aObject);
+            return ReadObjectOfKnownSize(aObject);
         }
         else
         {
@@ -84,11 +84,11 @@ class StreamReader
     {
         if constexpr (is_pointer<Type>)
         {
-            return ReadStreamablePtr<Type>(aStreamable);
+            return ReadStreamablePtr(aStreamable);
         }
         else
         {
-            return ReadStreamable<Type>(aStreamable);
+            return ReadStreamable(aStreamable);
         }
     }
 
@@ -123,25 +123,63 @@ class StreamReader
     {
         static_assert(std::ranges::range<Type>, "Type is not a range!");
 
-        using TypeValueType = typename Type::value_type;
-
         Type range{};
         const auto count = ReadCount();
-        RangeReserve<Type>(range, count);
+        RangeReserve(range, count);
 
         if constexpr (SizeFinder::FindRangeRank<Type>() > 1)
         {
             for (size_t i = 0; i < count; i++)
             {
-                range.insert(std::ranges::cend(range), ReadRange<TypeValueType>());
+                range.insert(std::ranges::cend(range), ReadRange<typename Type::value_type>());
             }
         }
         else
         {
-            ReadRangeRank1<Type>(range, count);
+            ReadRangeRank1(range, count);
         }
 
         return range;
+    }
+
+    template <typename Type> constexpr decltype(auto) ReadPath(Type &aRange, const Size::size_max aCount)
+    {
+        static_assert(is_path<Type>, "Type is not a path!");
+
+        if constexpr (std::is_same_v<std::wstring, typename Type::string_type>)
+        {
+            aRange.assign(Converter::FromUTF8(mStream->Read(aCount)));
+        }
+        else
+        {
+            ReadRangeStandardLayout(aRange, aCount);
+        }
+
+        return *this;
+    }
+
+    template <typename Type> constexpr decltype(auto) ReadRangeStandardLayout(Type &aRange, const Size::size_max aCount)
+    {
+        static_assert(is_range_std_lay<Type>, "Type is not a standard layout range!");
+
+        using TypeValueType = typename Type::value_type;
+
+        if constexpr (std::is_same_v<Type, std::wstring>)
+        {
+            aRange.assign(Converter::FromUTF8(mStream->Read(aCount)));
+        }
+        else if constexpr (is_path<Type>)
+        {
+            ReadPath(aRange, aCount);
+        }
+        else
+        {
+            const auto rangeView = mStream->Read(aCount * sizeof(TypeValueType));
+            const auto rangePtr = reinterpret_cast<const TypeValueType *>(rangeView.data());
+            aRange.assign(rangePtr, rangePtr + rangeView.size() / sizeof(TypeValueType));
+        }
+
+        return *this;
     }
 
     template <typename Type> constexpr decltype(auto) ReadRangeRank1(Type &aRange, const Size::size_max aCount)
@@ -150,22 +188,16 @@ class StreamReader
 
         using TypeValueType = typename Type::value_type;
 
-        if constexpr (std::is_same_v<Type, std::wstring>)
+        if constexpr (is_range_std_lay<Type>)
         {
-            aRange.assign(Converter::FromUTF8(mStream->Read(aCount)));
-        }
-        else if constexpr (is_range_std_lay<Type>)
-        {
-            const auto rangeView = mStream->Read(aCount * sizeof(TypeValueType));
-            const auto rangePtr = reinterpret_cast<const TypeValueType *>(rangeView.data());
-            aRange.assign(rangePtr, rangePtr + rangeView.size() / sizeof(TypeValueType));
+            ReadRangeStandardLayout(aRange, aCount);
         }
         else
         {
             for (size_t i = 0; i < aCount; i++)
             {
                 TypeValueType object{};
-                Read<TypeValueType>(object);
+                Read(object);
                 aRange.insert(std::ranges::cend(aRange), std::move(object));
             }
         }

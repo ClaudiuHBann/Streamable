@@ -37,33 +37,6 @@ class Converter
         return size;
     }
 
-    // TODO: delete me in the future if I am useless
-    [[nodiscard]] static auto FindUTF16Size(const std::wstring &aString) noexcept
-    {
-        const auto string = std::span<const uint8_t>{reinterpret_cast<const uint8_t *>(aString.data()),
-                                                     aString.size() * sizeof(std::wstring::value_type)};
-
-        size_t size{};
-        for (size_t i = 0; i < string.size(); i++)
-        {
-            if ((string[i] & 0xC0) == 0x80)
-            {
-                continue;
-            }
-
-            if (!(string[i] & 0x80) || (string[i] & 0xE0) == 0xC0 || (string[i] & 0xF0) == 0xE0)
-            {
-                size += 2;
-            }
-            else if ((string[i] & 0xF8) == 0xF0)
-            {
-                size += 4;
-            }
-        }
-
-        return size / sizeof(std::wstring::value_type);
-    }
-
     [[nodiscard]] static inline std::string ToUTF8(const std::wstring &aString)
     {
         return mConverter.to_bytes(aString);
