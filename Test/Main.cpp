@@ -49,23 +49,26 @@ class Shape : public hbann::IStreamable
 
 class Circle : public Shape
 {
-    STREAMABLE_DEFINE(Shape, mSVG, mURL);
+    STREAMABLE_DEFINE(Shape, mSVG, mURL, mVariant);
 
   public:
     Circle() = default;
-    Circle(const guid &aID, const std::string &aSVG, const std::filesystem::path &aURL)
-        : Shape(Type::CIRCLE, aID), mSVG(aSVG), mURL(aURL)
+    Circle(const guid &aID, const std::string &aSVG, const std::filesystem::path &aURL,
+           std::variant<std::vector<double>, bool> &&aVariant)
+        : Shape(Type::CIRCLE, aID), mSVG(aSVG), mURL(aURL), mVariant(aVariant)
     {
     }
 
     bool operator==(const Circle &aCircle) const
     {
-        return *(Shape *)this == *(Shape *)&aCircle && mSVG == aCircle.mSVG && mURL == aCircle.mURL;
+        return *(Shape *)this == *(Shape *)&aCircle && mSVG == aCircle.mSVG && mURL == aCircle.mURL &&
+               mVariant == aCircle.mVariant;
     }
 
   private:
     std::string mSVG{};
     std::filesystem::path mURL{};
+    std::variant<std::vector<double>, bool> mVariant{};
 };
 
 class Sphere : public Circle
@@ -82,7 +85,8 @@ class Sphere : public Circle
 
     bool operator==(const Sphere &aSphere) const
     {
-        return *(Circle *)this == *(Circle *)&aSphere && mReflexion == aSphere.mReflexion && mTuple == aSphere.mTuple;
+        return *(Circle *)this == *(Circle *)&aSphere && mReflexion == aSphere.mReflexion && mTuple == aSphere.mTuple &&
+               mPair == aSphere.mPair;
     }
 
   private:
@@ -322,7 +326,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
 
     SECTION("Derived")
     {
-        Shape *circleStart = new Circle(GUID_RND, "SVG", L"URL\\SHIT");
+        Shape *circleStart = new Circle(GUID_RND, "SVG", L"URL\\SHIT", true);
         Shape *circleEnd = new Circle();
         circleEnd->Deserialize(circleStart->Serialize());
 
@@ -334,7 +338,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
 
     SECTION("Derived++")
     {
-        Circle circle(GUID_RND, "SVG", L"URL\\SHIT");
+        Circle circle(GUID_RND, "SVG", L"URL\\SHIT", std::vector{69., 420.});
         Sphere sphereStart(circle, true, {"Commit: added tuple support", {22, 100}}, {circle, 22.});
         Sphere sphereEnd;
         sphereEnd.Deserialize(sphereStart.Serialize());
@@ -344,12 +348,12 @@ TEST_CASE("IStreamable", "[IStreamable]")
 
     SECTION("BaseClass*")
     {
-        Circle circle(GUID_RND, "SVG", L"URL\\SHIT");
+        Circle circle(GUID_RND, "SVG", L"URL\\SHIT", false);
         Sphere center(circle, true, {"Commit: added tuple support", {22, 100}}, {circle, 22.});
         std::vector<std::vector<std::wstring>> cells{{L"smth", L"else"}, {L"HBann", L"Sefu la bani"}};
-        std::vector<Shape *> shapes{new Circle(GUID_RND, "Circle1_SVG", "Circle1_URL"),
+        std::vector<Shape *> shapes{new Circle(GUID_RND, "Circle1_SVG", "Circle1_URL", true),
                                     new RectangleEx(GUID_RND, center, cells),
-                                    new Circle(GUID_RND, "Circle2_SVG", "Circle2_URL")};
+                                    new Circle(GUID_RND, "Circle2_SVG", "Circle2_URL", std::vector{420., 69.})};
         ::Context contextStart(std::move(shapes));
 
         ::Context contextEnd;

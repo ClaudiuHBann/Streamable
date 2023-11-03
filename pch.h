@@ -97,7 +97,7 @@ template <typename> struct is_tuple : std::false_type
 {
 };
 
-template <typename... Type> struct is_tuple<std::tuple<Type...>> : std::true_type
+template <typename... Types> struct is_tuple<std::tuple<Types...>> : std::true_type
 {
 };
 
@@ -108,10 +108,19 @@ template <typename> struct is_pair : std::false_type
 template <typename TypeFirst, typename TypeSecond> struct is_pair<std::pair<TypeFirst, TypeSecond>> : std::true_type
 {
 };
+
+template <typename> struct is_variant : std::false_type
+{
+};
+
+template <typename... Types> struct is_variant<std::variant<Types...>> : std::true_type
+{
+};
 } // namespace impl
 
 template <typename Type> constexpr bool is_tuple_v = impl::is_tuple<Type>::value;
 template <typename Type> constexpr bool is_pair_v = impl::is_pair<Type>::value;
+template <typename Type> constexpr bool is_variant_v = impl::is_variant<Type>::value;
 
 template <typename Container>
 concept has_method_reserve =
@@ -165,6 +174,7 @@ constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
          - make the tostream and fromstream private or protected
          - can Streamable call the intermediate class's FindDerivedStreamable automatically?
          - when reserving size for wstrings that have been encoded we reserve more (worst case x2)
+         - use monostate for the std::variant
          - FindRangeSize should not check for contiguous range when finding size of a range
          - when finding derived class from base class pointer, add a tuple representing the types that can be read and
         make the user access the objects by index so can't read a bad object

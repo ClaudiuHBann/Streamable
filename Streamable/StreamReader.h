@@ -61,9 +61,15 @@ class StreamReader
 
     template <typename Type> constexpr decltype(auto) Read(Type &aObject)
     {
-        if constexpr (is_tuple_v<Type> || is_pair_v<Type>)
+        if constexpr (is_variant_v<Type>)
         {
-            std::apply([this](auto &&...aArgs) { ReadAll(aArgs...); }, aObject);
+            std::visit([&](auto &&aArg) { Read(aArg); }, aObject);
+            return *this;
+        }
+        else if constexpr (is_tuple_v<Type> || is_pair_v<Type>)
+        {
+            std::apply([&](auto &&...aArgs) { ReadAll(aArgs...); }, aObject);
+            return *this;
         }
         else if constexpr (std::ranges::range<Type>)
         {
