@@ -64,23 +64,19 @@ class SizeFinder
   private:
     template <typename Type> [[nodiscard]] static constexpr Size::size_max FindObjectSize(Type &aObject) noexcept
     {
-        if constexpr (std::ranges::range<Type>)
+        if constexpr (is_tuple_v<Type>)
+        {
+            Size::size_max size{};
+            std::apply([&](auto &&...aArgs) { size += FindParseSize(aArgs...); }, aObject);
+            return size;
+        }
+        else if constexpr (std::ranges::range<Type>)
         {
             return FindRangeSize(aObject);
         }
         else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
         {
-            Size::size_max size{};
-            if constexpr (is_pointer<Type>)
-            {
-                size = static_cast<IStreamable *>(aObject)->FindParseSize();
-            }
-            else
-            {
-                size = static_cast<IStreamable *>(&aObject)->FindParseSize();
-            }
-
-            return Size::FindRequiredBytes(size);
+            return FindStreamableSize(aObject);
         }
         else if constexpr (is_std_lay_no_ptr<Type>)
         {
@@ -90,6 +86,24 @@ class SizeFinder
         {
             static_assert(always_false<Type>, "Type is not accepted!");
         }
+    }
+
+    template <typename Type>
+    [[nodiscard]] static constexpr Size::size_max FindStreamableSize(Type &aStreamable) noexcept
+    {
+        static_assert(is_base_of_no_ptr<IStreamable, Type>, "Type is not a streamable!");
+
+        Size::size_max size{};
+        if constexpr (is_pointer<Type>)
+        {
+            size = static_cast<IStreamable *>(aStreamable)->FindParseSize();
+        }
+        else
+        {
+            size = static_cast<IStreamable *>(&aStreamable)->FindParseSize();
+        }
+
+        return Size::FindRequiredBytes(size) + size;
     }
 
     template <typename Type> [[nodiscard]] static constexpr Size::size_max FindRangeSize(Type &aRange) noexcept

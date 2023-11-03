@@ -61,7 +61,11 @@ class StreamReader
 
     template <typename Type> constexpr decltype(auto) Read(Type &aObject)
     {
-        if constexpr (std::ranges::range<Type>)
+        if constexpr (is_tuple_v<Type>)
+        {
+            std::apply([this](auto &&...aArgs) { ReadAll(aArgs...); }, aObject);
+        }
+        else if constexpr (std::ranges::range<Type>)
         {
             aObject = std::move(ReadRange<Type>());
             return *this;

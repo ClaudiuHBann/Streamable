@@ -70,21 +70,23 @@ class Circle : public Shape
 
 class Sphere : public Circle
 {
-    STREAMABLE_DEFINE(Circle, mReflexion);
+    STREAMABLE_DEFINE(Circle, mReflexion, mTuple);
 
   public:
     Sphere() = default;
-    Sphere(const Circle &aCircle, const bool aReflexion) : Circle(aCircle), mReflexion(aReflexion)
+    Sphere(const Circle &aCircle, const bool aReflexion, std::tuple<std::string, std::list<int>> &&aTuple)
+        : Circle(aCircle), mReflexion(aReflexion), mTuple(std::move(aTuple))
     {
     }
 
     bool operator==(const Sphere &aSphere) const
     {
-        return *(Circle *)this == *(Circle *)&aSphere && mReflexion == aSphere.mReflexion;
+        return *(Circle *)this == *(Circle *)&aSphere && mReflexion == aSphere.mReflexion && mTuple == aSphere.mTuple;
     }
 
   private:
     bool mReflexion{};
+    std::tuple<std::string, std::list<int>> mTuple{};
 };
 
 class RectangleEx : public Shape
@@ -330,7 +332,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
 
     SECTION("Derived++")
     {
-        Sphere sphereStart({GUID_RND, "SVG", L"URL\\SHIT"}, true);
+        Sphere sphereStart({GUID_RND, "SVG", L"URL\\SHIT"}, true, {"Commit: added tuple support", {22, 100}});
         Sphere sphereEnd;
         sphereEnd.Deserialize(sphereStart.Serialize());
 
@@ -339,7 +341,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
 
     SECTION("BaseClass*")
     {
-        Sphere center({GUID_RND, "SVG", L"URL\\SHIT"}, true);
+        Sphere center({GUID_RND, "SVG", L"URL\\SHIT"}, true, {"Commit: added tuple support", {22, 100}});
         std::vector<std::vector<std::wstring>> cells{{L"smth", L"else"}, {L"HBann", L"Sefu la bani"}};
         std::vector<Shape *> shapes{new Circle(GUID_RND, "Circle1_SVG", "Circle1_URL"),
                                     new RectangleEx(GUID_RND, center, cells),

@@ -154,7 +154,11 @@ class StreamWriter
 
     template <typename Type> constexpr decltype(auto) Write(Type &aObject)
     {
-        if constexpr (std::ranges::range<Type>)
+        if constexpr (is_tuple_v<Type>)
+        {
+            std::apply([this](auto &&...aArgs) { WriteAll(aArgs...); }, aObject);
+        }
+        else if constexpr (std::ranges::range<Type>)
         {
             return WriteRange(aObject);
         }
