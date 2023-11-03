@@ -61,7 +61,7 @@ class StreamReader
 
     template <typename Type> constexpr decltype(auto) Read(Type &aObject)
     {
-        if constexpr (is_tuple_v<Type>)
+        if constexpr (is_tuple_v<Type> || is_pair_v<Type>)
         {
             std::apply([this](auto &&...aArgs) { ReadAll(aArgs...); }, aObject);
         }

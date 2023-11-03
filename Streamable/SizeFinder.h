@@ -64,7 +64,7 @@ class SizeFinder
   private:
     template <typename Type> [[nodiscard]] static constexpr Size::size_max FindObjectSize(Type &aObject) noexcept
     {
-        if constexpr (is_tuple_v<Type>)
+        if constexpr (is_tuple_v<Type> || is_pair_v<Type>)
         {
             Size::size_max size{};
             std::apply([&](auto &&...aArgs) { size += FindParseSize(aArgs...); }, aObject);
