@@ -152,12 +152,21 @@ class StreamWriter
         return *this;
     }
 
+    template <typename Type> constexpr decltype(auto) WriteVariant(Type &aVariant)
+    {
+        static_assert(is_variant_v<Type>, "Type is not a variant!");
+
+        WriteCount(aVariant.index());
+        std::visit([&](auto &&aArg) { Write(aArg); }, aVariant);
+
+        return *this;
+    }
+
     template <typename Type> constexpr decltype(auto) Write(Type &aObject)
     {
         if constexpr (is_variant_v<Type>)
         {
-            std::visit([&](auto &&aArg) { Write(aArg); }, aObject);
-            return *this;
+            return WriteVariant(aObject);
         }
         else if constexpr (is_tuple_v<Type> || is_pair_v<Type>)
         {

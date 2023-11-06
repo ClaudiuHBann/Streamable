@@ -63,8 +63,7 @@ class StreamReader
     {
         if constexpr (is_variant_v<Type>)
         {
-            std::visit([&](auto &&aArg) { Read(aArg); }, aObject);
-            return *this;
+            return ReadVariant(aObject);
         }
         else if constexpr (is_tuple_v<Type> || is_pair_v<Type>)
         {
@@ -88,6 +87,16 @@ class StreamReader
         {
             static_assert(always_false<Type>, "Type is not accepted!");
         }
+    }
+
+    template <typename Type> constexpr decltype(auto) ReadVariant(Type &aVariant)
+    {
+        static_assert(is_variant_v<Type>, "Type is not a variant!");
+
+        aVariant = variant_from_index<Type>(ReadCount());
+        std::visit([&](auto &&aArg) { Read(aArg); }, aVariant);
+
+        return *this;
     }
 
     template <typename Type> constexpr decltype(auto) ReadStreamableX(Type &aStreamable)

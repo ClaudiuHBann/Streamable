@@ -136,8 +136,7 @@ template <typename Type>
 concept is_pointer = std::is_pointer_v<Type> || is_pointer_unique<Type> || is_pointer_shared<Type>;
 
 template <typename Type>
-concept is_std_lay_no_ptr = std::is_standard_layout_v<Type> && !
-is_pointer<Type>;
+concept is_std_lay_no_ptr = std::is_standard_layout_v<Type> && !is_pointer<Type>;
 
 template <typename Base, typename Derived>
 concept is_base_of_no_ptr = std::is_base_of_v<Base, std::remove_pointer_t<Derived>>;
@@ -146,28 +145,43 @@ template <typename Type>
 concept is_path = std::is_same_v<std::remove_cvref_t<Type>, std::filesystem::path>;
 
 template <typename Container>
-concept is_range_std_lay = (std::ranges::contiguous_range<Container> &&
-                            is_std_lay_no_ptr<typename Container::value_type>) ||
-                           is_path<Container>;
+concept is_range_std_lay =
+    (std::ranges::contiguous_range<Container> && is_std_lay_no_ptr<typename Container::value_type>) ||
+    is_path<Container>;
 
 template <typename Container>
 concept has_method_size = requires(Container &aContainer) { std::ranges::size(aContainer); };
 
 template <typename Class>
 concept has_method_find_derived_streamable = requires(StreamReader &aStreamReader) {
-                                                 {
-                                                     Class::FindDerivedStreamable(aStreamReader)
-                                                     } -> std::convertible_to<IStreamable *>;
-                                             };
+    {
+        Class::FindDerivedStreamable(aStreamReader)
+    } -> std::convertible_to<IStreamable *>;
+};
 
 constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
 {
     return *aString1 == *aString2 && (!*aString1 || static_equal(aString1 + 1, aString2 + 1));
 }
+
+template <typename Type, std::size_t I = 0> Type variant_from_index(const std::size_t aIndex)
+{
+    static_assert(is_variant_v<Type>, "Type is not a variant!");
+
+    if constexpr (I < std::variant_size_v<Type>)
+    {
+        return aIndex ? variant_from_index<Type, I + 1>(aIndex - 1) : Type{std::in_place_index<I>};
+    }
+    else
+    {
+        throw std::out_of_range("Out of bounds variant index!");
+    }
+}
 } // namespace hbann
 
 /*
     TODO:
+         - objects that have std_lay should come before like std::pair or std::tuple
          - check SizeFinder for for incorrect use of the Size::findrequired bytes and etc...
          - can FindDerivedStreamable be protected or even private?
          - make the user choose the data type for the stream
