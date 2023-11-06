@@ -116,11 +116,20 @@ template <typename> struct is_variant : std::false_type
 template <typename... Types> struct is_variant<std::variant<Types...>> : std::true_type
 {
 };
+
+template <typename> struct is_optional : std::false_type
+{
+};
+
+template <typename Type> struct is_optional<std::optional<Type>> : std::true_type
+{
+};
 } // namespace impl
 
 template <typename Type> constexpr bool is_tuple_v = impl::is_tuple<Type>::value;
 template <typename Type> constexpr bool is_pair_v = impl::is_pair<Type>::value;
 template <typename Type> constexpr bool is_variant_v = impl::is_variant<Type>::value;
+template <typename Type> constexpr bool is_optional_v = impl::is_optional<Type>::value;
 
 template <typename Container>
 concept has_method_reserve =
@@ -182,7 +191,8 @@ template <typename Type, std::size_t I = 0> Type variant_from_index(const std::s
 /*
     TODO:
          - objects that have std_lay should come before like std::pair or std::tuple
-         - check SizeFinder for for incorrect use of the Size::findrequired bytes and etc...
+         - check SizeFinder for added type support
+         - check SizeFinder for incorrect use of the Size::findrequired bytes and etc...
          - can FindDerivedStreamable be protected or even private?
          - make the user choose the data type for the stream
          - make the tostream and fromstream private or protected

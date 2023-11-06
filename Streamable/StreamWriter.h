@@ -162,9 +162,26 @@ class StreamWriter
         return *this;
     }
 
+    template <typename Type> constexpr decltype(auto) WriteOptional(Type &aOpt)
+    {
+        static_assert(is_optional_v<Type>, "Type is not an optional!");
+
+        WriteCount(aOpt.has_value());
+        if (aOpt.has_value())
+        {
+            Write(*aOpt);
+        }
+
+        return *this;
+    }
+
     template <typename Type> constexpr decltype(auto) Write(Type &aObject)
     {
-        if constexpr (is_variant_v<Type>)
+        if constexpr (is_optional_v<Type>)
+        {
+            return WriteOptional(aObject);
+        }
+        else if constexpr (is_variant_v<Type>)
         {
             return WriteVariant(aObject);
         }

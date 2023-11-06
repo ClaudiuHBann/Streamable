@@ -64,7 +64,11 @@ class SizeFinder
   private:
     template <typename Type> [[nodiscard]] static constexpr Size::size_max FindObjectSize(Type &aObject) noexcept
     {
-        if constexpr (is_variant_v<Type>)
+        if constexpr (is_optional_v<Type>)
+        {
+            return aObject.has_value() ? FindObjectSize(*aObject) : 0;
+        }
+        else if constexpr (is_variant_v<Type>)
         {
             Size::size_max size{};
             std::visit([&](auto &&aArg) { size += FindObjectSize(aArg); }, aObject);

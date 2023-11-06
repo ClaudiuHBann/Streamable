@@ -53,7 +53,7 @@ class Circle : public Shape
 
   public:
     Circle() = default;
-    Circle(const guid &aID, const std::string &aSVG, const std::filesystem::path &aURL,
+    Circle(const guid &aID, const std::optional<std::string> &aSVG, const std::filesystem::path &aURL,
            std::variant<std::vector<double>, bool> &&aVariant)
         : Shape(Type::CIRCLE, aID), mSVG(aSVG), mURL(aURL), mVariant(aVariant)
     {
@@ -66,7 +66,7 @@ class Circle : public Shape
     }
 
   private:
-    std::string mSVG{};
+    std::optional<std::string> mSVG{};
     std::filesystem::path mURL{};
     std::variant<std::vector<double>, bool> mVariant{};
 };
@@ -326,7 +326,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
 
     SECTION("Derived")
     {
-        Shape *circleStart = new Circle(GUID_RND, "SVG", L"URL\\SHIT", true);
+        Shape *circleStart = new Circle(GUID_RND, std::nullopt, L"URL\\SHIT", true);
         Shape *circleEnd = new Circle();
         circleEnd->Deserialize(circleStart->Serialize());
 
@@ -348,7 +348,7 @@ TEST_CASE("IStreamable", "[IStreamable]")
 
     SECTION("BaseClass*")
     {
-        Circle circle(GUID_RND, "SVG", L"URL\\SHIT", false);
+        Circle circle(GUID_RND, {}, L"URL\\SHIT", false);
         Sphere center(circle, true, {"Commit: added tuple support", {22, 100}}, {circle, 22.});
         std::vector<std::vector<std::wstring>> cells{{L"smth", L"else"}, {L"HBann", L"Sefu la bani"}};
         std::vector<Shape *> shapes{new Circle(GUID_RND, "Circle1_SVG", "Circle1_URL", true),

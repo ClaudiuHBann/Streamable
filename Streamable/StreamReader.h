@@ -61,7 +61,11 @@ class StreamReader
 
     template <typename Type> constexpr decltype(auto) Read(Type &aObject)
     {
-        if constexpr (is_variant_v<Type>)
+        if constexpr (is_optional_v<Type>)
+        {
+            return ReadOptional(aObject);
+        }
+        else if constexpr (is_variant_v<Type>)
         {
             return ReadVariant(aObject);
         }
@@ -87,6 +91,20 @@ class StreamReader
         {
             static_assert(always_false<Type>, "Type is not accepted!");
         }
+    }
+
+    template <typename Type> constexpr decltype(auto) ReadOptional(Type &aOpt)
+    {
+        static_assert(is_optional_v<Type>, "Type is not an optional!");
+
+        if (ReadCount())
+        {
+            typename Type::value_type obj{};
+            Read(obj);
+            aOpt = std::move(obj);
+        }
+
+        return *this;
     }
 
     template <typename Type> constexpr decltype(auto) ReadVariant(Type &aVariant)
