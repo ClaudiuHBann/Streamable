@@ -74,11 +74,16 @@ class SizeFinder
             std::visit([&](auto &&aArg) { size += FindObjectSize(aArg); }, aObject);
             return size;
         }
-        else if constexpr (is_tuple_v<Type> || is_pair_v<Type>)
+        else if constexpr (is_tuple_v<Type>)
         {
             Size::size_max size{};
             std::apply([&](auto &&...aArgs) { size += FindParseSize(aArgs...); }, aObject);
             return size;
+        }
+        else if constexpr (is_pair_v<Type>)
+        {
+            using keyFirstNoConst = std::remove_const_t<typename Type::first_type>;
+            return FindObjectSize(const_cast<keyFirstNoConst &>(aObject.first)) + FindObjectSize(aObject.second);
         }
         else if constexpr (std::ranges::range<Type>)
         {

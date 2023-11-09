@@ -185,9 +185,16 @@ class StreamWriter
         {
             return WriteVariant(aObject);
         }
-        else if constexpr (is_tuple_v<Type> || is_pair_v<Type>)
+        else if constexpr (is_tuple_v<Type>)
         {
             std::apply([&](auto &&...aArgs) { WriteAll(aArgs...); }, aObject);
+            return *this;
+        }
+        else if constexpr (is_pair_v<Type>)
+        {
+            // TODO: why can't we use WriteAll here?
+            Write(const_cast<typename Type::first_type &>(aObject.first));
+            Write(aObject.second);
             return *this;
         }
         else if constexpr (std::ranges::range<Type>)

@@ -69,10 +69,19 @@ class StreamReader
         {
             return ReadVariant(aObject);
         }
-        else if constexpr (is_tuple_v<Type> || is_pair_v<Type>)
+        else if constexpr (is_tuple_v<Type>)
         {
             std::apply([&](auto &&...aArgs) { ReadAll(aArgs...); }, aObject);
             return *this;
+        }
+        else if constexpr (is_pair_v<Type>)
+        {
+            typename Type::first_type first{};
+            typename Type::second_type second{};
+            Read(const_cast<std::remove_const_t<decltype(first)> &>(first));
+            Read(second);
+
+            aObject = {}; // TODO: why the fuck it doesnt work
         }
         else if constexpr (std::ranges::range<Type>)
         {

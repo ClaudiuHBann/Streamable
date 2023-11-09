@@ -97,7 +97,7 @@ class Sphere : public Circle
 
 class RectangleEx : public Shape
 {
-    STREAMABLE_DEFINE(Shape, mCenter, mCells);
+    STREAMABLE_DEFINE(Shape, mCenter, mMap, mCells);
 
   public:
     RectangleEx() = default;
@@ -113,6 +113,7 @@ class RectangleEx : public Shape
 
   private:
     Sphere mCenter{};
+    std::map<int, double> mMap{};
     std::vector<std::vector<std::wstring>> mCells{};
 };
 
