@@ -76,12 +76,8 @@ class StreamReader
         }
         else if constexpr (is_pair_v<Type>)
         {
-            typename Type::first_type first{};
-            typename Type::second_type second{};
-            Read(const_cast<std::remove_const_t<decltype(first)> &>(first));
-            Read(second);
-
-            aObject = {}; // TODO: why the fuck it doesnt work
+            Read(const_cast<std::remove_const_t<decltype(aObject.first)> &>(aObject.first));
+            Read(aObject.second);
         }
         else if constexpr (std::ranges::range<Type>)
         {
