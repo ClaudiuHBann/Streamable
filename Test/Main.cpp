@@ -101,8 +101,8 @@ class RectangleEx : public Shape
 
   public:
     RectangleEx() = default;
-    RectangleEx(const guid &aID, const Sphere &aCenter, const std::vector<std::vector<std::wstring>> &aCells)
-        : Shape(Type::RECTANGLE, aID), mCenter(aCenter), mCells(aCells)
+    RectangleEx(const guid &aID, unique_ptr<Sphere> &&aCenter, const std::vector<std::vector<std::wstring>> &aCells)
+        : Shape(Type::RECTANGLE, aID), mCenter(std::move(aCenter)), mCells(aCells)
     {
     }
 
@@ -112,7 +112,7 @@ class RectangleEx : public Shape
     }
 
   private:
-    Sphere mCenter{};
+    unique_ptr<Sphere> mCenter{};
     std::map<int, double> mMap{};
     std::vector<std::vector<std::wstring>> mCells{};
 };
@@ -140,13 +140,13 @@ class Context : public hbann::IStreamable
 
   public:
     Context() = default;
-    Context(std::vector<Shape *> &&aShapes) : mShapes(std::move(aShapes))
+    Context(std::shared_ptr<std::vector<Shape *>> &&aShapes) : mShapes(std::move(aShapes))
     {
     }
 
     ~Context()
     {
-        for (auto &shape : mShapes)
+        for (auto &shape : *mShapes)
         {
             delete (shape);
         }
@@ -154,22 +154,22 @@ class Context : public hbann::IStreamable
 
     bool operator==(const Context &aContext) const
     {
-        if (mShapes.size() != aContext.mShapes.size())
+        if (mShapes->size() != aContext.mShapes->size())
         {
             return false;
         }
 
-        for (size_t i = 0; i < mShapes.size(); i++)
+        for (size_t i = 0; i < mShapes->size(); i++)
         {
-            if (mShapes[i]->GetType() != aContext.mShapes[i]->GetType())
+            if ((*mShapes)[i]->GetType() != (*aContext.mShapes)[i]->GetType())
             {
                 return false;
             }
 
-            switch (mShapes[i]->GetType())
+            switch ((*mShapes)[i]->GetType())
             {
             case Shape::Type::CIRCLE: {
-                if (*(Circle *)mShapes[i] != *(Circle *)aContext.mShapes[i])
+                if (*(Circle *)(*mShapes)[i] != *(Circle *)(*aContext.mShapes)[i])
                 {
                     return false;
                 }
@@ -178,7 +178,7 @@ class Context : public hbann::IStreamable
             }
 
             case Shape::Type::RECTANGLE: {
-                if (*(RectangleEx *)mShapes[i] != *(RectangleEx *)aContext.mShapes[i])
+                if (*(RectangleEx *)(*mShapes)[i] != *(RectangleEx *)(*aContext.mShapes)[i])
                 {
                     return false;
                 }
@@ -192,7 +192,7 @@ class Context : public hbann::IStreamable
     }
 
   private:
-    std::vector<Shape *> mShapes{};
+    std::shared_ptr<std::vector<Shape *>> mShapes{};
 };
 
 TEST_CASE("Streamable", "[Streamable]")
@@ -350,11 +350,16 @@ TEST_CASE("IStreamable", "[IStreamable]")
     SECTION("BaseClass*")
     {
         Circle circle(GUID_RND, {}, L"URL\\SHIT", false);
-        Sphere center(circle, true, {"Commit: added tuple support", {22, 100}}, {circle, 22.});
         std::vector<std::vector<std::wstring>> cells{{L"smth", L"else"}, {L"HBann", L"Sefu la bani"}};
-        std::vector<Shape *> shapes{new Circle(GUID_RND, "Circle1_SVG", "Circle1_URL", true),
-                                    new RectangleEx(GUID_RND, center, cells),
-                                    new Circle(GUID_RND, "Circle2_SVG", "Circle2_URL", std::vector{420., 69.})};
+
+        auto center = new Sphere(circle, true, {"Commit: added tuple support", {22, 100}}, {circle, 22.});
+        std::unique_ptr<Sphere> centerUP(center);
+
+        auto shapes = std::make_shared<std::vector<Shape *>>();
+        shapes->push_back(new Circle(GUID_RND, "Circle1_SVG", "Circle1_URL", true));
+        shapes->push_back(new RectangleEx(GUID_RND, std::move(centerUP), cells));
+        shapes->push_back(new Circle(GUID_RND, "Circle2_SVG", "Circle2_URL", std::vector{420., 69.}));
+
         ::Context contextStart(std::move(shapes));
 
         ::Context contextEnd;
