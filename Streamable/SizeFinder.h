@@ -66,7 +66,7 @@ class SizeFinder
     {
         if constexpr (is_optional_v<Type>)
         {
-            return aObject.has_value() ? FindObjectSize(*aObject) : 0;
+            return aObject.has_value() ? FindObjectSize(*aObject) : 1;
         }
         else if constexpr (is_variant_v<Type>)
         {
@@ -82,8 +82,10 @@ class SizeFinder
         }
         else if constexpr (is_pair_v<Type>)
         {
-            using keyFirstNoConst = std::remove_const_t<typename Type::first_type>;
-            return FindObjectSize(const_cast<keyFirstNoConst &>(aObject.first)) + FindObjectSize(aObject.second);
+            // TODO: can we remove this workaround for std::map's key ?
+            // we remove the constness of the std::pair::first_type because of the std::map::value_type::first_type
+            auto &first = const_cast<std::remove_const_t<typename Type::first_type> &>(aObject.first);
+            return FindParseSize(first, aObject.second);
         }
         else if constexpr (std::ranges::range<Type>)
         {

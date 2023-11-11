@@ -76,8 +76,10 @@ class StreamReader
         }
         else if constexpr (is_pair_v<Type>)
         {
-            Read(const_cast<std::remove_const_t<decltype(aObject.first)> &>(aObject.first));
-            Read(aObject.second);
+            // TODO: can we remove this workaround for std::map's key ?
+            // we remove the constness of the std::pair::first_type because of the std::map::value_type::first_type
+            auto &first = const_cast<std::remove_const_t<typename Type::first_type> &>(aObject.first);
+            return ReadAll(first, aObject.second);
         }
         else if constexpr (std::ranges::range<Type>)
         {

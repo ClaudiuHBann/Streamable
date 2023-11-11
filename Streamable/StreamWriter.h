@@ -192,10 +192,10 @@ class StreamWriter
         }
         else if constexpr (is_pair_v<Type>)
         {
-            // TODO: why can't we use WriteAll here?
-            Write(const_cast<typename Type::first_type &>(aObject.first));
-            Write(aObject.second);
-            return *this;
+            // TODO: can we remove this workaround for std::map's key ?
+            // we remove the constness of the std::pair::first_type because of the std::map::value_type::first_type
+            auto &first = const_cast<std::remove_const_t<typename Type::first_type> &>(aObject.first);
+            return WriteAll(first, aObject.second);
         }
         else if constexpr (std::ranges::range<Type>)
         {
