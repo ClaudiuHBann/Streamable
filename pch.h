@@ -87,62 +87,58 @@ constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
     STREAMABLE_DEFINE_FROM_STREAM(baseClass, __VA_ARGS__)                                                              \
     STREAMABLE_DEFINE_FIND_PARSE_SIZE(baseClass, __VA_ARGS__)
 
+#define DEFINE_TT1(name, tn, t)                                                                                        \
+    namespace hbann                                                                                                    \
+    {                                                                                                                  \
+    namespace impl                                                                                                     \
+    {                                                                                                                  \
+    template <typename> struct is_##name : std::false_type                                                             \
+    {                                                                                                                  \
+    };                                                                                                                 \
+                                                                                                                       \
+    template <tn> struct is_##name##<std::##name##<t>> : std::true_type                                                \
+    {                                                                                                                  \
+    };                                                                                                                 \
+    }                                                                                                                  \
+                                                                                                                       \
+    template <typename Type> constexpr bool is_##name##_v = impl::is_##name##<Type>::value;                            \
+    }
+
+#define DEFINE_TT2(name, tn1, tn2, t1, t2)                                                                             \
+    namespace hbann                                                                                                    \
+    {                                                                                                                  \
+    namespace impl                                                                                                     \
+    {                                                                                                                  \
+    template <typename> struct is_##name : std::false_type                                                             \
+    {                                                                                                                  \
+    };                                                                                                                 \
+                                                                                                                       \
+    template <tn1, tn2> struct is_##name##<std::##name##<t1, t2>> : std::true_type                                     \
+    {                                                                                                                  \
+    };                                                                                                                 \
+    }                                                                                                                  \
+                                                                                                                       \
+    template <typename Type> constexpr bool is_##name##_v = impl::is_##name##<Type>::value;                            \
+    }
+
+DEFINE_TT2(pair, typename TypeFirst, typename TypeSecond, TypeFirst, TypeSecond);
+DEFINE_TT1(tuple, typename... Types, Types...);
+DEFINE_TT1(variant, typename... Types, Types...);
+DEFINE_TT1(optional, typename Type, Type);
+DEFINE_TT1(unique_ptr, typename Type, Type);
+DEFINE_TT1(shared_ptr, typename Type, Type);
+
 namespace hbann
 {
 template <typename> constexpr auto always_false = false;
 
-namespace impl
-{
-template <typename> struct is_tuple : std::false_type
-{
-};
-
-template <typename... Types> struct is_tuple<std::tuple<Types...>> : std::true_type
-{
-};
-
-template <typename> struct is_pair : std::false_type
-{
-};
-
-template <typename TypeFirst, typename TypeSecond> struct is_pair<std::pair<TypeFirst, TypeSecond>> : std::true_type
-{
-};
-
-template <typename> struct is_variant : std::false_type
-{
-};
-
-template <typename... Types> struct is_variant<std::variant<Types...>> : std::true_type
-{
-};
-
-template <typename> struct is_optional : std::false_type
-{
-};
-
-template <typename Type> struct is_optional<std::optional<Type>> : std::true_type
-{
-};
-} // namespace impl
-
-template <typename Type> constexpr bool is_tuple_v = impl::is_tuple<Type>::value;
-template <typename Type> constexpr bool is_pair_v = impl::is_pair<Type>::value;
-template <typename Type> constexpr bool is_variant_v = impl::is_variant<Type>::value;
-template <typename Type> constexpr bool is_optional_v = impl::is_optional<Type>::value;
-
+// TODO: what is the container has a method "reserve" that doesn't actually reserve memory
 template <typename Container>
 concept has_method_reserve =
     std::ranges::contiguous_range<Container> && requires(Container &aContainer) { aContainer.reserve(size_t(0)); };
 
 template <typename Type>
-concept is_pointer_unique = std::is_same_v<std::remove_cvref_t<Type>, std::unique_ptr<typename Type::value_type>>;
-
-template <typename Type>
-concept is_pointer_shared = std::is_same_v<std::remove_cvref_t<Type>, std::shared_ptr<typename Type::value_type>>;
-
-template <typename Type>
-concept is_pointer = std::is_pointer_v<Type> || is_pointer_unique<Type> || is_pointer_shared<Type>;
+concept is_pointer = std::is_pointer_v<Type> || is_shared_ptr_v<Type> || is_unique_ptr_v<Type>;
 
 template <typename Type>
 concept is_std_lay_no_ptr = std::is_standard_layout_v<Type> && !is_pointer<Type>;
@@ -190,6 +186,7 @@ template <typename Type, std::size_t I = 0> Type variant_from_index(const std::s
 
 /*
     TODO:
+         - remove as many std::is_same_v and make type traits
          - objects that have std_lay should come before like std::pair or std::tuple
          - check SizeFinder for added type support
          - check SizeFinder for incorrect use of the Size::findrequired bytes and etc...
