@@ -30,7 +30,7 @@ class StreamReader;
 constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
 
 #define STREAMABLE_DEFINE_FROM_STREAM(baseClass, ...)                                                                  \
-  public:                                                                                                              \
+  protected:                                                                                                           \
     constexpr void FromStream() override                                                                               \
     {                                                                                                                  \
         if constexpr (!::hbann::static_equal(#baseClass, STREAMABLE_INTERFACE_NAME))                                   \
@@ -42,7 +42,7 @@ constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
     }
 
 #define STREAMABLE_DEFINE_TO_STREAM(baseClass, ...)                                                                    \
-  public:                                                                                                              \
+  protected:                                                                                                           \
     constexpr void ToStream() override                                                                                 \
     {                                                                                                                  \
         if constexpr (!::hbann::static_equal(#baseClass, STREAMABLE_INTERFACE_NAME))                                   \
@@ -74,11 +74,12 @@ constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
 
 #define STREAMABLE_DEFINE_INTRUSIVE                                                                                    \
   private:                                                                                                             \
+    friend class ::hbann::SizeFinder;                                                                                  \
     friend class ::hbann::StreamReader;                                                                                \
     friend class ::hbann::StreamWriter;
 
 #define STATIC_ASSERT_HAS_ISTREAMABLE_BASE(baseClass)                                                                  \
-    static_assert(std::is_base_of_v<::hbann::IStreamable, baseClass>, "The class must inherit a streamable!");
+    static_assert(std::derived_from<baseClass, ::hbann::IStreamable>, "The class must inherit a streamable!");
 
 #define STREAMABLE_DEFINE(baseClass, ...)                                                                              \
     STATIC_ASSERT_HAS_ISTREAMABLE_BASE(baseClass)                                                                      \
@@ -132,19 +133,22 @@ namespace hbann
 {
 template <typename> constexpr auto always_false = false;
 
-// TODO: what is the container has a method "reserve" that doesn't actually reserve memory
+// TODO: what if the container has a method "reserve" that doesn't actually reserve memory
 template <typename Container>
 concept has_method_reserve =
     std::ranges::contiguous_range<Container> && requires(Container &aContainer) { aContainer.reserve(size_t(0)); };
 
 template <typename Type>
-concept is_pointer = std::is_pointer_v<Type> || is_shared_ptr_v<Type> || is_unique_ptr_v<Type>;
+concept is_pointer_ex = std::is_pointer_v<Type> || is_shared_ptr_v<Type> || is_unique_ptr_v<Type>;
+
+template <typename Derived, typename Base>
+concept is_derived_from_with_ptr =
+    std::is_pointer_v<Derived> && std::derived_from<std::remove_pointer_t<Derived>, Base> ||
+    (is_unique_ptr_v<Derived> && std::derived_from<typename Derived::element_type, Base>) ||
+    (is_shared_ptr_v<Derived> && std::derived_from<typename Derived::element_type, Base>);
 
 template <typename Type>
-concept is_std_lay_no_ptr = std::is_standard_layout_v<Type> && !is_pointer<Type>;
-
-template <typename Base, typename Derived>
-concept is_base_of_no_ptr = std::is_base_of_v<Base, std::remove_pointer_t<Derived>>;
+concept is_std_lay_no_ptr = std::is_standard_layout_v<Type> && !is_pointer_ex<Type>;
 
 template <typename Type>
 concept is_path = std::is_same_v<std::remove_cvref_t<Type>, std::filesystem::path>;
@@ -164,18 +168,19 @@ concept has_method_find_derived_streamable = requires(StreamReader &aStreamReade
     } -> std::convertible_to<IStreamable *>;
 };
 
-constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
+[[nodiscard]] constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
 {
     return *aString1 == *aString2 && (!*aString1 || static_equal(aString1 + 1, aString2 + 1));
 }
 
-template <typename Type, std::size_t I = 0> Type variant_from_index(const std::size_t aIndex)
+template <typename Type, std::size_t vIndex = 0>
+[[nodiscard]] constexpr Type variant_from_index(const std::size_t aIndex)
 {
     static_assert(is_variant_v<Type>, "Type is not a variant!");
 
-    if constexpr (I < std::variant_size_v<Type>)
+    if constexpr (vIndex < std::variant_size_v<Type>)
     {
-        return aIndex ? variant_from_index<Type, I + 1>(aIndex - 1) : Type{std::in_place_index<I>};
+        return aIndex ? variant_from_index<Type, vIndex + 1>(aIndex - 1) : Type{std::in_place_index<vIndex>};
     }
     else
     {
@@ -186,6 +191,8 @@ template <typename Type, std::size_t I = 0> Type variant_from_index(const std::s
 
 /*
     TODO:
+         - create a smart/raw pointer wrapper
+         - split project in multiple files
          - remove as many std::is_same_v and make type traits
          - objects that have std_lay should come before like std::pair or std::tuple
          - check SizeFinder for added type support

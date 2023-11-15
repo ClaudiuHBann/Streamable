@@ -86,9 +86,13 @@ class StreamReader
             aObject = std::move(ReadRange<Type>());
             return *this;
         }
-        else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
+        else if constexpr (std::derived_from<Type, IStreamable>)
         {
-            return ReadStreamableX(aObject);
+            return ReadStreamable(aObject);
+        }
+        else if constexpr (is_pointer_ex<Type>)
+        {
+            return ReadPointer(aObject);
         }
         else if constexpr (is_std_lay_no_ptr<Type>)
         {
@@ -124,21 +128,37 @@ class StreamReader
         return *this;
     }
 
-    template <typename Type> constexpr decltype(auto) ReadStreamableX(Type &aStreamable)
+    template <typename Type> constexpr decltype(auto) ReadPointer(Type &aPointer)
     {
-        if constexpr (is_pointer<Type>)
+        static_assert(is_pointer_ex<Type>, "Type is not a smart/raw pointer!");
+
+        if constexpr (is_unique_ptr_v<Type>)
         {
-            return ReadStreamablePtr(aStreamable);
+            aPointer = std::make_unique<typename Type::element_type>();
+        }
+        else if constexpr (is_shared_ptr_v<Type>)
+        {
+            aPointer = std::make_shared<typename Type::element_type>();
+        }
+        else // raw pointers
+        {
+            aPointer = new std::remove_pointer_t<Type>;
+        }
+
+        // we treat pointers to streamable in a special way
+        if constexpr (is_derived_from_with_ptr<Type, IStreamable>)
+        {
+            return ReadStreamablePtr(aPointer);
         }
         else
         {
-            return ReadStreamable(aStreamable);
+            return Read(*aPointer);
         }
     }
 
     template <typename Type> constexpr decltype(auto) ReadStreamable(Type &aStreamable)
     {
-        static_assert(std::is_base_of_v<IStreamable, Type>, "Type is not a streamable!");
+        static_assert(std::derived_from<Type, IStreamable>, "Type is not a streamable!");
 
         aStreamable.Deserialize(mStream->Read(ReadCount()), false); // read streamable size in bytes
         return *this;
@@ -146,17 +166,31 @@ class StreamReader
 
     template <typename Type> constexpr decltype(auto) ReadStreamablePtr(Type &aStreamablePtr)
     {
-        using TypeNoPtr = std::remove_pointer_t<Type>;
+        static_assert(is_derived_from_with_ptr<Type, IStreamable>, "Type is not a streamable smart/raw pointer!");
 
-        static_assert(std::is_base_of_v<IStreamable, TypeNoPtr>, "Type is not a streamable pointer!");
+        using TypeNoPtr = std::conditional_t<std::is_pointer_v<Type>, std::remove_pointer_t<Type>,
+                                             typename std::pointer_traits<Type>::element_type>;
+
         static_assert(has_method_find_derived_streamable<TypeNoPtr>,
                       "Type doesn't have method 'static IStreamable* FindDerivedStreamable(StreamReader &)' !");
 
         Peek([&](auto) {
             Stream stream(mStream->Read(ReadCount())); // read streamable size in bytes
             StreamReader streamReader(stream);
+
             // TODO: we let the user read n objects after wich we read again... fix it
-            aStreamablePtr = static_cast<Type>(TypeNoPtr::FindDerivedStreamable(streamReader));
+            if constexpr (is_unique_ptr_v<Type>)
+            {
+                aStreamablePtr.reset(static_cast<TypeNoPtr *>(TypeNoPtr::FindDerivedStreamable(streamReader)));
+            }
+            else if constexpr (is_shared_ptr_v<Type>)
+            {
+                aStreamablePtr.reset(static_cast<TypeNoPtr *>(TypeNoPtr::FindDerivedStreamable(streamReader)));
+            }
+            else
+            {
+                aStreamablePtr = static_cast<TypeNoPtr *>(TypeNoPtr::FindDerivedStreamable(streamReader));
+            }
         });
 
         aStreamablePtr->Deserialize(mStream->Read(ReadCount()), false);
@@ -260,7 +294,7 @@ class StreamReader
         // TODO: handle range multiple ranks
         if constexpr (has_method_reserve<Type>)
         {
-            if constexpr (is_base_of_no_ptr<IStreamable, Type>)
+            if constexpr (std::derived_from<IStreamable, Type>)
             {
                 Peek([&](auto) {
                     for (size_t i = 0; i < aCount; i++)

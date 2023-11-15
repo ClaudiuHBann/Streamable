@@ -91,9 +91,13 @@ class SizeFinder
         {
             return FindRangeSize(aObject);
         }
-        else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
+        else if constexpr (std::derived_from<Type, IStreamable>)
         {
             return FindStreamableSize(aObject);
+        }
+        else if constexpr (is_pointer_ex<Type>)
+        {
+            return FindObjectSize(*aObject);
         }
         else if constexpr (is_std_lay_no_ptr<Type>)
         {
@@ -108,16 +112,16 @@ class SizeFinder
     template <typename Type>
     [[nodiscard]] static constexpr Size::size_max FindStreamableSize(Type &aStreamable) noexcept
     {
-        static_assert(is_base_of_no_ptr<IStreamable, Type>, "Type is not a streamable!");
+        static_assert(std::derived_from<Type, IStreamable>, "Type is not a streamable!");
 
         Size::size_max size{};
-        if constexpr (is_pointer<Type>)
+        if constexpr (is_pointer_ex<Type>)
         {
-            size = static_cast<IStreamable *>(aStreamable)->FindParseSize();
+            size = aStreamable->FindParseSize();
         }
         else
         {
-            size = static_cast<IStreamable *>(&aStreamable)->FindParseSize();
+            size = aStreamable.FindParseSize();
         }
 
         return Size::FindRequiredBytes(size) + size;

@@ -77,20 +77,20 @@ class Sphere : public Circle
 
   public:
     Sphere() = default;
-    Sphere(const Circle &aCircle, const bool aReflexion, std::tuple<std::string, std::list<int>> &&aTuple,
+    Sphere(const Circle &aCircle, unique_ptr<bool> &&aReflexion, std::tuple<std::string, std::list<int>> &&aTuple,
            std::pair<Circle, double> &&aPair)
-        : Circle(aCircle), mReflexion(aReflexion), mTuple(std::move(aTuple)), mPair(std::move(aPair))
+        : Circle(aCircle), mReflexion(std::move(aReflexion)), mTuple(std::move(aTuple)), mPair(std::move(aPair))
     {
     }
 
     bool operator==(const Sphere &aSphere) const
     {
-        return *(Circle *)this == *(Circle *)&aSphere && mReflexion == aSphere.mReflexion && mTuple == aSphere.mTuple &&
-               mPair == aSphere.mPair;
+        return *(Circle *)this == *(Circle *)&aSphere && *mReflexion == *aSphere.mReflexion &&
+               mTuple == aSphere.mTuple && mPair == aSphere.mPair;
     }
 
   private:
-    bool mReflexion{};
+    unique_ptr<bool> mReflexion{};
     std::tuple<std::string, std::list<int>> mTuple{};
     std::pair<Circle, double> mPair{};
 };
@@ -101,7 +101,7 @@ class RectangleEx : public Shape
 
   public:
     RectangleEx() = default;
-    RectangleEx(const guid &aID, unique_ptr<Sphere> &&aCenter, const std::vector<std::vector<std::wstring>> &aCells)
+    RectangleEx(const guid &aID, Sphere &&aCenter, const std::vector<std::vector<std::wstring>> &aCells)
         : Shape(Type::RECTANGLE, aID), mCenter(std::move(aCenter)), mCells(aCells)
     {
     }
@@ -112,7 +112,7 @@ class RectangleEx : public Shape
     }
 
   private:
-    unique_ptr<Sphere> mCenter{};
+    Sphere mCenter{};
     std::map<int, double> mMap{};
     std::vector<std::vector<std::wstring>> mCells{};
 };
@@ -148,7 +148,7 @@ class Context : public hbann::IStreamable
     {
         for (auto &shape : *mShapes)
         {
-            delete (shape);
+            delete shape;
         }
     }
 
@@ -340,7 +340,8 @@ TEST_CASE("IStreamable", "[IStreamable]")
     SECTION("Derived++")
     {
         Circle circle(GUID_RND, "SVG", L"URL\\SHIT", std::vector{69., 420.});
-        Sphere sphereStart(circle, true, {"Commit: added tuple support", {22, 100}}, {circle, 22.});
+        Sphere sphereStart(circle, std::make_unique<bool>(true), {"Commit: added tuple support", {22, 100}},
+                           {circle, 22.});
         Sphere sphereEnd;
         sphereEnd.Deserialize(sphereStart.Serialize());
 
@@ -352,12 +353,11 @@ TEST_CASE("IStreamable", "[IStreamable]")
         Circle circle(GUID_RND, {}, L"URL\\SHIT", false);
         std::vector<std::vector<std::wstring>> cells{{L"smth", L"else"}, {L"HBann", L"Sefu la bani"}};
 
-        auto center = new Sphere(circle, true, {"Commit: added tuple support", {22, 100}}, {circle, 22.});
-        std::unique_ptr<Sphere> centerUP(center);
+        Sphere sphere(circle, std::make_unique<bool>(true), {"Commit: added tuple support", {22, 100}}, {circle, 22.});
 
         auto shapes = std::make_shared<std::vector<Shape *>>();
         shapes->push_back(new Circle(GUID_RND, "Circle1_SVG", "Circle1_URL", true));
-        shapes->push_back(new RectangleEx(GUID_RND, std::move(centerUP), cells));
+        shapes->push_back(new RectangleEx(GUID_RND, std::move(sphere), cells));
         shapes->push_back(new Circle(GUID_RND, "Circle2_SVG", "Circle2_URL", std::vector{420., 69.}));
 
         ::Context contextStart(std::move(shapes));

@@ -70,17 +70,9 @@ class StreamWriter
 
     template <typename Type> constexpr decltype(auto) WriteStreamable(Type &aStreamable)
     {
-        static_assert(is_base_of_no_ptr<IStreamable, Type>, "Type is not a streamable (pointer)!");
+        static_assert(std::derived_from<Type, IStreamable>, "Type is not a streamable!");
 
-        Stream stream{};
-        if constexpr (is_pointer<Type>)
-        {
-            stream = std::move(aStreamable->Serialize());
-        }
-        else
-        {
-            stream = std::move(aStreamable.Serialize());
-        }
+        auto stream(std::move(aStreamable.Serialize()));
         const auto streamView = stream.View();
 
         // we write the size in bytes of the stream
@@ -201,9 +193,13 @@ class StreamWriter
         {
             return WriteRange(aObject);
         }
-        else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
+        else if constexpr (std::derived_from<Type, IStreamable>)
         {
             return WriteStreamable(aObject);
+        }
+        else if constexpr (is_pointer_ex<Type>)
+        {
+            return Write(*aObject);
         }
         else if constexpr (is_std_lay_no_ptr<Type>)
         {
