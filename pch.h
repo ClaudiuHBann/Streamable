@@ -193,16 +193,14 @@ template <typename Type, std::size_t vIndex = 0>
 
 /*
     TODO:
-         - ??? objects that have std_lay should come before like std::pair or std::tuple
-         - ??? FindRangeSize should not check for contiguous range when finding size of a range
          - can Streamable call the intermediate class's FindDerivedStreamable automatically?
-         - when reserving size for wstrings that have been encoded we reserve more (worst case x2)
          - check SizeFinder for added type support and for incorrect use of the Size::findrequired bytes and etc...
          - add separated examples
          - remake tests
 
     FEATURES:
-         - remove raw pointer support and add support for unique_ptr and shared_ptr
+         - remove raw pointer, it's c++ bro, memory safety 💪
+         - support for multiple inheritance of streamables
 
     UX:
          - when finding derived class from base class pointer, add a tuple representing the types that can be read

@@ -171,6 +171,8 @@ class StreamReader
         using TypeNoPtr = std::conditional_t<std::is_pointer_v<Type>, std::remove_pointer_t<Type>,
                                              typename std::pointer_traits<Type>::element_type>;
 
+        // we cannot use the has_method_find_derived_streamable concept because we must use the context of the
+        // StreamReader that is a friend of streamables
         static_assert(
             requires(StreamReader &aStreamReader) {
                 {
@@ -307,14 +309,20 @@ class StreamReader
                     {
                         const auto sizeCurrent = ReadCount();
                         size += sizeCurrent;
-                        auto seek = mStream->Read(sizeCurrent);
-                        seek;
+                        [[maybe_unused]] auto _ = mStream->Read(sizeCurrent);
                     }
                 });
             }
             else if constexpr (is_std_lay_no_ptr<TypeValueType>)
             {
-                size = aCount * sizeof(TypeValueType);
+                if constexpr (std::is_same_v<Type, std::wstring>)
+                {
+                    Peek([&](auto) { size += Converter::FindUTF16Size(mStream->Read(aCount)); });
+                }
+                else
+                {
+                    size = aCount * sizeof(TypeValueType);
+                }
             }
             else
             {
