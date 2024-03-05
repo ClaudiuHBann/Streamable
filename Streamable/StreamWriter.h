@@ -104,7 +104,9 @@ class StreamWriter
     {
         static_assert(is_range_standard_layout<Type>, "Type is not a standard layout range!");
 
-        if constexpr (std::is_same_v<Type, std::wstring>)
+        using TypeValueType = typename Type::value_type;
+
+        if constexpr (is_wstring<Type>)
         {
             WriteRangeStandardLayout(Converter::ToUTF8(aRange));
         }
@@ -117,7 +119,7 @@ class StreamWriter
             WriteCount(SizeFinder::GetRangeCount(aRange));
 
             const auto rangePtr = reinterpret_cast<const uint8_t *>(std::ranges::data(aRange));
-            const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(typename Type::value_type);
+            const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
             mStream->Write({rangePtr, rangeSize});
         }
 
@@ -184,8 +186,7 @@ class StreamWriter
         }
         else if constexpr (is_pair_v<Type>)
         {
-            // TODO: can we remove this workaround for std::map's key ?
-            // we remove the constness of the std::pair::first_type because of the std::map::value_type::first_type
+            // we remove the constness of map's pair's key so we can use the already implemented Write branches
             auto &first = const_cast<std::remove_const_t<typename Type::first_type> &>(aObject.first);
             return WriteAll(first, aObject.second);
         }

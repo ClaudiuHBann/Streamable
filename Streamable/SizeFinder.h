@@ -82,8 +82,7 @@ class SizeFinder
         }
         else if constexpr (is_pair_v<Type>)
         {
-            // TODO: can we remove this workaround for std::map's key ?
-            // we remove the constness of the std::pair::first_type because of the std::map::value_type::first_type
+            // we remove the constness of map's pair's key so we can use the already implemented FindParseSize branches
             auto &first = const_cast<std::remove_const_t<typename Type::first_type> &>(aObject.first);
             return FindParseSize(first, aObject.second);
         }
@@ -154,7 +153,7 @@ class SizeFinder
         Size::size_max size{};
         if constexpr (is_range_standard_layout<Type>)
         {
-            if constexpr (std::is_same_v<Type, std::wstring>)
+            if constexpr (is_wstring<Type>)
             {
                 size += Converter::FindUTF8Size(aRange);
             }

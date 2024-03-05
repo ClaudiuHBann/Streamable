@@ -128,12 +128,15 @@ DEFINE_TT1(variant, typename... Types, Types...);
 DEFINE_TT1(optional, typename Type, Type);
 DEFINE_TT1(unique_ptr, typename Type, Type);
 DEFINE_TT1(shared_ptr, typename Type, Type);
+DEFINE_TT1(basic_string, typename Type, Type);
 
 namespace hbann
 {
 template <typename> constexpr auto always_false = false;
 
-// TODO: what if the container has a method "reserve" that doesn't actually reserve memory
+template <typename Type>
+concept is_wstring = std::is_same_v<typename Type::value_type, wchar_t> && is_basic_string_v<Type>;
+
 template <typename Container>
 concept has_method_reserve =
     std::ranges::contiguous_range<Container> && requires(Container &aContainer) { aContainer.reserve(size_t(0)); };
@@ -193,6 +196,7 @@ template <typename Type, std::size_t vIndex = 0>
     FEATURES:
          - support for multiple inheritance of streamables
          - instead of reading object to jump over the value, create a jump method
+         - handle range reserve for ranges of multiple ranks
 
     UX:
          - when finding derived class from base class pointer, add a tuple representing the types that can be read

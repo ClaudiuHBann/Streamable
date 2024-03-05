@@ -242,8 +242,6 @@ TEST_CASE("Streamable", "[Streamable]")
             }
         }
         REQUIRE(hbann::SizeFinder::FindParseSize(vvs) == vvsSize);
-
-        // TODO: add IStreamable SizeFinder test
     }
 
     SECTION("Stream")
@@ -289,8 +287,6 @@ TEST_CASE("Streamable", "[Streamable]")
 
         const auto sView = stream.Read(sSize);
         REQUIRE(!std::memcmp(s.c_str(), sView.data(), sView.size()));
-
-        // TODO: add IStreamable StreamWriter test
     }
 
     SECTION("StreamReader")
@@ -309,8 +305,6 @@ TEST_CASE("Streamable", "[Streamable]")
 
         REQUIRE(d == dd);
         REQUIRE(s == ss);
-
-        // TODO: add IStreamable StreamReader test
     }
 }
 

@@ -76,8 +76,7 @@ class StreamReader
         }
         else if constexpr (is_pair_v<Type>)
         {
-            // TODO: can we remove this workaround for std::map's key ?
-            // we remove the constness of the std::pair::first_type because of the std::map::value_type::first_type
+            // we remove the constness of map's pair's key so we can use the already implemented Read branches
             auto &first = const_cast<std::remove_const_t<typename Type::first_type> &>(aObject.first);
             return ReadAll(first, aObject.second);
         }
@@ -108,9 +107,11 @@ class StreamReader
     {
         static_assert(is_optional_v<Type>, "Type is not an optional!");
 
+        using TypeValueType = typename Type::value_type;
+
         if (ReadCount())
         {
-            typename Type::value_type obj{};
+            TypeValueType obj{};
             Read(obj);
             aOpt = std::move(obj);
         }
@@ -186,11 +187,7 @@ class StreamReader
             StreamReader streamReader(stream);
 
             // TODO: we let the user read n objects after wich we read again... fix it
-            if constexpr (is_unique_ptr_v<Type>)
-            {
-                aStreamablePtr.reset(static_cast<TypeNoPtr *>(TypeNoPtr::FindDerivedStreamable(streamReader)));
-            }
-            else if constexpr (is_shared_ptr_v<Type>)
+            if constexpr (is_smart_pointer<Type>)
             {
                 aStreamablePtr.reset(static_cast<TypeNoPtr *>(TypeNoPtr::FindDerivedStreamable(streamReader)));
             }
@@ -208,6 +205,8 @@ class StreamReader
     {
         static_assert(std::ranges::range<Type>, "Type is not a range!");
 
+        using TypeValueType = typename Type::value_type;
+
         Type range{};
         const auto count = ReadCount();
         RangeReserve(range, count);
@@ -216,7 +215,7 @@ class StreamReader
         {
             for (size_t i = 0; i < count; i++)
             {
-                range.insert(std::ranges::cend(range), ReadRange<typename Type::value_type>());
+                range.insert(std::ranges::cend(range), ReadRange<TypeValueType>());
             }
         }
         else
@@ -231,8 +230,9 @@ class StreamReader
     {
         static_assert(is_path<Type>, "Type is not a path!");
 
-        // TODO: this looks sussy
-        if constexpr (std::is_same_v<std::wstring, typename Type::string_type>)
+        using TypeStringType = typename Type::string_type;
+
+        if constexpr (is_wstring<TypeStringType>)
         {
             aRange.assign(Converter::FromUTF8(mStream->Read(aCount)));
         }
@@ -250,7 +250,7 @@ class StreamReader
 
         using TypeValueType = typename Type::value_type;
 
-        if constexpr (std::is_same_v<Type, std::wstring>)
+        if constexpr (is_wstring<Type>)
         {
             aRange.assign(Converter::FromUTF8(mStream->Read(aCount)));
         }
@@ -299,7 +299,6 @@ class StreamReader
 
         Size::size_max size{};
 
-        // TODO: handle range multiple ranks
         if constexpr (has_method_reserve<Type>)
         {
             if constexpr (std::derived_from<IStreamable, Type>)
@@ -315,7 +314,7 @@ class StreamReader
             }
             else if constexpr (is_standard_layout_no_pointer<TypeValueType>)
             {
-                if constexpr (std::is_same_v<Type, std::wstring>)
+                if constexpr (is_wstring<Type>)
                 {
                     Peek([&](auto) { size += Converter::FindUTF16Size(mStream->Read(aCount)); });
                 }
