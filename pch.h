@@ -162,11 +162,13 @@ template <typename Container>
 concept has_method_size = requires(Container &aContainer) { std::ranges::size(aContainer); };
 
 template <typename Class>
-concept has_method_find_derived_streamable = requires(StreamReader &aStreamReader) {
-    {
-        Class::FindDerivedStreamable(aStreamReader)
-    } -> std::convertible_to<IStreamable *>;
-};
+concept has_method_find_derived_streamable =
+    std::derived_from<std::remove_pointer_t<std::decay_t<Class>>, IStreamable> &&
+    requires(StreamReader &aStreamReader) {
+        {
+            Class::FindDerivedStreamable(aStreamReader)
+        } -> std::convertible_to<IStreamable *>;
+    };
 
 [[nodiscard]] constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
 {
@@ -191,27 +193,22 @@ template <typename Type, std::size_t vIndex = 0>
 
 /*
     TODO:
-         - create a smart/raw pointer wrapper
-         - split project in multiple files
-         - remove as many std::is_same_v and make type traits
-         - objects that have std_lay should come before like std::pair or std::tuple
-         - check SizeFinder for added type support
-         - check SizeFinder for incorrect use of the Size::findrequired bytes and etc...
-         - can FindDerivedStreamable be protected or even private?
-         - make the user choose the data type for the stream
-         - make the tostream and fromstream private or protected
+         - ??? objects that have std_lay should come before like std::pair or std::tuple
+         - ??? FindRangeSize should not check for contiguous range when finding size of a range
          - can Streamable call the intermediate class's FindDerivedStreamable automatically?
          - when reserving size for wstrings that have been encoded we reserve more (worst case x2)
-         - use monostate for the std::variant
-         - FindRangeSize should not check for contiguous range when finding size of a range
-         - when finding derived class from base class pointer, add a tuple representing the types that can be read and
-        make the user access the objects by index so can't read a bad object
+         - check SizeFinder for added type support and for incorrect use of the Size::findrequired bytes and etc...
          - add separated examples
-         - add tests for converter
-         - add support for unique_ptr and shared_ptr
-         - add hbann::Size tests
+         - remake tests
+
+    FEATURES:
+         - remove raw pointer support and add support for unique_ptr and shared_ptr
+
+    UX:
+         - when finding derived class from base class pointer, add a tuple representing the types that can be read
+   and make the user access the objects by index so can't read a bad object
 
     WARNING:
-         - when adding a new feature try to implement the serialize and deserialize algorithms with SizeFinder for the
-   object and, if possible, the reserve method
+         - when adding a new feature try to implement the serialize and deserialize algorithms with SizeFinder for
+   the object and, if possible, the reserve method
 */

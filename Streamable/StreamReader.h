@@ -171,8 +171,13 @@ class StreamReader
         using TypeNoPtr = std::conditional_t<std::is_pointer_v<Type>, std::remove_pointer_t<Type>,
                                              typename std::pointer_traits<Type>::element_type>;
 
-        static_assert(has_method_find_derived_streamable<TypeNoPtr>,
-                      "Type doesn't have method 'static IStreamable* FindDerivedStreamable(StreamReader &)' !");
+        static_assert(
+            requires(StreamReader &aStreamReader) {
+                {
+                    TypeNoPtr::FindDerivedStreamable(aStreamReader)
+                } -> std::convertible_to<IStreamable *>;
+            }, "Type doesn't have a public/protected method 'static "
+               "IStreamable* FindDerivedStreamable(StreamReader &)' !");
 
         Peek([&](auto) {
             Stream stream(mStream->Read(ReadCount())); // read streamable size in bytes
@@ -224,6 +229,7 @@ class StreamReader
     {
         static_assert(is_path<Type>, "Type is not a path!");
 
+        // TODO: this looks sussy
         if constexpr (std::is_same_v<std::wstring, typename Type::string_type>)
         {
             aRange.assign(Converter::FromUTF8(mStream->Read(aCount)));
