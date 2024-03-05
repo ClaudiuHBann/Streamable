@@ -139,36 +139,29 @@ concept has_method_reserve =
     std::ranges::contiguous_range<Container> && requires(Container &aContainer) { aContainer.reserve(size_t(0)); };
 
 template <typename Type>
-concept is_pointer_ex = std::is_pointer_v<Type> || is_shared_ptr_v<Type> || is_unique_ptr_v<Type>;
+concept is_smart_pointer = is_shared_ptr_v<Type> || is_unique_ptr_v<Type>;
+
+template <typename Type>
+concept is_any_pointer = std::is_pointer_v<Type> || is_smart_pointer<Type>;
 
 template <typename Derived, typename Base>
-concept is_derived_from_with_ptr =
+concept is_derived_from_pointer =
     std::is_pointer_v<Derived> && std::derived_from<std::remove_pointer_t<Derived>, Base> ||
-    (is_unique_ptr_v<Derived> && std::derived_from<typename Derived::element_type, Base>) ||
-    (is_shared_ptr_v<Derived> && std::derived_from<typename Derived::element_type, Base>);
+    (is_smart_pointer<Derived> && std::derived_from<typename Derived::element_type, Base>);
 
 template <typename Type>
-concept is_std_lay_no_ptr = std::is_standard_layout_v<Type> && !is_pointer_ex<Type>;
+concept is_standard_layout_no_pointer = std::is_standard_layout_v<Type> && !is_any_pointer<Type>;
 
 template <typename Type>
-concept is_path = std::is_same_v<std::remove_cvref_t<Type>, std::filesystem::path>;
+concept is_path = std::is_same_v<Type, std::filesystem::path>;
 
 template <typename Container>
-concept is_range_std_lay =
-    (std::ranges::contiguous_range<Container> && is_std_lay_no_ptr<typename Container::value_type>) ||
+concept is_range_standard_layout =
+    (std::ranges::contiguous_range<Container> && is_standard_layout_no_pointer<typename Container::value_type>) ||
     is_path<Container>;
 
 template <typename Container>
 concept has_method_size = requires(Container &aContainer) { std::ranges::size(aContainer); };
-
-template <typename Class>
-concept has_method_find_derived_streamable =
-    std::derived_from<std::remove_pointer_t<std::decay_t<Class>>, IStreamable> &&
-    requires(StreamReader &aStreamReader) {
-        {
-            Class::FindDerivedStreamable(aStreamReader)
-        } -> std::convertible_to<IStreamable *>;
-    };
 
 [[nodiscard]] constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
 {
@@ -193,14 +186,13 @@ template <typename Type, std::size_t vIndex = 0>
 
 /*
     TODO:
-         - can Streamable call the intermediate class's FindDerivedStreamable automatically?
          - check SizeFinder for added type support and for incorrect use of the Size::findrequired bytes and etc...
          - add separated examples
          - remake tests
 
     FEATURES:
-         - remove raw pointer, it's c++ bro, memory safety 💪
          - support for multiple inheritance of streamables
+         - instead of reading object to jump over the value, create a jump method
 
     UX:
          - when finding derived class from base class pointer, add a tuple representing the types that can be read

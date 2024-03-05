@@ -95,11 +95,11 @@ class SizeFinder
         {
             return FindStreamableSize(aObject);
         }
-        else if constexpr (is_pointer_ex<Type>)
+        else if constexpr (is_any_pointer<Type>)
         {
             return FindObjectSize(*aObject);
         }
-        else if constexpr (is_std_lay_no_ptr<Type>)
+        else if constexpr (is_standard_layout_no_pointer<Type>)
         {
             return sizeof(Type);
         }
@@ -115,7 +115,7 @@ class SizeFinder
         static_assert(std::derived_from<Type, IStreamable>, "Type is not a streamable!");
 
         Size::size_max size{};
-        if constexpr (is_pointer_ex<Type>)
+        if constexpr (is_any_pointer<Type>)
         {
             size = aStreamable->FindParseSize();
         }
@@ -152,7 +152,7 @@ class SizeFinder
         using TypeValueType = typename Type::value_type;
 
         Size::size_max size{};
-        if constexpr (is_range_std_lay<Type>)
+        if constexpr (is_range_standard_layout<Type>)
         {
             if constexpr (std::is_same_v<Type, std::wstring>)
             {

@@ -54,7 +54,7 @@ class StreamWriter
 
     template <typename Type> constexpr decltype(auto) WriteObjectOfKnownSize(const Type &aObject)
     {
-        static_assert(is_std_lay_no_ptr<Type>, "Type is not an object of known size or it is a pointer!");
+        static_assert(is_standard_layout_no_pointer<Type>, "Type is not an object of known size or it is a pointer!");
 
         const auto objectPtr = reinterpret_cast<const uint8_t *>(&aObject);
         mStream->Write({objectPtr, sizeof(aObject)});
@@ -102,7 +102,7 @@ class StreamWriter
 
     template <typename Type> constexpr decltype(auto) WriteRangeStandardLayout(const Type &aRange)
     {
-        static_assert(is_range_std_lay<Type>, "Type is not a standard layout range!");
+        static_assert(is_range_standard_layout<Type>, "Type is not a standard layout range!");
 
         if constexpr (std::is_same_v<Type, std::wstring>)
         {
@@ -128,7 +128,7 @@ class StreamWriter
     {
         static_assert(SizeFinder::FindRangeRank<Type>() == 1, "Type is not a rank 1 range!");
 
-        if constexpr (is_range_std_lay<Type>)
+        if constexpr (is_range_standard_layout<Type>)
         {
             WriteRangeStandardLayout(aRange);
         }
@@ -197,11 +197,11 @@ class StreamWriter
         {
             return WriteStreamable(aObject);
         }
-        else if constexpr (is_pointer_ex<Type>)
+        else if constexpr (is_any_pointer<Type>)
         {
             return Write(*aObject);
         }
-        else if constexpr (is_std_lay_no_ptr<Type>)
+        else if constexpr (is_standard_layout_no_pointer<Type>)
         {
             return WriteObjectOfKnownSize(aObject);
         }

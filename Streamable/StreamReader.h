@@ -90,11 +90,11 @@ class StreamReader
         {
             return ReadStreamable(aObject);
         }
-        else if constexpr (is_pointer_ex<Type>)
+        else if constexpr (is_any_pointer<Type>)
         {
             return ReadPointer(aObject);
         }
-        else if constexpr (is_std_lay_no_ptr<Type>)
+        else if constexpr (is_standard_layout_no_pointer<Type>)
         {
             return ReadObjectOfKnownSize(aObject);
         }
@@ -130,7 +130,7 @@ class StreamReader
 
     template <typename Type> constexpr decltype(auto) ReadPointer(Type &aPointer)
     {
-        static_assert(is_pointer_ex<Type>, "Type is not a smart/raw pointer!");
+        static_assert(is_any_pointer<Type>, "Type is not a smart/raw pointer!");
 
         if constexpr (is_unique_ptr_v<Type>)
         {
@@ -146,7 +146,7 @@ class StreamReader
         }
 
         // we treat pointers to streamable in a special way
-        if constexpr (is_derived_from_with_ptr<Type, IStreamable>)
+        if constexpr (is_derived_from_pointer<Type, IStreamable>)
         {
             return ReadStreamablePtr(aPointer);
         }
@@ -166,7 +166,7 @@ class StreamReader
 
     template <typename Type> constexpr decltype(auto) ReadStreamablePtr(Type &aStreamablePtr)
     {
-        static_assert(is_derived_from_with_ptr<Type, IStreamable>, "Type is not a streamable smart/raw pointer!");
+        static_assert(is_derived_from_pointer<Type, IStreamable>, "Type is not a streamable smart/raw pointer!");
 
         using TypeNoPtr = std::conditional_t<std::is_pointer_v<Type>, std::remove_pointer_t<Type>,
                                              typename std::pointer_traits<Type>::element_type>;
@@ -246,7 +246,7 @@ class StreamReader
 
     template <typename Type> constexpr decltype(auto) ReadRangeStandardLayout(Type &aRange, const Size::size_max aCount)
     {
-        static_assert(is_range_std_lay<Type>, "Type is not a standard layout range!");
+        static_assert(is_range_standard_layout<Type>, "Type is not a standard layout range!");
 
         using TypeValueType = typename Type::value_type;
 
@@ -274,7 +274,7 @@ class StreamReader
 
         using TypeValueType = typename Type::value_type;
 
-        if constexpr (is_range_std_lay<Type>)
+        if constexpr (is_range_standard_layout<Type>)
         {
             ReadRangeStandardLayout(aRange, aCount);
         }
@@ -313,7 +313,7 @@ class StreamReader
                     }
                 });
             }
-            else if constexpr (is_std_lay_no_ptr<TypeValueType>)
+            else if constexpr (is_standard_layout_no_pointer<TypeValueType>)
             {
                 if constexpr (std::is_same_v<Type, std::wstring>)
                 {
@@ -337,7 +337,7 @@ class StreamReader
 
     template <typename Type> constexpr decltype(auto) ReadObjectOfKnownSize(Type &aObject)
     {
-        static_assert(is_std_lay_no_ptr<Type>, "Type is not an object of known size or it is a pointer!");
+        static_assert(is_standard_layout_no_pointer<Type>, "Type is not an object of known size or it is a pointer!");
 
         const auto view = mStream->Read(sizeof(Type));
         aObject = *reinterpret_cast<const Type *>(view.data());
