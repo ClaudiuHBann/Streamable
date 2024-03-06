@@ -232,14 +232,9 @@ class StreamReader
 
         using TypeStringType = typename Type::string_type;
 
-        if constexpr (is_wstring<TypeStringType>)
-        {
-            aRange.assign(Converter::FromUTF8(mStream->Read(aCount)));
-        }
-        else
-        {
-            ReadRangeStandardLayout(aRange, aCount);
-        }
+        TypeStringType pathNative{};
+        ReadRangeStandardLayout(pathNative, aCount);
+        aRange.assign(pathNative);
 
         return *this;
     }
