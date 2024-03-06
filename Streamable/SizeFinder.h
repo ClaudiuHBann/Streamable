@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2023 Claudiu HBann
+    Copyright (c) 2024 Claudiu HBann
 
     See LICENSE for the full terms of the MIT License.
 */

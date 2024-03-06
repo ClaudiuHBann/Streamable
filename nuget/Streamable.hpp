@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2023 Claudiu HBann
+    Copyright (c) 2024 Claudiu HBann
     
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,7 @@ class StreamReader;
 #include <cstring>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
 #include <variant>
@@ -46,7 +47,7 @@ class StreamReader;
 constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
 
 #define STREAMABLE_DEFINE_FROM_STREAM(baseClass, ...)                                                                  \
-  public:                                                                                                              \
+  protected:                                                                                                           \
     constexpr void FromStream() override                                                                               \
     {                                                                                                                  \
         if constexpr (!::hbann::static_equal(#baseClass, STREAMABLE_INTERFACE_NAME))                                   \
@@ -58,7 +59,7 @@ constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
     }
 
 #define STREAMABLE_DEFINE_TO_STREAM(baseClass, ...)                                                                    \
-  public:                                                                                                              \
+  protected:                                                                                                           \
     constexpr void ToStream() override                                                                                 \
     {                                                                                                                  \
         if constexpr (!::hbann::static_equal(#baseClass, STREAMABLE_INTERFACE_NAME))                                   \
@@ -90,11 +91,12 @@ constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
 
 #define STREAMABLE_DEFINE_INTRUSIVE                                                                                    \
   private:                                                                                                             \
+    friend class ::hbann::SizeFinder;                                                                                  \
     friend class ::hbann::StreamReader;                                                                                \
     friend class ::hbann::StreamWriter;
 
 #define STATIC_ASSERT_HAS_ISTREAMABLE_BASE(baseClass)                                                                  \
-    static_assert(std::is_base_of_v<::hbann::IStreamable, baseClass>, "The class must inherit a streamable!");
+    static_assert(std::derived_from<baseClass, ::hbann::IStreamable>, "The class must inherit a streamable!");
 
 #define STREAMABLE_DEFINE(baseClass, ...)                                                                              \
     STATIC_ASSERT_HAS_ISTREAMABLE_BASE(baseClass)                                                                      \
@@ -105,49 +107,193 @@ constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
 
 namespace hbann
 {
+namespace detail
+{
+template <typename> struct is_pair : std::false_type
+{
+};
+template <typename TypeFirst, typename TypeSecond> struct is_pair<std::pair<TypeFirst, TypeSecond>> : std::true_type
+{
+};
+
+template <typename> struct is_tuple : std::false_type
+{
+};
+template <typename... Types> struct is_tuple<std::tuple<Types...>> : std::true_type
+{
+};
+
+template <typename> struct is_variant : std::false_type
+{
+};
+template <typename... Types> struct is_variant<std::variant<Types...>> : std::true_type
+{
+};
+
+template <typename> struct is_unique_ptr : std::false_type
+{
+};
+template <typename Type> struct is_unique_ptr<std::unique_ptr<Type>> : std::true_type
+{
+};
+
+template <typename> struct is_optional : std::false_type
+{
+};
+template <typename Type> struct is_optional<std::optional<Type>> : std::true_type
+{
+};
+
+template <typename> struct is_shared_ptr : std::false_type
+{
+};
+template <typename Type> struct is_shared_ptr<std::shared_ptr<Type>> : std::true_type
+{
+};
+
+template <typename> struct is_basic_string : std::false_type
+{
+};
+template <typename Type> struct is_basic_string<std::basic_string<Type>> : std::true_type
+{
+};
+} // namespace detail
+
+template <typename Type> constexpr bool is_pair_v = detail::is_pair<Type>::value;
+template <typename Type> constexpr bool is_tuple_v = detail::is_tuple<Type>::value;
+template <typename Type> constexpr bool is_variant_v = detail::is_variant<Type>::value;
+template <typename Type> constexpr bool is_optional_v = detail::is_optional<Type>::value;
+template <typename Type> constexpr bool is_unique_ptr_v = detail::is_unique_ptr<Type>::value;
+template <typename Type> constexpr bool is_shared_ptr_v = detail::is_shared_ptr<Type>::value;
+template <typename Type> constexpr bool is_basic_string_v = detail::is_basic_string<Type>::value;
+
 template <typename> constexpr auto always_false = false;
+
+template <typename Type>
+concept is_wstring = std::is_same_v<typename Type::value_type, std::wstring::value_type> && is_basic_string_v<Type>;
 
 template <typename Container>
 concept has_method_reserve =
     std::ranges::contiguous_range<Container> && requires(Container &aContainer) { aContainer.reserve(size_t(0)); };
 
 template <typename Type>
-concept is_pointer_unique = std::is_same_v<std::remove_cvref_t<Type>, std::unique_ptr<typename Type::value_type>>;
+concept is_smart_pointer = is_shared_ptr_v<Type> || is_unique_ptr_v<Type>;
 
 template <typename Type>
-concept is_pointer_shared = std::is_same_v<std::remove_cvref_t<Type>, std::shared_ptr<typename Type::value_type>>;
+concept is_any_pointer = std::is_pointer_v<Type> || is_smart_pointer<Type>;
+
+template <typename Derived, typename Base>
+concept is_derived_from_pointer =
+    std::is_pointer_v<Derived> && std::derived_from<std::remove_pointer_t<Derived>, Base> ||
+    (is_smart_pointer<Derived> && std::derived_from<typename Derived::element_type, Base>);
 
 template <typename Type>
-concept is_pointer = std::is_pointer_v<Type> || is_pointer_unique<Type> || is_pointer_shared<Type>;
+concept is_standard_layout_no_pointer = std::is_standard_layout_v<Type> && !is_any_pointer<Type>;
 
 template <typename Type>
-concept is_std_lay_no_ptr = std::is_standard_layout_v<Type> && !is_pointer<Type>;
-
-template <typename Base, typename Derived>
-concept is_base_of_no_ptr = std::is_base_of_v<Base, std::remove_pointer_t<Derived>>;
-
-template <typename Type>
-concept is_path = std::is_same_v<std::remove_cvref_t<Type>, std::filesystem::path>;
+concept is_path = std::is_same_v<Type, std::filesystem::path>;
 
 template <typename Container>
-concept is_range_std_lay =
-    (std::ranges::contiguous_range<Container> && is_std_lay_no_ptr<typename Container::value_type>) ||
+concept is_range_standard_layout =
+    (std::ranges::contiguous_range<Container> && is_standard_layout_no_pointer<typename Container::value_type>) ||
     is_path<Container>;
 
 template <typename Container>
 concept has_method_size = requires(Container &aContainer) { std::ranges::size(aContainer); };
 
-template <typename Class>
-concept has_method_find_derived_streamable = requires(StreamReader &aStreamReader) {
-    {
-        Class::FindDerivedStreamable(aStreamReader)
-    } -> std::convertible_to<IStreamable *>;
-};
-
-constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
+[[nodiscard]] constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
 {
     return *aString1 == *aString2 && (!*aString1 || static_equal(aString1 + 1, aString2 + 1));
 }
+
+template <typename Type, std::size_t vIndex = 0>
+[[nodiscard]] constexpr Type variant_from_index(const std::size_t aIndex)
+{
+    static_assert(is_variant_v<Type>, "Type is not a variant!");
+
+    if constexpr (vIndex < std::variant_size_v<Type>)
+    {
+        return aIndex ? variant_from_index<Type, vIndex + 1>(aIndex - 1) : Type{std::in_place_index<vIndex>};
+    }
+    else
+    {
+        throw std::out_of_range("Out of bounds variant index!");
+    }
+}
+
+class Converter
+{
+  public:
+    [[nodiscard]] static auto FindUTF8Size(const std::wstring &aString) noexcept
+    {
+        size_t size{};
+        for (size_t i = 0; i < aString.size(); i++)
+        {
+            if (aString[i] <= 0x7F)
+            {
+                size++;
+            }
+            else if (aString[i] <= 0x7FF)
+            {
+                size += 2;
+            }
+            else if (aString[i] <= 0xFFFF)
+            {
+                size += 3;
+            }
+            else
+            {
+                size += 4;
+            }
+        }
+
+        return size;
+    }
+
+    [[nodiscard]] static auto FindUTF16Size(const std::span<const uint8_t> &aString) noexcept
+    {
+        size_t size{};
+
+        for (size_t i = 0; i < aString.size(); i++)
+        {
+            if (!(aString[i] & 0x80))
+            {
+                size++;
+            }
+            else if ((aString[i] & 0xE0) == 0xC0)
+            {
+                size++;
+                i++;
+            }
+            else if ((aString[i] & 0xF0) == 0xE0)
+            {
+                size += 2;
+                i += 2;
+            }
+            else if ((aString[i] & 0xF8) == 0xF0)
+            {
+                size += 2;
+                i += 3;
+            }
+        }
+
+        return size;
+    }
+
+    [[nodiscard]] static inline std::string ToUTF8(const std::wstring &aString)
+    {
+        return mConverter.to_bytes(aString);
+    }
+
+    [[nodiscard]] static inline std::wstring FromUTF8(const std::span<const uint8_t> &aString)
+    {
+        auto aStringChar = reinterpret_cast<const char *>(aString.data());
+        return mConverter.from_bytes(aStringChar, aStringChar + aString.size());
+    }
+
+  private:
+    static inline std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> mConverter{};
+};
 
 /*
     Format: first 3 bits + the actual size at last
@@ -160,7 +306,7 @@ constexpr bool static_equal(const char *aString1, const char *aString2) noexcept
 class Size
 {
   public:
-    using size_max = size_t; // size_t / 8
+    using size_max = size_t; // size_t / (4/8)
     using span = std::span<const uint8_t>;
 
     [[nodiscard]] static constexpr auto FindRequiredBytes(const uint8_t aSize) noexcept
@@ -292,50 +438,6 @@ class Size
     }
 };
 
-class Converter
-{
-  public:
-    [[nodiscard]] static auto FindUTF8Size(const std::wstring &aString) noexcept
-    {
-        size_t size{};
-        for (size_t i = 0; i < aString.size(); i++)
-        {
-            if (aString[i] <= 0x7F)
-            {
-                size++;
-            }
-            else if (aString[i] <= 0x7FF)
-            {
-                size += 2;
-            }
-            else if (aString[i] <= 0xFFFF)
-            {
-                size += 3;
-            }
-            else
-            {
-                size += 4;
-            }
-        }
-
-        return size;
-    }
-
-    [[nodiscard]] static inline std::string ToUTF8(const std::wstring &aString)
-    {
-        return mConverter.to_bytes(aString);
-    }
-
-    [[nodiscard]] static inline std::wstring FromUTF8(const std::span<const uint8_t> &aString)
-    {
-        auto aStringChar = reinterpret_cast<const char *>(aString.data());
-        return mConverter.from_bytes(aStringChar, aStringChar + aString.size());
-    }
-
-  private:
-    static inline std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> mConverter{};
-};
-
 class Stream
 {
     friend class StreamReader;
@@ -436,8 +538,6 @@ class Stream
     }
 };
 
-class IStreamable;
-
 class SizeFinder
 {
   public:
@@ -488,25 +588,41 @@ class SizeFinder
   private:
     template <typename Type> [[nodiscard]] static constexpr Size::size_max FindObjectSize(Type &aObject) noexcept
     {
-        if constexpr (std::ranges::range<Type>)
+        if constexpr (is_optional_v<Type>)
+        {
+            return aObject.has_value() ? FindObjectSize(*aObject) : 1;
+        }
+        else if constexpr (is_variant_v<Type>)
+        {
+            Size::size_max size{};
+            std::visit([&](auto &&aArg) { size += FindObjectSize(aArg); }, aObject);
+            return size;
+        }
+        else if constexpr (is_tuple_v<Type>)
+        {
+            Size::size_max size{};
+            std::apply([&](auto &&...aArgs) { size += FindParseSize(aArgs...); }, aObject);
+            return size;
+        }
+        else if constexpr (is_pair_v<Type>)
+        {
+            // we remove the constness of map's pair's key so we can use the already implemented FindParseSize branches
+            auto &first = const_cast<std::remove_const_t<typename Type::first_type> &>(aObject.first);
+            return FindParseSize(first, aObject.second);
+        }
+        else if constexpr (std::ranges::range<Type>)
         {
             return FindRangeSize(aObject);
         }
-        else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
+        else if constexpr (std::derived_from<Type, IStreamable>)
         {
-            Size::size_max size{};
-            if constexpr (is_pointer<Type>)
-            {
-                size = static_cast<IStreamable *>(aObject)->FindParseSize();
-            }
-            else
-            {
-                size = static_cast<IStreamable *>(&aObject)->FindParseSize();
-            }
-
-            return Size::FindRequiredBytes(size);
+            return FindStreamableSize(aObject);
         }
-        else if constexpr (is_std_lay_no_ptr<Type>)
+        else if constexpr (is_any_pointer<Type>)
+        {
+            return FindObjectSize(*aObject);
+        }
+        else if constexpr (is_standard_layout_no_pointer<Type>)
         {
             return sizeof(Type);
         }
@@ -514,6 +630,24 @@ class SizeFinder
         {
             static_assert(always_false<Type>, "Type is not accepted!");
         }
+    }
+
+    template <typename Type>
+    [[nodiscard]] static constexpr Size::size_max FindStreamableSize(Type &aStreamable) noexcept
+    {
+        static_assert(std::derived_from<Type, IStreamable>, "Type is not a streamable!");
+
+        Size::size_max size{};
+        if constexpr (is_any_pointer<Type>)
+        {
+            size = aStreamable->FindParseSize();
+        }
+        else
+        {
+            size = aStreamable.FindParseSize();
+        }
+
+        return Size::FindRequiredBytes(size) + size;
     }
 
     template <typename Type> [[nodiscard]] static constexpr Size::size_max FindRangeSize(Type &aRange) noexcept
@@ -541,9 +675,9 @@ class SizeFinder
         using TypeValueType = typename Type::value_type;
 
         Size::size_max size{};
-        if constexpr (is_range_std_lay<Type>)
+        if constexpr (is_range_standard_layout<Type>)
         {
-            if constexpr (std::is_same_v<Type, std::wstring>)
+            if constexpr (is_wstring<Type>)
             {
                 size += Converter::FindUTF8Size(aRange);
             }
@@ -563,170 +697,6 @@ class SizeFinder
         return size;
     }
 };
-
-class IStreamable;
-
-class StreamWriter
-{
-  public:
-    constexpr StreamWriter(Stream &aStream) noexcept : mStream(&aStream)
-    {
-    }
-
-    constexpr StreamWriter(StreamWriter &&aStreamWriter) noexcept
-    {
-        *this = std::move(aStreamWriter);
-    }
-
-    template <typename Type, typename... Types> constexpr void WriteAll(Type &aObject, Types &...aObjects)
-    {
-        using TypeRaw = std::remove_cvref_t<Type>;
-
-        Write<TypeRaw>(aObject);
-
-        if constexpr (sizeof...(aObjects))
-        {
-            WriteAll<Types...>(aObjects...);
-        }
-    }
-
-    constexpr void WriteAll()
-    {
-    }
-
-    constexpr StreamWriter &operator=(StreamWriter &&aStreamWriter) noexcept
-    {
-        mStream = aStreamWriter.mStream;
-
-        return *this;
-    }
-
-  private:
-    Stream *mStream{};
-
-    template <typename Type> constexpr decltype(auto) WriteObjectOfKnownSize(const Type &aObject)
-    {
-        static_assert(is_std_lay_no_ptr<Type>, "Type is not an object of known size or it is a pointer!");
-
-        const auto objectPtr = reinterpret_cast<const uint8_t *>(&aObject);
-        mStream->Write({objectPtr, sizeof(aObject)});
-
-        return *this;
-    }
-
-    inline decltype(auto) WriteCount(const Size::size_max aSize)
-    {
-        mStream->Write(Size::MakeSize(aSize));
-        return *this;
-    }
-
-    template <typename Type> constexpr decltype(auto) WriteStreamable(Type &aStreamable)
-    {
-        static_assert(is_base_of_no_ptr<IStreamable, Type>, "Type is not a streamable (pointer)!");
-
-        Stream stream{};
-        if constexpr (is_pointer<Type>)
-        {
-            stream = std::move(aStreamable->Serialize());
-        }
-        else
-        {
-            stream = std::move(aStreamable.Serialize());
-        }
-        const auto streamView = stream.View();
-
-        // we write the size in bytes of the stream
-        WriteCount(streamView.size());
-        return mStream->Write(streamView);
-    }
-
-    template <typename Type> constexpr decltype(auto) WriteRange(Type &aRange)
-    {
-        static_assert(std::ranges::range<Type>, "Type is not a range!");
-
-        using TypeValueType = typename Type::value_type;
-
-        if constexpr (SizeFinder::FindRangeRank<Type>() > 1)
-        {
-            WriteCount(SizeFinder::GetRangeCount(aRange));
-            for (auto &object : aRange)
-            {
-                WriteRange<TypeValueType>(object);
-            }
-        }
-        else
-        {
-            WriteRangeRank1<Type>(aRange);
-        }
-
-        return *this;
-    }
-
-    template <typename Type> constexpr decltype(auto) WriteRangeRank1(Type &aRange)
-    {
-        static_assert(std::ranges::range<Type>, "Type is not a range!");
-
-        using TypeValueType = typename Type::value_type;
-
-        if constexpr (is_range_std_lay<Type>)
-        {
-            if constexpr (std::is_same_v<Type, std::wstring>)
-            {
-                const auto stringUTF8 = Converter::ToUTF8(aRange);
-                WriteCount(SizeFinder::GetRangeCount(stringUTF8));
-                mStream->Write({reinterpret_cast<const uint8_t *>(stringUTF8.data()), stringUTF8.size()});
-            }
-            else if constexpr (is_path<Type>)
-            {
-                WriteCount(SizeFinder::GetRangeCount(aRange));
-
-                const auto rangePtr = reinterpret_cast<const uint8_t *>(aRange.native().data());
-                const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
-                mStream->Write({rangePtr, rangeSize});
-            }
-            else
-            {
-                WriteCount(SizeFinder::GetRangeCount(aRange));
-
-                const auto rangePtr = reinterpret_cast<const uint8_t *>(std::ranges::data(aRange));
-                const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
-                mStream->Write({rangePtr, rangeSize});
-            }
-        }
-        else
-        {
-            WriteCount(SizeFinder::GetRangeCount(aRange));
-            for (auto &object : aRange)
-            {
-                Write<TypeValueType>(object);
-            }
-        }
-
-        return *this;
-    }
-
-    template <typename Type> constexpr decltype(auto) Write(Type &aObject)
-    {
-        if constexpr (std::ranges::range<Type>)
-        {
-            return WriteRange<Type>(aObject);
-        }
-        else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
-        {
-            return WriteStreamable<Type>(aObject);
-        }
-        else if constexpr (is_std_lay_no_ptr<Type>)
-        {
-            return WriteObjectOfKnownSize<Type>(aObject);
-        }
-        else
-        {
-            static_assert(always_false<Type>, "Type is not accepted!");
-        }
-    }
-};
-
-class IStreamable;
 
 class StreamReader
 {
@@ -775,18 +745,41 @@ class StreamReader
 
     template <typename Type> constexpr decltype(auto) Read(Type &aObject)
     {
-        if constexpr (std::ranges::range<Type>)
+        if constexpr (is_optional_v<Type>)
+        {
+            return ReadOptional(aObject);
+        }
+        else if constexpr (is_variant_v<Type>)
+        {
+            return ReadVariant(aObject);
+        }
+        else if constexpr (is_tuple_v<Type>)
+        {
+            std::apply([&](auto &&...aArgs) { ReadAll(aArgs...); }, aObject);
+            return *this;
+        }
+        else if constexpr (is_pair_v<Type>)
+        {
+            // we remove the constness of map's pair's key so we can use the already implemented Read branches
+            auto &first = const_cast<std::remove_const_t<typename Type::first_type> &>(aObject.first);
+            return ReadAll(first, aObject.second);
+        }
+        else if constexpr (std::ranges::range<Type>)
         {
             aObject = std::move(ReadRange<Type>());
             return *this;
         }
-        else if constexpr (is_base_of_no_ptr<IStreamable, Type>)
+        else if constexpr (std::derived_from<Type, IStreamable>)
         {
-            return ReadStreamableX<Type>(aObject);
+            return ReadStreamable(aObject);
         }
-        else if constexpr (is_std_lay_no_ptr<Type>)
+        else if constexpr (is_any_pointer<Type>)
         {
-            return ReadObjectOfKnownSize<Type>(aObject);
+            return ReadPointer(aObject);
+        }
+        else if constexpr (is_standard_layout_no_pointer<Type>)
+        {
+            return ReadObjectOfKnownSize(aObject);
         }
         else
         {
@@ -794,21 +787,63 @@ class StreamReader
         }
     }
 
-    template <typename Type> constexpr decltype(auto) ReadStreamableX(Type &aStreamable)
+    template <typename Type> constexpr decltype(auto) ReadOptional(Type &aOpt)
     {
-        if constexpr (is_pointer<Type>)
+        static_assert(is_optional_v<Type>, "Type is not an optional!");
+
+        using TypeValueType = typename Type::value_type;
+
+        if (ReadCount())
         {
-            return ReadStreamablePtr<Type>(aStreamable);
+            TypeValueType obj{};
+            Read(obj);
+            aOpt = std::move(obj);
+        }
+
+        return *this;
+    }
+
+    template <typename Type> constexpr decltype(auto) ReadVariant(Type &aVariant)
+    {
+        static_assert(is_variant_v<Type>, "Type is not a variant!");
+
+        aVariant = variant_from_index<Type>(ReadCount());
+        std::visit([&](auto &&aArg) { Read(aArg); }, aVariant);
+
+        return *this;
+    }
+
+    template <typename Type> constexpr decltype(auto) ReadPointer(Type &aPointer)
+    {
+        static_assert(is_any_pointer<Type>, "Type is not a smart/raw pointer!");
+
+        if constexpr (is_unique_ptr_v<Type>)
+        {
+            aPointer = std::make_unique<typename Type::element_type>();
+        }
+        else if constexpr (is_shared_ptr_v<Type>)
+        {
+            aPointer = std::make_shared<typename Type::element_type>();
+        }
+        else // raw pointers
+        {
+            aPointer = new std::remove_pointer_t<Type>;
+        }
+
+        // we treat pointers to streamable in a special way
+        if constexpr (is_derived_from_pointer<Type, IStreamable>)
+        {
+            return ReadStreamablePtr(aPointer);
         }
         else
         {
-            return ReadStreamable<Type>(aStreamable);
+            return Read(*aPointer);
         }
     }
 
     template <typename Type> constexpr decltype(auto) ReadStreamable(Type &aStreamable)
     {
-        static_assert(std::is_base_of_v<IStreamable, Type>, "Type is not a streamable!");
+        static_assert(std::derived_from<Type, IStreamable>, "Type is not a streamable!");
 
         aStreamable.Deserialize(mStream->Read(ReadCount()), false); // read streamable size in bytes
         return *this;
@@ -816,17 +851,34 @@ class StreamReader
 
     template <typename Type> constexpr decltype(auto) ReadStreamablePtr(Type &aStreamablePtr)
     {
-        using TypeNoPtr = std::remove_pointer_t<Type>;
+        static_assert(is_derived_from_pointer<Type, IStreamable>, "Type is not a streamable smart/raw pointer!");
 
-        static_assert(std::is_base_of_v<IStreamable, TypeNoPtr>, "Type is not a streamable pointer!");
-        static_assert(has_method_find_derived_streamable<TypeNoPtr>,
-                      "Type doesn't have method 'static IStreamable* FindDerivedStreamable(StreamReader &)' !");
+        using TypeNoPtr = std::conditional_t<std::is_pointer_v<Type>, std::remove_pointer_t<Type>,
+                                             typename std::pointer_traits<Type>::element_type>;
+
+        // we cannot use the has_method_find_derived_streamable concept because we must use the context of the
+        // StreamReader that is a friend of streamables
+        static_assert(
+            requires(StreamReader &aStreamReader) {
+                {
+                    TypeNoPtr::FindDerivedStreamable(aStreamReader)
+                } -> std::convertible_to<IStreamable *>;
+            }, "Type doesn't have a public/protected method 'static "
+               "IStreamable* FindDerivedStreamable(StreamReader &)' !");
 
         Peek([&](auto) {
             Stream stream(mStream->Read(ReadCount())); // read streamable size in bytes
             StreamReader streamReader(stream);
+
             // TODO: we let the user read n objects after wich we read again... fix it
-            aStreamablePtr = static_cast<Type>(TypeNoPtr::FindDerivedStreamable(streamReader));
+            if constexpr (is_smart_pointer<Type>)
+            {
+                aStreamablePtr.reset(static_cast<TypeNoPtr *>(TypeNoPtr::FindDerivedStreamable(streamReader)));
+            }
+            else
+            {
+                aStreamablePtr = static_cast<TypeNoPtr *>(TypeNoPtr::FindDerivedStreamable(streamReader));
+            }
         });
 
         aStreamablePtr->Deserialize(mStream->Read(ReadCount()), false);
@@ -841,7 +893,7 @@ class StreamReader
 
         Type range{};
         const auto count = ReadCount();
-        RangeReserve<Type>(range, count);
+        RangeReserve(range, count);
 
         if constexpr (SizeFinder::FindRangeRank<Type>() > 1)
         {
@@ -852,10 +904,47 @@ class StreamReader
         }
         else
         {
-            ReadRangeRank1<Type>(range, count);
+            ReadRangeRank1(range, count);
         }
 
         return range;
+    }
+
+    template <typename Type> constexpr decltype(auto) ReadPath(Type &aRange, const Size::size_max aCount)
+    {
+        static_assert(is_path<Type>, "Type is not a path!");
+
+        using TypeStringType = typename Type::string_type;
+
+        TypeStringType pathNative{};
+        ReadRangeStandardLayout(pathNative, aCount);
+        aRange.assign(pathNative);
+
+        return *this;
+    }
+
+    template <typename Type> constexpr StreamReader &ReadRangeStandardLayout(Type &aRange, const Size::size_max aCount)
+    {
+        static_assert(is_range_standard_layout<Type>, "Type is not a standard layout range!");
+
+        using TypeValueType = typename Type::value_type;
+
+        if constexpr (is_wstring<Type>)
+        {
+            aRange.assign(Converter::FromUTF8(mStream->Read(aCount)));
+        }
+        else if constexpr (is_path<Type>)
+        {
+            ReadPath(aRange, aCount);
+        }
+        else
+        {
+            const auto rangeView = mStream->Read(aCount * sizeof(TypeValueType));
+            const auto rangePtr = reinterpret_cast<const TypeValueType *>(rangeView.data());
+            aRange.assign(rangePtr, rangePtr + rangeView.size() / sizeof(TypeValueType));
+        }
+
+        return *this;
     }
 
     template <typename Type> constexpr decltype(auto) ReadRangeRank1(Type &aRange, const Size::size_max aCount)
@@ -864,22 +953,16 @@ class StreamReader
 
         using TypeValueType = typename Type::value_type;
 
-        if constexpr (std::is_same_v<Type, std::wstring>)
+        if constexpr (is_range_standard_layout<Type>)
         {
-            aRange.assign(Converter::FromUTF8(mStream->Read(aCount)));
-        }
-        else if constexpr (is_range_std_lay<Type>)
-        {
-            const auto rangeView = mStream->Read(aCount * sizeof(TypeValueType));
-            const auto rangePtr = reinterpret_cast<const TypeValueType *>(rangeView.data());
-            aRange.assign(rangePtr, rangePtr + rangeView.size() / sizeof(TypeValueType));
+            ReadRangeStandardLayout(aRange, aCount);
         }
         else
         {
             for (size_t i = 0; i < aCount; i++)
             {
                 TypeValueType object{};
-                Read<TypeValueType>(object);
+                Read(object);
                 aRange.insert(std::ranges::cend(aRange), std::move(object));
             }
         }
@@ -895,24 +978,29 @@ class StreamReader
 
         Size::size_max size{};
 
-        // TODO: handle range multiple ranks
         if constexpr (has_method_reserve<Type>)
         {
-            if constexpr (is_base_of_no_ptr<IStreamable, Type>)
+            if constexpr (std::derived_from<IStreamable, Type>)
             {
                 Peek([&](auto) {
                     for (size_t i = 0; i < aCount; i++)
                     {
                         const auto sizeCurrent = ReadCount();
                         size += sizeCurrent;
-                        auto seek = mStream->Read(sizeCurrent);
-                        seek;
+                        [[maybe_unused]] auto _ = mStream->Read(sizeCurrent);
                     }
                 });
             }
-            else if constexpr (is_std_lay_no_ptr<TypeValueType>)
+            else if constexpr (is_standard_layout_no_pointer<TypeValueType>)
             {
-                size = aCount * sizeof(TypeValueType);
+                if constexpr (is_wstring<Type>)
+                {
+                    Peek([&](auto) { size += Converter::FindUTF16Size(mStream->Read(aCount)); });
+                }
+                else
+                {
+                    size = aCount * sizeof(TypeValueType);
+                }
             }
             else
             {
@@ -927,7 +1015,7 @@ class StreamReader
 
     template <typename Type> constexpr decltype(auto) ReadObjectOfKnownSize(Type &aObject)
     {
-        static_assert(is_std_lay_no_ptr<Type>, "Type is not an object of known size or it is a pointer!");
+        static_assert(is_standard_layout_no_pointer<Type>, "Type is not an object of known size or it is a pointer!");
 
         const auto view = mStream->Read(sizeof(Type));
         aObject = *reinterpret_cast<const Type *>(view.data());
@@ -939,6 +1027,205 @@ class StreamReader
     {
         const auto size = Size::FindRequiredBytes(mStream->Current());
         return Size::MakeSize(mStream->Read(size));
+    }
+};
+
+class StreamWriter
+{
+  public:
+    constexpr StreamWriter(Stream &aStream) noexcept : mStream(&aStream)
+    {
+    }
+
+    constexpr StreamWriter(StreamWriter &&aStreamWriter) noexcept
+    {
+        *this = std::move(aStreamWriter);
+    }
+
+    template <typename Type, typename... Types> constexpr void WriteAll(Type &aObject, Types &...aObjects)
+    {
+        using TypeRaw = std::remove_cvref_t<Type>;
+
+        Write<TypeRaw>(aObject);
+
+        if constexpr (sizeof...(aObjects))
+        {
+            WriteAll<Types...>(aObjects...);
+        }
+    }
+
+    constexpr void WriteAll()
+    {
+    }
+
+    constexpr StreamWriter &operator=(StreamWriter &&aStreamWriter) noexcept
+    {
+        mStream = aStreamWriter.mStream;
+
+        return *this;
+    }
+
+  private:
+    Stream *mStream{};
+
+    template <typename Type> constexpr decltype(auto) WriteObjectOfKnownSize(const Type &aObject)
+    {
+        static_assert(is_standard_layout_no_pointer<Type>, "Type is not an object of known size or it is a pointer!");
+
+        const auto objectPtr = reinterpret_cast<const uint8_t *>(&aObject);
+        mStream->Write({objectPtr, sizeof(aObject)});
+
+        return *this;
+    }
+
+    inline decltype(auto) WriteCount(const Size::size_max aSize)
+    {
+        mStream->Write(Size::MakeSize(aSize));
+        return *this;
+    }
+
+    template <typename Type> constexpr decltype(auto) WriteStreamable(Type &aStreamable)
+    {
+        static_assert(std::derived_from<Type, IStreamable>, "Type is not a streamable!");
+
+        auto stream(std::move(aStreamable.Serialize()));
+        const auto streamView = stream.View();
+
+        // we write the size in bytes of the stream
+        WriteCount(streamView.size());
+        return mStream->Write(streamView);
+    }
+
+    template <typename Type> constexpr decltype(auto) WriteRange(Type &aRange)
+    {
+        static_assert(std::ranges::range<Type>, "Type is not a range!");
+
+        if constexpr (SizeFinder::FindRangeRank<Type>() > 1)
+        {
+            WriteCount(SizeFinder::GetRangeCount(aRange));
+            for (auto &object : aRange)
+            {
+                WriteRange(object);
+            }
+        }
+        else
+        {
+            WriteRangeRank1(aRange);
+        }
+
+        return *this;
+    }
+
+    template <typename Type> constexpr decltype(auto) WriteRangeStandardLayout(const Type &aRange)
+    {
+        static_assert(is_range_standard_layout<Type>, "Type is not a standard layout range!");
+
+        using TypeValueType = typename Type::value_type;
+
+        if constexpr (is_wstring<Type>)
+        {
+            WriteRangeStandardLayout(Converter::ToUTF8(aRange));
+        }
+        else if constexpr (is_path<Type>)
+        {
+            WriteRangeStandardLayout(aRange.native());
+        }
+        else
+        {
+            WriteCount(SizeFinder::GetRangeCount(aRange));
+
+            const auto rangePtr = reinterpret_cast<const uint8_t *>(std::ranges::data(aRange));
+            const auto rangeSize = SizeFinder::GetRangeCount(aRange) * sizeof(TypeValueType);
+            mStream->Write({rangePtr, rangeSize});
+        }
+
+        return *this;
+    }
+
+    template <typename Type> constexpr decltype(auto) WriteRangeRank1(Type &aRange)
+    {
+        static_assert(SizeFinder::FindRangeRank<Type>() == 1, "Type is not a rank 1 range!");
+
+        if constexpr (is_range_standard_layout<Type>)
+        {
+            WriteRangeStandardLayout(aRange);
+        }
+        else
+        {
+            WriteCount(SizeFinder::GetRangeCount(aRange));
+            for (auto &object : aRange)
+            {
+                Write(object);
+            }
+        }
+
+        return *this;
+    }
+
+    template <typename Type> constexpr decltype(auto) WriteVariant(Type &aVariant)
+    {
+        static_assert(is_variant_v<Type>, "Type is not a variant!");
+
+        WriteCount(aVariant.index());
+        std::visit([&](auto &&aArg) { Write(aArg); }, aVariant);
+
+        return *this;
+    }
+
+    template <typename Type> constexpr decltype(auto) WriteOptional(Type &aOpt)
+    {
+        static_assert(is_optional_v<Type>, "Type is not an optional!");
+
+        WriteCount(aOpt.has_value());
+        if (aOpt.has_value())
+        {
+            Write(*aOpt);
+        }
+
+        return *this;
+    }
+
+    template <typename Type> constexpr decltype(auto) Write(Type &aObject)
+    {
+        if constexpr (is_optional_v<Type>)
+        {
+            return WriteOptional(aObject);
+        }
+        else if constexpr (is_variant_v<Type>)
+        {
+            return WriteVariant(aObject);
+        }
+        else if constexpr (is_tuple_v<Type>)
+        {
+            std::apply([&](auto &&...aArgs) { WriteAll(aArgs...); }, aObject);
+            return *this;
+        }
+        else if constexpr (is_pair_v<Type>)
+        {
+            // we remove the constness of map's pair's key so we can use the already implemented Write branches
+            auto &first = const_cast<std::remove_const_t<typename Type::first_type> &>(aObject.first);
+            return WriteAll(first, aObject.second);
+        }
+        else if constexpr (std::ranges::range<Type>)
+        {
+            return WriteRange(aObject);
+        }
+        else if constexpr (std::derived_from<Type, IStreamable>)
+        {
+            return WriteStreamable(aObject);
+        }
+        else if constexpr (is_any_pointer<Type>)
+        {
+            return Write(*aObject);
+        }
+        else if constexpr (is_standard_layout_no_pointer<Type>)
+        {
+            return WriteObjectOfKnownSize(aObject);
+        }
+        else
+        {
+            static_assert(always_false<Type>, "Type is not accepted!");
+        }
     }
 };
 
