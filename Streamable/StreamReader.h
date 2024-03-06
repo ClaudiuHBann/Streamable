@@ -244,7 +244,7 @@ class StreamReader
         return *this;
     }
 
-    template <typename Type> constexpr decltype(auto) ReadRangeStandardLayout(Type &aRange, const Size::size_max aCount)
+    template <typename Type> constexpr StreamReader &ReadRangeStandardLayout(Type &aRange, const Size::size_max aCount)
     {
         static_assert(is_range_standard_layout<Type>, "Type is not a standard layout range!");
 

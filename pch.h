@@ -21,6 +21,7 @@ class StreamReader;
 #include <cstring>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
 #include <variant>
@@ -88,54 +89,72 @@ constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
     STREAMABLE_DEFINE_FROM_STREAM(baseClass, __VA_ARGS__)                                                              \
     STREAMABLE_DEFINE_FIND_PARSE_SIZE(baseClass, __VA_ARGS__)
 
-#define DEFINE_TT1(name, tn, t)                                                                                        \
-    namespace hbann                                                                                                    \
-    {                                                                                                                  \
-    namespace impl                                                                                                     \
-    {                                                                                                                  \
-    template <typename> struct is_##name : std::false_type                                                             \
-    {                                                                                                                  \
-    };                                                                                                                 \
-                                                                                                                       \
-    template <tn> struct is_##name##<std::##name##<t>> : std::true_type                                                \
-    {                                                                                                                  \
-    };                                                                                                                 \
-    }                                                                                                                  \
-                                                                                                                       \
-    template <typename Type> constexpr bool is_##name##_v = impl::is_##name##<Type>::value;                            \
-    }
-
-#define DEFINE_TT2(name, tn1, tn2, t1, t2)                                                                             \
-    namespace hbann                                                                                                    \
-    {                                                                                                                  \
-    namespace impl                                                                                                     \
-    {                                                                                                                  \
-    template <typename> struct is_##name : std::false_type                                                             \
-    {                                                                                                                  \
-    };                                                                                                                 \
-                                                                                                                       \
-    template <tn1, tn2> struct is_##name##<std::##name##<t1, t2>> : std::true_type                                     \
-    {                                                                                                                  \
-    };                                                                                                                 \
-    }                                                                                                                  \
-                                                                                                                       \
-    template <typename Type> constexpr bool is_##name##_v = impl::is_##name##<Type>::value;                            \
-    }
-
-DEFINE_TT2(pair, typename TypeFirst, typename TypeSecond, TypeFirst, TypeSecond);
-DEFINE_TT1(tuple, typename... Types, Types...);
-DEFINE_TT1(variant, typename... Types, Types...);
-DEFINE_TT1(optional, typename Type, Type);
-DEFINE_TT1(unique_ptr, typename Type, Type);
-DEFINE_TT1(shared_ptr, typename Type, Type);
-DEFINE_TT1(basic_string, typename Type, Type);
-
 namespace hbann
 {
+namespace detail
+{
+template <typename> struct is_pair : std::false_type
+{
+};
+template <typename TypeFirst, typename TypeSecond> struct is_pair<std::pair<TypeFirst, TypeSecond>> : std::true_type
+{
+};
+
+template <typename> struct is_tuple : std::false_type
+{
+};
+template <typename... Types> struct is_tuple<std::tuple<Types...>> : std::true_type
+{
+};
+
+template <typename> struct is_variant : std::false_type
+{
+};
+template <typename... Types> struct is_variant<std::variant<Types...>> : std::true_type
+{
+};
+
+template <typename> struct is_unique_ptr : std::false_type
+{
+};
+template <typename Type> struct is_unique_ptr<std::unique_ptr<Type>> : std::true_type
+{
+};
+
+template <typename> struct is_optional : std::false_type
+{
+};
+template <typename Type> struct is_optional<std::optional<Type>> : std::true_type
+{
+};
+
+template <typename> struct is_shared_ptr : std::false_type
+{
+};
+template <typename Type> struct is_shared_ptr<std::shared_ptr<Type>> : std::true_type
+{
+};
+
+template <typename> struct is_basic_string : std::false_type
+{
+};
+template <typename Type> struct is_basic_string<std::basic_string<Type>> : std::true_type
+{
+};
+} // namespace detail
+
+template <typename Type> constexpr bool is_pair_v = detail::is_pair<Type>::value;
+template <typename Type> constexpr bool is_tuple_v = detail::is_tuple<Type>::value;
+template <typename Type> constexpr bool is_variant_v = detail::is_variant<Type>::value;
+template <typename Type> constexpr bool is_optional_v = detail::is_optional<Type>::value;
+template <typename Type> constexpr bool is_unique_ptr_v = detail::is_unique_ptr<Type>::value;
+template <typename Type> constexpr bool is_shared_ptr_v = detail::is_shared_ptr<Type>::value;
+template <typename Type> constexpr bool is_basic_string_v = detail::is_basic_string<Type>::value;
+
 template <typename> constexpr auto always_false = false;
 
 template <typename Type>
-concept is_wstring = std::is_same_v<typename Type::value_type, wchar_t> && is_basic_string_v<Type>;
+concept is_wstring = std::is_same_v<typename Type::value_type, std::wstring::value_type> && is_basic_string_v<Type>;
 
 template <typename Container>
 concept has_method_reserve =

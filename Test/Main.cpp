@@ -77,7 +77,7 @@ class Sphere : public Circle
 
   public:
     Sphere() = default;
-    Sphere(const Circle &aCircle, unique_ptr<bool> &&aReflexion, std::tuple<std::string, std::list<int>> &&aTuple,
+    Sphere(const Circle &aCircle, std::unique_ptr<bool> &&aReflexion, std::tuple<std::string, std::list<int>> &&aTuple,
            std::pair<Circle, double> &&aPair)
         : Circle(aCircle), mReflexion(std::move(aReflexion)), mTuple(std::move(aTuple)), mPair(std::move(aPair))
     {
@@ -90,7 +90,7 @@ class Sphere : public Circle
     }
 
   private:
-    unique_ptr<bool> mReflexion{};
+    std::unique_ptr<bool> mReflexion{};
     std::tuple<std::string, std::list<int>> mTuple{};
     std::pair<Circle, double> mPair{};
 };
