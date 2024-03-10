@@ -17,7 +17,7 @@ To use this library, simply download and include the header file `Streamable.hpp
 
 ## Features
 
-- **fast** - it's even faster and takes less memory than [MsgPack](https://msgpack.org/)
+- **fast** - fast++ and memory-- compared to [MsgPack](https://msgpack.org/)
 - **easy-to-use** - inherit a class and use a macro :D
 - **single-header** - just copy paste the file into your project
 - **has no dependencies** - it only uses the `C++20` standard library
