@@ -44,7 +44,9 @@ class StreamReader;
 #include <vector>
 
 // Streamable
-constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
+inline constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
+
+#define STREAMABLE_RESET_ACCESS_MODIFIER private:
 
 #define STREAMABLE_DEFINE_FROM_STREAM(baseClass, ...)                                                                  \
   protected:                                                                                                           \
@@ -56,7 +58,9 @@ constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
         }                                                                                                              \
                                                                                                                        \
         mStreamReader.ReadAll(__VA_ARGS__);                                                                            \
-    }
+    }                                                                                                                  \
+                                                                                                                       \
+    STREAMABLE_RESET_ACCESS_MODIFIER
 
 #define STREAMABLE_DEFINE_TO_STREAM(baseClass, ...)                                                                    \
   protected:                                                                                                           \
@@ -72,7 +76,9 @@ constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
         }                                                                                                              \
                                                                                                                        \
         mStreamWriter.WriteAll(__VA_ARGS__);                                                                           \
-    }
+    }                                                                                                                  \
+                                                                                                                       \
+    STREAMABLE_RESET_ACCESS_MODIFIER
 
 #define STREAMABLE_DEFINE_FIND_PARSE_SIZE(baseClass, ...)                                                              \
   protected:                                                                                                           \
@@ -87,7 +93,9 @@ constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
         size += ::hbann::SizeFinder::FindParseSize(__VA_ARGS__);                                                       \
                                                                                                                        \
         return size;                                                                                                   \
-    }
+    }                                                                                                                  \
+                                                                                                                       \
+    STREAMABLE_RESET_ACCESS_MODIFIER
 
 #define STREAMABLE_DEFINE_INTRUSIVE                                                                                    \
   private:                                                                                                             \
@@ -103,7 +111,8 @@ constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
     STREAMABLE_DEFINE_INTRUSIVE                                                                                        \
     STREAMABLE_DEFINE_TO_STREAM(baseClass, __VA_ARGS__)                                                                \
     STREAMABLE_DEFINE_FROM_STREAM(baseClass, __VA_ARGS__)                                                              \
-    STREAMABLE_DEFINE_FIND_PARSE_SIZE(baseClass, __VA_ARGS__)
+    STREAMABLE_DEFINE_FIND_PARSE_SIZE(baseClass, __VA_ARGS__)                                                          \
+    STREAMABLE_RESET_ACCESS_MODIFIER
 
 namespace hbann
 {
@@ -159,15 +168,15 @@ template <typename Type> struct is_basic_string<std::basic_string<Type>> : std::
 };
 } // namespace detail
 
-template <typename Type> constexpr bool is_pair_v = detail::is_pair<Type>::value;
-template <typename Type> constexpr bool is_tuple_v = detail::is_tuple<Type>::value;
-template <typename Type> constexpr bool is_variant_v = detail::is_variant<Type>::value;
-template <typename Type> constexpr bool is_optional_v = detail::is_optional<Type>::value;
-template <typename Type> constexpr bool is_unique_ptr_v = detail::is_unique_ptr<Type>::value;
-template <typename Type> constexpr bool is_shared_ptr_v = detail::is_shared_ptr<Type>::value;
-template <typename Type> constexpr bool is_basic_string_v = detail::is_basic_string<Type>::value;
+template <typename Type> inline constexpr bool is_pair_v = detail::is_pair<Type>::value;
+template <typename Type> inline constexpr bool is_tuple_v = detail::is_tuple<Type>::value;
+template <typename Type> inline constexpr bool is_variant_v = detail::is_variant<Type>::value;
+template <typename Type> inline constexpr bool is_optional_v = detail::is_optional<Type>::value;
+template <typename Type> inline constexpr bool is_unique_ptr_v = detail::is_unique_ptr<Type>::value;
+template <typename Type> inline constexpr bool is_shared_ptr_v = detail::is_shared_ptr<Type>::value;
+template <typename Type> inline constexpr bool is_basic_string_v = detail::is_basic_string<Type>::value;
 
-template <typename> constexpr auto always_false = false;
+template <typename> inline constexpr auto always_false = false;
 
 template <typename Type>
 concept is_wstring = std::is_same_v<typename Type::value_type, std::wstring::value_type> && is_basic_string_v<Type>;
@@ -404,7 +413,7 @@ class Size
     }
 
   private:
-    static constexpr auto SIZE_MAX_IN_BYTES = sizeof(size_max);
+    static inline constexpr auto SIZE_MAX_IN_BYTES = sizeof(size_max);
 
     template <typename AF = bool> [[nodiscard]] static constexpr size_max ToBigEndian(const size_max aSize) noexcept
     {
@@ -448,6 +457,10 @@ class Stream
     using stream = std::variant<vector, span>;
 
     constexpr Stream() noexcept : mStream(vector())
+    {
+    }
+
+    constexpr Stream(const Stream &) noexcept
     {
     }
 
@@ -510,6 +523,11 @@ class Stream
     constexpr decltype(auto) Write(const span &aSpan)
     {
         GetStream().insert(GetStream().end(), aSpan.data(), aSpan.data() + aSpan.size());
+        return *this;
+    }
+
+    constexpr Stream &operator=(const Stream &) noexcept
+    {
         return *this;
     }
 
@@ -705,6 +723,10 @@ class StreamReader
     {
     }
 
+    constexpr StreamReader(const StreamReader &aStreamReader) noexcept : mStream(aStreamReader.mStream)
+    {
+    }
+
     constexpr StreamReader(StreamReader &&aStreamReader) noexcept
     {
         *this = std::move(aStreamReader);
@@ -733,10 +755,15 @@ class StreamReader
         return *this;
     }
 
+    constexpr StreamReader &operator=(const StreamReader &aStreamReader) noexcept
+    {
+        mStream = aStreamReader.mStream;
+        return *this;
+    }
+
     constexpr StreamReader &operator=(StreamReader &&aStreamReader) noexcept
     {
         mStream = aStreamReader.mStream;
-
         return *this;
     }
 
@@ -825,8 +852,9 @@ class StreamReader
         {
             aPointer = std::make_shared<typename Type::element_type>();
         }
-        else // raw pointers
+        else if constexpr (!is_derived_from_pointer<Type, IStreamable>)
         {
+            // raw pointers MUST be allocated only for non streamables
             aPointer = new std::remove_pointer_t<Type>;
         }
 
@@ -1037,6 +1065,10 @@ class StreamWriter
     {
     }
 
+    constexpr StreamWriter(const StreamWriter &aStreamWriter) noexcept : mStream(aStreamWriter.mStream)
+    {
+    }
+
     constexpr StreamWriter(StreamWriter &&aStreamWriter) noexcept
     {
         *this = std::move(aStreamWriter);
@@ -1058,10 +1090,15 @@ class StreamWriter
     {
     }
 
+    constexpr StreamWriter &operator=(const StreamWriter &aStreamWriter) noexcept
+    {
+        mStream = aStreamWriter.mStream;
+        return *this;
+    }
+
     constexpr StreamWriter &operator=(StreamWriter &&aStreamWriter) noexcept
     {
         mStream = aStreamWriter.mStream;
-
         return *this;
     }
 
