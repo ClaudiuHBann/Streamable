@@ -117,7 +117,7 @@ class Size
     }
 
   private:
-    static constexpr auto SIZE_MAX_IN_BYTES = sizeof(size_max);
+    static inline constexpr auto SIZE_MAX_IN_BYTES = sizeof(size_max);
 
     template <typename AF = bool> [[nodiscard]] static constexpr size_max ToBigEndian(const size_max aSize) noexcept
     {

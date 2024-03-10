@@ -23,6 +23,10 @@ class Stream
     {
     }
 
+    constexpr Stream(const Stream &) noexcept
+    {
+    }
+
     constexpr Stream(const span &aSpan) noexcept : mStream(aSpan)
     {
     }
@@ -82,6 +86,11 @@ class Stream
     constexpr decltype(auto) Write(const span &aSpan)
     {
         GetStream().insert(GetStream().end(), aSpan.data(), aSpan.data() + aSpan.size());
+        return *this;
+    }
+
+    constexpr Stream &operator=(const Stream &) noexcept
+    {
         return *this;
     }
 

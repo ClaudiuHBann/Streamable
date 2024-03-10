@@ -21,6 +21,10 @@ class StreamReader
     {
     }
 
+    constexpr StreamReader(const StreamReader &aStreamReader) noexcept : mStream(aStreamReader.mStream)
+    {
+    }
+
     constexpr StreamReader(StreamReader &&aStreamReader) noexcept
     {
         *this = std::move(aStreamReader);
@@ -49,10 +53,15 @@ class StreamReader
         return *this;
     }
 
+    constexpr StreamReader &operator=(const StreamReader &aStreamReader) noexcept
+    {
+        mStream = aStreamReader.mStream;
+        return *this;
+    }
+
     constexpr StreamReader &operator=(StreamReader &&aStreamReader) noexcept
     {
         mStream = aStreamReader.mStream;
-
         return *this;
     }
 
@@ -141,8 +150,9 @@ class StreamReader
         {
             aPointer = std::make_shared<typename Type::element_type>();
         }
-        else // raw pointers
+        else if constexpr (!is_derived_from_pointer<Type, IStreamable>)
         {
+            // raw pointers MUST be allocated only for non streamables
             aPointer = new std::remove_pointer_t<Type>;
         }
 

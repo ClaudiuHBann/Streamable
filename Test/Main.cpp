@@ -8,7 +8,7 @@ typedef struct _guid
     unsigned char Data4[8];
 } guid;
 
-constexpr guid GUID_RND = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+inline constexpr guid GUID_RND = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
 class Shape : public hbann::IStreamable
 {
@@ -40,11 +40,10 @@ class Shape : public hbann::IStreamable
     }
 
   private:
-    static hbann::IStreamable *FindDerivedStreamable(hbann::StreamReader &aStreamReader);
-
-  private:
     Type mType = Type::NONE;
     guid mID{};
+
+    static hbann::IStreamable *FindDerivedStreamable(hbann::StreamReader &aStreamReader);
 };
 
 class Circle : public Shape

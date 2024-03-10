@@ -21,6 +21,10 @@ class StreamWriter
     {
     }
 
+    constexpr StreamWriter(const StreamWriter &aStreamWriter) noexcept : mStream(aStreamWriter.mStream)
+    {
+    }
+
     constexpr StreamWriter(StreamWriter &&aStreamWriter) noexcept
     {
         *this = std::move(aStreamWriter);
@@ -42,10 +46,15 @@ class StreamWriter
     {
     }
 
+    constexpr StreamWriter &operator=(const StreamWriter &aStreamWriter) noexcept
+    {
+        mStream = aStreamWriter.mStream;
+        return *this;
+    }
+
     constexpr StreamWriter &operator=(StreamWriter &&aStreamWriter) noexcept
     {
         mStream = aStreamWriter.mStream;
-
         return *this;
     }
 
