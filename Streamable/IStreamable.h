@@ -13,7 +13,6 @@ namespace hbann
 {
 class IStreamable
 {
-    friend class SizeFinder;
     friend class StreamWriter;
     friend class StreamReader;
 
@@ -47,8 +46,6 @@ class IStreamable
 
     virtual void ToStream() = 0;
     virtual void FromStream() = 0;
-
-    [[nodiscard]] virtual Size::size_max FindParseSize() = 0;
 
     [[nodiscard]] constexpr Stream &&Release() noexcept
     {

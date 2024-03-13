@@ -55,36 +55,14 @@ inline constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
         {                                                                                                              \
             baseClass::ToStream();                                                                                     \
         }                                                                                                              \
-        else                                                                                                           \
-        {                                                                                                              \
-            Reserve(FindParseSize());                                                                                  \
-        }                                                                                                              \
                                                                                                                        \
         mStreamWriter.WriteAll(__VA_ARGS__);                                                                           \
     }                                                                                                                  \
                                                                                                                        \
     STREAMABLE_RESET_ACCESS_MODIFIER
 
-#define STREAMABLE_DEFINE_FIND_PARSE_SIZE(baseClass, ...)                                                              \
-  protected:                                                                                                           \
-    [[nodiscard]] constexpr ::hbann::Size::size_max FindParseSize() override                                           \
-    {                                                                                                                  \
-        ::hbann::Size::size_max size{};                                                                                \
-        if constexpr (!::hbann::static_equal(#baseClass, STREAMABLE_INTERFACE_NAME))                                   \
-        {                                                                                                              \
-            size += baseClass::FindParseSize();                                                                        \
-        }                                                                                                              \
-                                                                                                                       \
-        size += ::hbann::SizeFinder::FindParseSize(__VA_ARGS__);                                                       \
-                                                                                                                       \
-        return size;                                                                                                   \
-    }                                                                                                                  \
-                                                                                                                       \
-    STREAMABLE_RESET_ACCESS_MODIFIER
-
 #define STREAMABLE_DEFINE_INTRUSIVE                                                                                    \
   private:                                                                                                             \
-    friend class ::hbann::SizeFinder;                                                                                  \
     friend class ::hbann::StreamReader;                                                                                \
     friend class ::hbann::StreamWriter;
 
@@ -96,7 +74,6 @@ inline constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
     STREAMABLE_DEFINE_INTRUSIVE                                                                                        \
     STREAMABLE_DEFINE_TO_STREAM(baseClass, __VA_ARGS__)                                                                \
     STREAMABLE_DEFINE_FROM_STREAM(baseClass, __VA_ARGS__)                                                              \
-    STREAMABLE_DEFINE_FIND_PARSE_SIZE(baseClass, __VA_ARGS__)                                                          \
     STREAMABLE_RESET_ACCESS_MODIFIER
 
 namespace hbann
@@ -166,10 +143,6 @@ template <typename> inline constexpr auto always_false = false;
 template <typename Type>
 concept is_wstring = std::is_same_v<typename Type::value_type, std::wstring::value_type> && is_basic_string_v<Type>;
 
-template <typename Container>
-concept has_method_reserve =
-    std::ranges::contiguous_range<Container> && requires(Container &aContainer) { aContainer.reserve(size_t(0)); };
-
 template <typename Type>
 concept is_smart_pointer = is_shared_ptr_v<Type> || is_unique_ptr_v<Type>;
 
@@ -218,20 +191,15 @@ template <typename Type, std::size_t vIndex = 0>
 
 /*
     TODO:
-         - check SizeFinder for added type support and for incorrect use of the Size::findrequired bytes and etc...
          - add separated examples
-         - remake tests
+         - refactor tests
 
     FEATURES:
+         - add suport for utf32
          - support for multiple inheritance of streamables
          - instead of reading object to jump over the value, create a jump method
-         - handle range reserve for ranges of multiple ranks
 
     UX:
          - when finding derived class from base class pointer, add a tuple representing the types that can be read
    and make the user access the objects by index so can't read a bad object
-
-    WARNING:
-         - when adding a new feature try to implement the serialize and deserialize algorithms with SizeFinder for
-   the object and, if possible, the reserve method
 */

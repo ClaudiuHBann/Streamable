@@ -219,7 +219,6 @@ class StreamReader
 
         Type range{};
         const auto count = ReadCount();
-        RangeReserve(range, count);
 
         if constexpr (SizeFinder::FindRangeRank<Type>() > 1)
         {
@@ -291,49 +290,6 @@ class StreamReader
                 Read(object);
                 aRange.insert(std::ranges::cend(aRange), std::move(object));
             }
-        }
-
-        return *this;
-    }
-
-    template <typename Type> constexpr decltype(auto) RangeReserve(Type &aRange, const Size::size_max aCount)
-    {
-        static_assert(std::ranges::range<Type>, "Type is not a range!");
-
-        using TypeValueType = typename Type::value_type;
-
-        Size::size_max size{};
-
-        if constexpr (has_method_reserve<Type>)
-        {
-            if constexpr (std::derived_from<IStreamable, Type>)
-            {
-                Peek([&](auto) {
-                    for (size_t i = 0; i < aCount; i++)
-                    {
-                        const auto sizeCurrent = ReadCount();
-                        size += sizeCurrent;
-                        [[maybe_unused]] auto _ = mStream->Read(sizeCurrent);
-                    }
-                });
-            }
-            else if constexpr (is_standard_layout_no_pointer<TypeValueType>)
-            {
-                if constexpr (is_wstring<Type>)
-                {
-                    Peek([&](auto) { size += Converter::FindUTF16Size(mStream->Read(aCount)); });
-                }
-                else
-                {
-                    size = aCount * sizeof(TypeValueType);
-                }
-            }
-            else
-            {
-                size = aCount;
-            }
-
-            aRange.reserve(size);
         }
 
         return *this;
