@@ -46,10 +46,10 @@ class StreamReader
     {
     }
 
-    template <typename FunctionSeek>
-    inline decltype(auto) Peek(const FunctionSeek &aFunctionSeek, const Size::size_max aOffset = 0)
+    inline decltype(auto) Peek(std::move_only_function<void(const Size::size_max)> aFunctionSeek,
+                               const Size::size_max aOffset = 0)
     {
-        mStream->Peek(aFunctionSeek, aOffset);
+        mStream->Peek(std::move(aFunctionSeek), aOffset);
         return *this;
     }
 

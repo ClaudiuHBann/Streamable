@@ -41,8 +41,8 @@ class Stream
         return std::move(GetStream());
     }
 
-    template <typename FunctionSeek>
-    inline decltype(auto) Peek(const FunctionSeek &aFunctionSeek, const Size::size_max aOffset = 0)
+    inline decltype(auto) Peek(std::move_only_function<void(const Size::size_max)> aFunctionSeek,
+                               const Size::size_max aOffset = 0)
     {
         const auto readIndex = mReadIndex;
         mReadIndex += aOffset;
