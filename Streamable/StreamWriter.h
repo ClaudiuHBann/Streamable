@@ -61,11 +61,11 @@ class StreamWriter
   private:
     Stream *mStream{};
 
-    template <typename Type> constexpr decltype(auto) WriteObjectOfKnownSize(const Type &aObject)
+    template <typename Type> constexpr decltype(auto) WriteObjectOfKnownSize(Type &aObject)
     {
         static_assert(is_standard_layout_no_pointer<Type>, "Type is not an object of known size or it is a pointer!");
 
-        const auto objectPtr = reinterpret_cast<const uint8_t *>(&aObject);
+        const auto objectPtr = reinterpret_cast<uint8_t *>(&aObject);
         mStream->Write({objectPtr, sizeof(aObject)});
 
         return *this;
@@ -115,9 +115,9 @@ class StreamWriter
 
         using TypeValueType = typename Type::value_type;
 
-        if constexpr (is_wstring<Type>)
+        if constexpr (is_utf16string<Type>)
         {
-            WriteRangeStandardLayout(Converter::ToUTF8(aRange));
+            WriteRangeStandardLayout(Converter::Encode(aRange));
         }
         else if constexpr (is_path<Type>)
         {

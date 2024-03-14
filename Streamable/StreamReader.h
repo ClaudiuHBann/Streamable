@@ -254,9 +254,9 @@ class StreamReader
 
         using TypeValueType = typename Type::value_type;
 
-        if constexpr (is_wstring<Type>)
+        if constexpr (is_utf16string<Type>)
         {
-            aRange.assign(Converter::FromUTF8(mStream->Read(aCount)));
+            aRange.assign(Converter::Decode<Type>(mStream->Read(aCount)));
         }
         else if constexpr (is_path<Type>)
         {

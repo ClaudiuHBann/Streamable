@@ -243,21 +243,21 @@ TEST_CASE("Streamable", "[Streamable]")
         hbann::Stream stream;
 
         std::string biceps("biceps");
-        stream.Write({reinterpret_cast<const uint8_t *>(biceps.c_str()), biceps.size()});
+        stream.Write({reinterpret_cast<uint8_t *>(biceps.data()), biceps.size()});
         const auto bicepsView = stream.Read(biceps.size());
         REQUIRE(!std::memcmp(biceps.c_str(), bicepsView.data(), bicepsView.size()));
 
         REQUIRE(!stream.Read(1).size());
 
         std::string triceps("triceps");
-        stream.Write({reinterpret_cast<const uint8_t *>(triceps.c_str()), triceps.size()});
+        stream.Write({reinterpret_cast<uint8_t *>(triceps.data()), triceps.size()});
         const auto tricepsView = stream.Read(triceps.size());
         REQUIRE(!std::memcmp(triceps.c_str(), tricepsView.data(), tricepsView.size()));
 
         REQUIRE(!stream.Read(1).size());
 
         std::string cariceps("cariceps");
-        stream.Write({reinterpret_cast<const uint8_t *>(cariceps.c_str()), cariceps.size()});
+        stream.Write({reinterpret_cast<uint8_t *>(cariceps.data()), cariceps.size()});
         const auto caricepsView = stream.Read(cariceps.size());
         REQUIRE(!std::memcmp(cariceps.c_str(), caricepsView.data(), caricepsView.size()));
     }

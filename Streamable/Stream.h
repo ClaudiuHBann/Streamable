@@ -27,7 +27,7 @@ class Stream
     {
     }
 
-    constexpr Stream(const span &aSpan) noexcept : mStream(aSpan)
+    constexpr Stream(const span aSpan) noexcept : mStream(aSpan)
     {
     }
 
@@ -83,7 +83,7 @@ class Stream
         return View()[mReadIndex];
     }
 
-    constexpr decltype(auto) Write(const span &aSpan)
+    constexpr decltype(auto) Write(const span aSpan)
     {
         GetStream().insert(GetStream().end(), aSpan.data(), aSpan.data() + aSpan.size());
         return *this;

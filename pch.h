@@ -13,11 +13,23 @@ class StreamReader;
 } // namespace hbann
 
 // std
-#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+
+#ifdef _WIN32
+
+#define NOIME
+#define NOMCX
+#define NOMINMAX
+#define NOSERVICE
+#define WIN32_LEAN_AND_MEAN
+
+#include <Windows.h>
+
+#else
+#warning "Platform does not support encoding UTF16 strings to save memory!"
+#endif
 
 #include <bit>
 #include <cmath>
-#include <codecvt>
 #include <cstring>
 #include <filesystem>
 #include <functional>
@@ -125,7 +137,7 @@ template <typename Type> struct is_shared_ptr<std::shared_ptr<Type>> : std::true
 template <typename> struct is_basic_string : std::false_type
 {
 };
-template <typename Type> struct is_basic_string<std::basic_string<Type>> : std::true_type
+template <typename... Types> struct is_basic_string<std::basic_string<Types...>> : std::true_type
 {
 };
 } // namespace detail
@@ -142,6 +154,12 @@ template <typename> inline constexpr auto always_false = false;
 
 template <typename Type>
 concept is_wstring = std::is_same_v<typename Type::value_type, std::wstring::value_type> && is_basic_string_v<Type>;
+
+template <typename Type>
+concept is_u16string = std::is_same_v<typename Type::value_type, std::u16string::value_type> && is_basic_string_v<Type>;
+
+template <typename Type>
+concept is_utf16string = is_u16string<Type> || (sizeof(std::wstring::value_type) == 2 && is_wstring<Type>);
 
 template <typename Type>
 concept is_smart_pointer = is_shared_ptr_v<Type> || is_unique_ptr_v<Type>;
@@ -191,11 +209,11 @@ template <typename Type, std::size_t vIndex = 0>
 
 /*
     TODO:
+         - add class name in defines so we won't break them in the future if the class name is needed
          - add separated examples
          - refactor tests
 
     FEATURES:
-         - add suport for utf32
          - support for multiple inheritance of streamables
          - instead of reading object to jump over the value, create a jump method
 

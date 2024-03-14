@@ -81,7 +81,7 @@ class Size
         return span{SIZE_AS_CHARS_START, requiredBytes};
     }
 
-    [[nodiscard]] static inline auto MakeSize(const span &aSize) noexcept
+    [[nodiscard]] static inline auto MakeSize(const span aSize) noexcept
     {
         static uint8_t SIZE_AS_CHARS[SIZE_MAX_IN_BYTES]{};
         static auto SIZE = reinterpret_cast<size_max *>(SIZE_AS_CHARS);
