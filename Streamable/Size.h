@@ -123,11 +123,30 @@ class Size
     {
         if constexpr (std::endian::native == std::endian::little)
         {
-            return std::byteswap(aSize);
+            if constexpr (sizeof(size_max) == 4)
+            {
+                return ((aSize >> 24) & 0x000000FF) | ((aSize >> 8) & 0x0000FF00) | ((aSize << 8) & 0x00FF0000) |
+                       ((aSize << 24) & 0xFF000000);
+            }
+            else if constexpr (sizeof(size_max) == 8)
+            {
+                return ((aSize & 0xFF00000000000000) >> 56) | ((aSize & 0x00FF000000000000) >> 40) |
+                       ((aSize & 0x0000FF0000000000) >> 24) | ((aSize & 0x000000FF00000000) >> 8) |
+                       ((aSize & 0x00000000FF000000) << 8) | ((aSize & 0x0000000000FF0000) << 24) |
+                       ((aSize & 0x000000000000FF00) << 40) | ((aSize & 0x00000000000000FF) << 56);
+            }
+            else
+            {
+                static_assert(always_false<AF>, "Unknown size!");
+            }
+        }
+        else if constexpr (std::endian::native == std::endian::big)
+        {
+            return aSize;
         }
         else
         {
-            return aSize;
+            static_assert(always_false<AF>, "Unknown endianness!");
         }
     }
 };

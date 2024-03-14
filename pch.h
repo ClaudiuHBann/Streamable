@@ -32,7 +32,6 @@ class StreamReader;
 #include <cmath>
 #include <cstring>
 #include <filesystem>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <span>
