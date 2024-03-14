@@ -47,9 +47,9 @@ class StreamReader
     }
 
     template <typename FunctionSeek>
-    inline decltype(auto) Peek(const FunctionSeek &aFunctionSeek, const Size::size_max aOffset = 0)
+    inline decltype(auto) Peek(FunctionSeek &&aFunctionSeek, const Size::size_max aOffset = 0)
     {
-        mStream->Peek(aFunctionSeek, aOffset);
+        mStream->Peek(std::forward<FunctionSeek>(aFunctionSeek), aOffset);
         return *this;
     }
 
