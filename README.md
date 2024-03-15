@@ -1,14 +1,14 @@
 
 # Streamable
 
-Fastest and Smallest (De)Serializer for C++20 or newer.
+Fastest, Smallest and Simplest (De)Serializer for C++20 or newer.
 
 ## Table of Contents
 
 - [Installation](#installation)
 - [Features](#features)
 - [Usage](#usage)
-- [Downsides and Limitations](#Downsides-and-Limitations)
+- [Downsides and Limitations](#downsides-and-limitations)
 - [Examples](#examples)
 
 ## Installation
@@ -17,17 +17,24 @@ To use this library, simply download and include the header file `Streamable.hpp
 
 ## Features
 
-- **fast** - fast++ and memory-- compared to [MsgPack](https://msgpack.org/)
+- **fast** - fast^2, memory-- and easy++ compared to [MsgPack](https://msgpack.org/)
 - **easy-to-use** - inherit a class and use a macro :D
 - **single-header** - just copy paste the file into your project
-- **has no dependencies** - it only uses the `C++20` standard library
-- **supports multiple compilers** - `MSVC` and `GCC`
+- **has no dependencies** - uses the `C++20` standard library and OS native API
+- **cross-platform** -
+
+| Platform      | Support      | Details                        |
+|---------------|--------------|--------------------------------|
+| Windows       | Yes          |                                |
+| macOS         | Partial      | No UTF16 encoding for memory-- |
+| Linux         | Partial      | No UTF16 encoding for memory-- |
+
 - **supports every data type** - beside **itself** (so called "streamables"), **raw/smart pointers** (ex:. `std::unique_ptr`, `std::shared_ptr` etc...), **most STL classes** (`std::tuple`, `std::optional`, `std::variant` etc...), **any nested range** (ex.: `std::wstring`, `std::list`, std::vector&lt;std::list&gt; etc...), **PODs** (ex.: POD structs and classes, enums, etc...), **primitive types** (ex.: `bool`, `unsigned int`, `double` etc...)
 
 ## Usage
 
 1. Inherit from the `IStreamable` class or any class that implements it.
-2. Use the macro **STREAMABLE_DEFINE** where you need to pass the base class and the objects you want to parse
+2. Use the macro **STREAMABLE_DEFINE** where you need to pass your class, the base classes to parse and the objects you want to parse
 3. **OPTIONAL** If "streamables" pointers are (de)serialized you MUST implement **FindDerivedStreamable** (if you forget this, a `static_assert` will appear explaining what is wrong)
 
 ## Downsides and Limitations
