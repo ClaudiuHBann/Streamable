@@ -203,7 +203,7 @@ class StreamReader
             }
             else
             {
-                aStreamablePtr = static_cast<TypeNoPtr *>(TypeNoPtr::FindDerivedStreamable(streamReader));
+                aStreamablePtr = dynamic_cast<TypeNoPtr *>(TypeNoPtr::FindDerivedStreamable(streamReader));
             }
         });
 

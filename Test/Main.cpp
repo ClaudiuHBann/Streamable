@@ -10,9 +10,9 @@ typedef struct _guid
 
 inline constexpr guid GUID_RND = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
-class Shape : public hbann::IStreamable
+class Shape : public virtual hbann::IStreamable
 {
-    STREAMABLE_DEFINE(IStreamable, mType, mID);
+    STREAMABLE_DEFINE(Shape, STREAMABLE_DEFINE_BASE(), mType, mID);
 
   public:
     enum class Type : uint8_t
@@ -48,7 +48,7 @@ class Shape : public hbann::IStreamable
 
 class Circle : public Shape
 {
-    STREAMABLE_DEFINE(Shape, mSVG, mURL, mVariant);
+    STREAMABLE_DEFINE(Circle, STREAMABLE_DEFINE_BASE(Shape), mSVG, mURL, mVariant);
 
   public:
     Circle() = default;
@@ -72,7 +72,7 @@ class Circle : public Shape
 
 class Sphere : public Circle
 {
-    STREAMABLE_DEFINE(Circle, mReflexion, mTuple, mPair);
+    STREAMABLE_DEFINE(Sphere, STREAMABLE_DEFINE_BASE(Circle), mReflexion, mTuple, mPair);
 
   public:
     Sphere() = default;
@@ -96,7 +96,7 @@ class Sphere : public Circle
 
 class RectangleEx : public Shape
 {
-    STREAMABLE_DEFINE(Shape, mCenter, mMap, mCells);
+    STREAMABLE_DEFINE(ReclangleEx, STREAMABLE_DEFINE_BASE(Shape), mCenter, mMap, mCells);
 
   public:
     RectangleEx() = default;
@@ -114,6 +114,25 @@ class RectangleEx : public Shape
     Sphere mCenter{};
     std::map<int, double> mMap{};
     std::vector<std::vector<std::wstring>> mCells{};
+};
+
+class Diamond : public Circle, public RectangleEx
+{
+    STREAMABLE_DEFINE(Diamond, STREAMABLE_DEFINE_BASE(Circle, RectangleEx));
+
+  public:
+    Diamond() = default;
+    Diamond(const guid &aIDC, const std::optional<std::string> &aSVG, const std::filesystem::path &aURL,
+            std::variant<std::vector<double>, bool> &&aVariant, const guid &aIDR, Sphere &&aCenter,
+            const std::vector<std::vector<std::wstring>> &aCells)
+        : Circle(aIDC, aSVG, aURL, move(aVariant)), RectangleEx(aIDR, move(aCenter), aCells)
+    {
+    }
+
+    bool operator==(const Diamond &aDiamond) const
+    {
+        return *(Circle *)this == *(Circle *)&aDiamond && *(RectangleEx *)this == *(RectangleEx *)&aDiamond;
+    }
 };
 
 hbann::IStreamable *Shape::FindDerivedStreamable(hbann::StreamReader &aStreamReader)
@@ -135,7 +154,7 @@ hbann::IStreamable *Shape::FindDerivedStreamable(hbann::StreamReader &aStreamRea
 
 class Context : public hbann::IStreamable
 {
-    STREAMABLE_DEFINE(IStreamable, mShapes);
+    STREAMABLE_DEFINE(Context, STREAMABLE_DEFINE_BASE(), mShapes);
 
   public:
     Context() = default;
@@ -322,6 +341,21 @@ TEST_CASE("IStreamable", "[IStreamable]")
 
         delete circleStart;
         delete circleEnd;
+    }
+
+    SECTION("DerivedxN")
+    {
+        Circle circle(GUID_RND, {}, L"URL\\SHIT", false);
+        std::vector<std::vector<std::wstring>> cells{{L"smth", L"else"}, {L"HBann", L"Sefu la bani"}};
+
+        Sphere sphere(circle, std::make_unique<bool>(true), {"Commit: added tuple support", {22, 100}}, {circle, 22.});
+
+        Diamond diamondStart(GUID_RND, {}, L"URL\\SHIT", false, GUID_RND, std::move(sphere), cells);
+
+        Diamond diamondEnd;
+        diamondEnd.Deserialize(diamondStart.Serialize());
+
+        REQUIRE(diamondStart == diamondEnd);
     }
 
     SECTION("Derived++")
