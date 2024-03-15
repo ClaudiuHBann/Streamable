@@ -16,11 +16,29 @@ class StreamReader;
 
 #ifdef _WIN32
 
+#ifndef NOIME
 #define NOIME
+#endif // !NOIME
+
+#ifndef NOMCX
 #define NOMCX
+#endif // !NOMCX
+
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif // !NOMINMAX
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif // !NOMINMAX
+
+#ifndef NOSERVICE
 #define NOSERVICE
+#endif // !NOSERVICE
+
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif // !WIN32_LEAN_AND_MEAN
 
 #include <Windows.h>
 
