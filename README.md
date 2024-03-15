@@ -8,6 +8,7 @@ Fastest, Smallest and Simplest (De)Serializer for C++20 or newer.
 - [Installation](#installation)
 - [Features](#features)
 - [Usage](#usage)
+- [Benchmark](#benchmark)
 - [Downsides and Limitations](#downsides-and-limitations)
 - [Examples](#examples)
 
@@ -36,6 +37,16 @@ To use this library, simply download and include the header file `Streamable.hpp
 1. Inherit from the `IStreamable` class or any class that implements it.
 2. Use the macro **STREAMABLE_DEFINE** where you need to pass your class, the base classes to parse and the objects you want to parse
 3. **OPTIONAL** If "streamables" pointers are (de)serialized you MUST implement **FindDerivedStreamable** (if you forget this, a `static_assert` will appear explaining what is wrong)
+
+## Benchmark
+
+This benchmark contains anything from trivial types to maps of strings to STL containers to vectors of derived classes as base class pointers etc...
+
+| Library           | Time (ms) | Memory Usage (KB) |
+|-------------------|-----------|-------------------|
+| Streamable        | 0.379     | 85                |
+| nlohmann::json    | 2.9       | 187               |
+| MsgPack           | 0.755     | 87                |
 
 ## Downsides and Limitations
 
