@@ -1,3 +1,9 @@
+/*
+    Copyright (c) 2024 Claudiu HBann
+
+    See LICENSE for the full terms of the MIT License.
+*/
+
 #pragma once
 
 namespace hbann
