@@ -246,7 +246,6 @@ template <typename Type, std::size_t vIndex = 0>
 
 /*
     TODO:
-         - use std::bitset for Size
          - add separated examples
          - refactor tests
 

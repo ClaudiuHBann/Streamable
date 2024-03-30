@@ -24,14 +24,13 @@ class Size
 
     [[nodiscard]] static constexpr auto FindRequiredBytes(const uint8_t aSize) noexcept
     {
-        const auto size = static_cast<uint8_t>(aSize);
-        if constexpr (sizeof(size_max) == 4)
+        if constexpr (SIZE_MAX_IN_BYTES == 4)
         {
-            return static_cast<size_max>(size >> 6);
+            return static_cast<size_max>(aSize >> 6);
         }
         else
         {
-            return static_cast<size_max>(size >> 5);
+            return static_cast<size_max>(aSize >> 5);
         }
     }
 
@@ -43,8 +42,9 @@ class Size
             // add the bits required to represent the size
             requiredBits += static_cast<size_max>(std::log2(aSize));
         }
+
         // add the bits required to represent the required bytes to store the final value
-        if constexpr (sizeof(size_max) == 4)
+        if constexpr (SIZE_MAX_IN_BYTES == 4)
         {
             requiredBits += 2;
         }
@@ -59,16 +59,16 @@ class Size
 
     [[nodiscard]] static inline auto MakeSize(const size_max aSize) noexcept
     {
-        static uint8_t SIZE_AS_CHARS[SIZE_MAX_IN_BYTES]{};
-        static auto SIZE = reinterpret_cast<size_max *>(SIZE_AS_CHARS);
+        thread_local uint8_t SIZE_AS_CHARS[SIZE_MAX_IN_BYTES]{};
+        auto &SIZE = *reinterpret_cast<size_max *>(SIZE_AS_CHARS);
 
         const auto requiredBytes = FindRequiredBytes(aSize);
         auto SIZE_AS_CHARS_START = SIZE_AS_CHARS + (SIZE_MAX_IN_BYTES - requiredBytes);
 
         // write the size itself
-        *SIZE = ToBigEndian(aSize);
+        SIZE = ToBigEndian(aSize);
         // write the 3 bits representing the bytes required
-        if constexpr (sizeof(size_max) == 4)
+        if constexpr (SIZE_MAX_IN_BYTES == 4)
         {
             *SIZE_AS_CHARS_START |= requiredBytes << 6;
         }
@@ -83,28 +83,25 @@ class Size
 
     [[nodiscard]] static inline auto MakeSize(const span aSize) noexcept
     {
-        static uint8_t SIZE_AS_CHARS[SIZE_MAX_IN_BYTES]{};
-        static auto SIZE = reinterpret_cast<size_max *>(SIZE_AS_CHARS);
-
-        // clear the last size
-        *SIZE = 0;
+        uint8_t SIZE_AS_CHARS[SIZE_MAX_IN_BYTES]{};
+        auto &SIZE = *reinterpret_cast<size_max *>(SIZE_AS_CHARS);
 
         size_max requiredBytes{};
-        const auto size = static_cast<uint8_t>(aSize.front());
-        if constexpr (sizeof(size_max) == 4)
+        if constexpr (SIZE_MAX_IN_BYTES == 4)
         {
-            requiredBytes = static_cast<size_max>(size >> 6);
+            requiredBytes = static_cast<size_max>(aSize.front() >> 6);
         }
         else
         {
-            requiredBytes = static_cast<size_max>(size >> 5);
+            requiredBytes = static_cast<size_max>(aSize.front() >> 5);
         }
-        auto SIZE_AS_CHARS_START = SIZE_AS_CHARS + (SIZE_MAX_IN_BYTES - requiredBytes);
 
+        auto SIZE_AS_CHARS_START = SIZE_AS_CHARS + (SIZE_MAX_IN_BYTES - requiredBytes);
         // copy only the resizeable size
         std::memcpy(SIZE_AS_CHARS_START, aSize.data(), requiredBytes);
+
         // clear the required bytes
-        if constexpr (sizeof(size_max) == 4)
+        if constexpr (SIZE_MAX_IN_BYTES == 4)
         {
             *SIZE_AS_CHARS_START &= 0b00111111;
         }
@@ -113,17 +110,17 @@ class Size
             *SIZE_AS_CHARS_START &= 0b00011111;
         }
 
-        return ToBigEndian(*SIZE);
+        return ToBigEndian(SIZE);
     }
 
   private:
     static inline constexpr auto SIZE_MAX_IN_BYTES = sizeof(size_max);
 
-    template <typename AF = bool> [[nodiscard]] static constexpr size_max ToBigEndian(const size_max aSize) noexcept
+    [[nodiscard]] static constexpr size_max ToBigEndian(const size_max aSize) noexcept
     {
         if constexpr (std::endian::native == std::endian::little)
         {
-            if constexpr (sizeof(size_max) == 4)
+            if constexpr (SIZE_MAX_IN_BYTES == 4)
             {
                 return ((aSize >> 24) & 0x000000FF) | ((aSize >> 8) & 0x0000FF00) | ((aSize << 8) & 0x00FF0000) |
                        ((aSize << 24) & 0xFF000000);
