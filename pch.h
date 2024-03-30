@@ -6,14 +6,9 @@
 
 #pragma once
 
-namespace hbann
-{
-class IStreamable;
-class StreamReader;
-} // namespace hbann
+#include "StreamableFWD.h"
 
-// std
-
+// native
 #ifdef _WIN32
 
 #ifndef NOIME
@@ -28,14 +23,6 @@ class StreamReader;
 #define NOMINMAX
 #endif // !NOMINMAX
 
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif // !NOMINMAX
-
-#ifndef NOSERVICE
-#define NOSERVICE
-#endif // !NOSERVICE
-
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif // !WIN32_LEAN_AND_MEAN
@@ -46,6 +33,7 @@ class StreamReader;
 #warning "Platform does not support encoding UTF16 strings to save memory!"
 #endif
 
+// std
 #include <bit>
 #include <cmath>
 #include <cstring>

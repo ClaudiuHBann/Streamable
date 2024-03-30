@@ -12,8 +12,6 @@
 
 namespace hbann
 {
-class IStreamable;
-
 class StreamWriter
 {
   public:

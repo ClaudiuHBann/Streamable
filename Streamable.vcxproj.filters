@@ -23,6 +23,7 @@
     <ClCompile Include="Streamable\Converter.cpp">
       <Filter>Streamable</Filter>
     </ClCompile>
+    <ClCompile Include="StreamableFWD.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Streamable\Stream.h">
@@ -47,6 +48,7 @@
     <ClInclude Include="Streamable\Converter.h">
       <Filter>Streamable</Filter>
     </ClInclude>
+    <ClInclude Include="StreamableFWD.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Streamable">
