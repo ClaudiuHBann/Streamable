@@ -46,7 +46,7 @@
 #include <vector>
 
 // Streamable
-inline constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
+inline constexpr auto STREAMABLE_INTERFACE_NAME = "::hbann::IStreamable";
 
 #define EXPAND(x) x
 #define GET_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, MACRO, ...) MACRO
