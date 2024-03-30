@@ -42,7 +42,7 @@ class Stream
     }
 
     template <typename FunctionSeek>
-    inline decltype(auto) Peek(FunctionSeek &&aFunctionSeek, const Size::size_max aOffset = 0)
+    constexpr decltype(auto) Peek(FunctionSeek &&aFunctionSeek, const Size::size_max aOffset = 0)
     {
         const auto readIndex = mReadIndex;
         mReadIndex += aOffset;

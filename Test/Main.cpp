@@ -324,6 +324,16 @@ TEST_CASE("IStreamable", "[IStreamable]")
 {
     SECTION("Simple")
     {
+        Circle circleStart(GUID_RND, {}, L"URL\\SHIT", false);
+        Circle circleEnd;
+        circleEnd.Deserialize(circleStart.Serialize());
+        circleStart.Deserialize(circleEnd.Serialize());
+
+        REQUIRE(circleStart == circleEnd);
+    }
+
+    SECTION("Simple")
+    {
         Shape shapeStart(Shape::Type::RECTANGLE, GUID_RND);
         Shape shapeEnd{};
         shapeEnd.Deserialize(shapeStart.Serialize());

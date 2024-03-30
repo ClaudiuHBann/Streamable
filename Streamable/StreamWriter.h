@@ -69,7 +69,7 @@ class StreamWriter
         return *this;
     }
 
-    inline decltype(auto) WriteCount(const Size::size_max aSize)
+    constexpr decltype(auto) WriteCount(const Size::size_max aSize)
     {
         mStream->Write(Size::MakeSize(aSize));
         return *this;

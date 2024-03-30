@@ -13,7 +13,7 @@ namespace hbann
 class SizeFinder
 {
   public:
-    template <typename Type> [[nodiscard]] static constexpr Size::size_max FindRangeRank() noexcept
+    template <typename Type> [[nodiscard]] static consteval Size::size_max FindRangeRank() noexcept
     {
         using TypeRaw = std::remove_cvref_t<Type>;
 

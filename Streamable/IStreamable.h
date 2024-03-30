@@ -19,13 +19,14 @@ class IStreamable
     Stream mStream;
 
   public:
-    [[nodiscard]] inline decltype(auto) Serialize()
+    [[nodiscard]] constexpr decltype(auto) Serialize()
     {
+        Swap(Stream());
         ToStream();
         return Release();
     }
 
-    inline void Deserialize(Stream &&aStream, const bool aClear = true)
+    constexpr void Deserialize(Stream &&aStream, const bool aClear = true)
     {
         Swap(std::move(aStream));
         FromStream();
