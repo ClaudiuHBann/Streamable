@@ -125,7 +125,7 @@ class Diamond : public Circle, public RectangleEx
     Diamond(const guid &aIDC, const std::optional<std::string> &aSVG, const std::filesystem::path &aURL,
             std::variant<std::vector<double>, bool> &&aVariant, const guid &aIDR, Sphere &&aCenter,
             const std::vector<std::vector<std::wstring>> &aCells)
-        : Circle(aIDC, aSVG, aURL, move(aVariant)), RectangleEx(aIDR, move(aCenter), aCells)
+        : Circle(aIDC, aSVG, aURL, std::move(aVariant)), RectangleEx(aIDR, std::move(aCenter), aCells)
     {
     }
 

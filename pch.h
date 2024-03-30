@@ -80,7 +80,7 @@ inline constexpr auto STREAMABLE_INTERFACE_NAME = "IStreamable";
 #define FROM_STREAM_ALL(...) EXPAND(PASTE(FROM_STREAM, __VA_ARGS__))
 
 // IStreamable by default because it must not be empty and does nothing
-#define STREAMABLE_DEFINE_BASE(...) IStreamable, __VA_ARGS__
+#define STREAMABLE_DEFINE_BASE(...) ::hbann::IStreamable, __VA_ARGS__
 
 #define STREAMABLE_RESET_ACCESS_MODIFIER private:
 
