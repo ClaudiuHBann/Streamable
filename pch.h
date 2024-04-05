@@ -46,41 +46,33 @@
 #include <vector>
 
 // Streamable
-inline constexpr auto STREAMABLE_INTERFACE_NAME = "::hbann::IStreamable";
-
-#define EXPAND(x) x
-#define GET_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, MACRO, ...) MACRO
-
-// clang-format off
-#define PASTE(...) EXPAND(GET_MACRO(__VA_ARGS__, PASTE9, PASTE8, PASTE7, PASTE6, PASTE5, PASTE4, PASTE3, PASTE2, PASTE1)(__VA_ARGS__))
-// Macro Magik Mate :D
-#define PASTE1(func, v1) func(v1)
-#define PASTE2(func, v1, v2) PASTE1(func, v1) PASTE1(func, v2)
-#define PASTE3(func, v1, v2, v3) PASTE1(func, v1) PASTE2(func, v2, v3)
-#define PASTE4(func, v1, v2, v3, v4) PASTE1(func, v1) PASTE3(func, v2, v3, v4)
-#define PASTE5(func, v1, v2, v3, v4, v5) PASTE1(func, v1) PASTE4(func, v2, v3, v4, v5)
-#define PASTE6(func, v1, v2, v3, v4, v5, v6) PASTE1(func, v1) PASTE5(func, v2, v3, v4, v5, v6)
-#define PASTE7(func, v1, v2, v3, v4, v5, v6, v7) PASTE1(func, v1) PASTE6(func, v2, v3, v4, v5, v6, v7)
-#define PASTE8(func, v1, v2, v3, v4, v5, v6, v7, v8) PASTE1(func, v1) PASTE7(func, v2, v3, v4, v5, v6, v7, v8)
-#define PASTE9(func, v1, v2, v3, v4, v5, v6, v7, v8, v9) PASTE1(func, v1) PASTE8(func, v2, v3, v4, v5, v6, v7, v8, v9)
-// clang-format on
-
-#define TO_STREAM(baseClass)                                                                                           \
-    if constexpr (!::hbann::static_equal(#baseClass, STREAMABLE_INTERFACE_NAME))                                       \
+#define STREAMABLE_DEFINE_TO_STREAM_BASES                                                                              \
+  private:                                                                                                             \
+    template <typename Type, std::size_t tIndex = std::tuple_size_v<Type>> constexpr void ToStreamBases()              \
     {                                                                                                                  \
-        baseClass::ToStream();                                                                                         \
+        static_assert(::hbann::is_tuple_v<Type>, "Type is not a tuple!");                                              \
+                                                                                                                       \
+        if constexpr (tIndex > 0)                                                                                      \
+        {                                                                                                              \
+            std::tuple_element_t<tIndex - 1, Type>::ToStream();                                                        \
+            ToStreamBases<Type, tIndex - 1>();                                                                         \
+        }                                                                                                              \
     }
-#define TO_STREAM_ALL(...) EXPAND(PASTE(TO_STREAM, __VA_ARGS__))
 
-#define FROM_STREAM(baseClass)                                                                                         \
-    if constexpr (!::hbann::static_equal(#baseClass, STREAMABLE_INTERFACE_NAME))                                       \
+#define STREAMABLE_DEFINE_FROM_STREAM_BASES                                                                            \
+  private:                                                                                                             \
+    template <typename Type, std::size_t tIndex = std::tuple_size_v<Type>> constexpr void FromStreamBases()            \
     {                                                                                                                  \
-        baseClass::FromStream();                                                                                       \
+        static_assert(::hbann::is_tuple_v<Type>, "Type is not a tuple!");                                              \
+                                                                                                                       \
+        if constexpr (tIndex > 0)                                                                                      \
+        {                                                                                                              \
+            std::tuple_element_t<tIndex - 1, Type>::FromStream();                                                      \
+            FromStreamBases<Type, tIndex - 1>();                                                                       \
+        }                                                                                                              \
     }
-#define FROM_STREAM_ALL(...) EXPAND(PASTE(FROM_STREAM, __VA_ARGS__))
 
-// IStreamable by default because it must not be empty and does nothing
-#define STREAMABLE_DEFINE_BASE(...) ::hbann::IStreamable, __VA_ARGS__
+#define STREAMABLE_DEFINE_BASE(...) std::tuple<__VA_ARGS__>
 
 #define STREAMABLE_RESET_ACCESS_MODIFIER private:
 
@@ -88,7 +80,7 @@ inline constexpr auto STREAMABLE_INTERFACE_NAME = "::hbann::IStreamable";
   protected:                                                                                                           \
     constexpr void FromStream() override                                                                               \
     {                                                                                                                  \
-        FROM_STREAM_ALL(baseClasses);                                                                                  \
+        FromStreamBases<baseClasses>();                                                                                \
                                                                                                                        \
         mStreamReader.ReadAll(__VA_ARGS__);                                                                            \
     }                                                                                                                  \
@@ -99,7 +91,7 @@ inline constexpr auto STREAMABLE_INTERFACE_NAME = "::hbann::IStreamable";
   protected:                                                                                                           \
     constexpr void ToStream() override                                                                                 \
     {                                                                                                                  \
-        TO_STREAM_ALL(baseClasses);                                                                                    \
+        ToStreamBases<baseClasses>();                                                                                  \
                                                                                                                        \
         mStreamWriter.WriteAll(__VA_ARGS__);                                                                           \
     }                                                                                                                  \
@@ -112,14 +104,24 @@ inline constexpr auto STREAMABLE_INTERFACE_NAME = "::hbann::IStreamable";
     friend class ::hbann::StreamWriter;
 
 #define STATIC_ASSERT_HAS_ISTREAMABLE_BASE(baseClasses)                                                                \
-    static_assert(::hbann::are_derived_from<::hbann::IStreamable, baseClasses>, "The class must inherit a "            \
-                                                                                "streamable!");
+    static_assert(::hbann::are_derived_from_istreamable_v<baseClasses>, "The class must inherit a streamable!");
+
+#define STATIC_ASSERT_DONT_PASS_ISTREAMABLE_AS_BASE(baseClasses)                                                       \
+    static_assert(::hbann::is_not_istreamable_v<baseClasses>, "The class ::hbann::IStreamable should not be a "        \
+                                                              "base!");
 
 #define STREAMABLE_DEFINE(className, baseClasses, ...)                                                                 \
+    STATIC_ASSERT_DONT_PASS_ISTREAMABLE_AS_BASE(baseClasses)                                                           \
     STATIC_ASSERT_HAS_ISTREAMABLE_BASE(baseClasses)                                                                    \
+                                                                                                                       \
     STREAMABLE_DEFINE_INTRUSIVE                                                                                        \
+                                                                                                                       \
+    STREAMABLE_DEFINE_TO_STREAM_BASES                                                                                  \
     STREAMABLE_DEFINE_TO_STREAM(baseClasses, __VA_ARGS__)                                                              \
+                                                                                                                       \
+    STREAMABLE_DEFINE_FROM_STREAM_BASES                                                                                \
     STREAMABLE_DEFINE_FROM_STREAM(baseClasses, __VA_ARGS__)                                                            \
+                                                                                                                       \
     STREAMABLE_RESET_ACCESS_MODIFIER
 
 namespace hbann
@@ -174,6 +176,24 @@ template <typename> struct is_basic_string : std::false_type
 template <typename... Types> struct is_basic_string<std::basic_string<Types...>> : std::true_type
 {
 };
+
+template <typename> struct are_derived_from_istreamable : std::false_type
+{
+};
+template <typename... Types>
+struct are_derived_from_istreamable<std::tuple<Types...>>
+    : std::integral_constant<bool, (std::derived_from<Types, IStreamable> && ...)>
+{
+};
+
+template <typename> struct is_not_istreamable : std::true_type
+{
+};
+template <typename... Types>
+struct is_not_istreamable<std::tuple<Types...>>
+    : std::integral_constant<bool, !(std::is_same_v<IStreamable, Types> || ...)>
+{
+};
 } // namespace detail
 
 template <typename Type> inline constexpr bool is_pair_v = detail::is_pair<Type>::value;
@@ -183,11 +203,11 @@ template <typename Type> inline constexpr bool is_optional_v = detail::is_option
 template <typename Type> inline constexpr bool is_unique_ptr_v = detail::is_unique_ptr<Type>::value;
 template <typename Type> inline constexpr bool is_shared_ptr_v = detail::is_shared_ptr<Type>::value;
 template <typename Type> inline constexpr bool is_basic_string_v = detail::is_basic_string<Type>::value;
+template <typename Type>
+inline constexpr bool are_derived_from_istreamable_v = detail::are_derived_from_istreamable<Type>::value;
+template <typename Type> inline constexpr bool is_not_istreamable_v = detail::is_not_istreamable<Type>::value;
 
 template <typename> inline constexpr auto always_false = false;
-
-template <typename Base, typename... Derived>
-concept are_derived_from = (std::derived_from<Derived, Base> && ...);
 
 template <typename Type>
 concept is_wstring = std::is_same_v<typename Type::value_type, std::wstring::value_type> && is_basic_string_v<Type>;
