@@ -48,6 +48,14 @@ class IStreamable
     virtual void ToStream() = 0;
     virtual void FromStream() = 0;
 
+    virtual void ToStreamBases()
+    {
+    }
+
+    virtual void FromStreamBases()
+    {
+    }
+
     [[nodiscard]] constexpr Stream &&Release() noexcept
     {
         return std::move(mStream);
