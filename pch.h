@@ -72,15 +72,15 @@
 #define STATIC_ASSERT_HAS_ISTREAMABLE_BASE(...)                                                                        \
     static_assert(::hbann::are_derived_from_istreamable<__VA_ARGS__>, "The class must inherit a streamable!");
 
-#define STATIC_ASSERT_DONT_PASS_ISTREAMABLE_AS_BASE(baseClasses)                                                       \
-    static_assert(!::hbann::are_same_as_istreamable<baseClasses>, "The class ::hbann::IStreamable should not be a "    \
+#define STATIC_ASSERT_DONT_PASS_ISTREAMABLE_AS_BASE(...)                                                               \
+    static_assert(!::hbann::are_same_as_istreamable<__VA_ARGS__>, "The class ::hbann::IStreamable should not be a "    \
                                                                   "base!");
 
 #define STREAMABLE_RESET_ACCESS_MODIFIER private:
 
 #define STREAMABLE_DEFINE_TO_STREAM_BASES(...)                                                                         \
   protected:                                                                                                           \
-    constexpr void ToStreamBases() override                                                                            \
+    void ToStreamBases() override                                                                                      \
     {                                                                                                                  \
         TS_BASES(__VA_ARGS__);                                                                                         \
     }                                                                                                                  \
@@ -89,7 +89,7 @@
 
 #define STREAMABLE_DEFINE_FROM_STREAM_BASES(...)                                                                       \
   protected:                                                                                                           \
-    constexpr void FromStreamBases() override                                                                          \
+    void FromStreamBases() override                                                                                    \
     {                                                                                                                  \
         FS_BASES(__VA_ARGS__);                                                                                         \
     }                                                                                                                  \
@@ -107,7 +107,7 @@
 
 #define STREAMABLE_DEFINE_FROM_STREAM(className, ...)                                                                  \
   protected:                                                                                                           \
-    constexpr void FromStream() override                                                                               \
+    void FromStream() override                                                                                         \
     {                                                                                                                  \
         className::FromStreamBases();                                                                                  \
                                                                                                                        \
@@ -118,7 +118,7 @@
 
 #define STREAMABLE_DEFINE_TO_STREAM(className, ...)                                                                    \
   protected:                                                                                                           \
-    constexpr void ToStream() override                                                                                 \
+    void ToStream() override                                                                                           \
     {                                                                                                                  \
         className::ToStreamBases();                                                                                    \
                                                                                                                        \
