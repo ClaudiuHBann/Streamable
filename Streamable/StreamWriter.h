@@ -15,7 +15,7 @@ namespace hbann
 class StreamWriter
 {
   public:
-    constexpr StreamWriter(Stream &aStream) noexcept : mStream(&aStream)
+    constexpr explicit StreamWriter(Stream &aStream) noexcept : mStream(&aStream)
     {
     }
 

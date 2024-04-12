@@ -15,7 +15,7 @@ namespace hbann
 class StreamReader
 {
   public:
-    constexpr StreamReader(Stream &aStream) noexcept : mStream(&aStream)
+    constexpr explicit StreamReader(Stream &aStream) noexcept : mStream(&aStream)
     {
     }
 

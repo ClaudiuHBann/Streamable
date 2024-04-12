@@ -27,7 +27,7 @@ class Stream
     {
     }
 
-    constexpr Stream(const span aSpan) noexcept : mStream(aSpan)
+    constexpr explicit Stream(const span aSpan) noexcept : mStream(aSpan)
     {
     }
 
