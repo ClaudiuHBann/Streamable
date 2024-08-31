@@ -169,7 +169,8 @@ class StreamReader
     {
         static_assert(std::derived_from<Type, IStreamable>, "Type is not a streamable!");
 
-        aStreamable.Deserialize(mStream->Read(ReadCount()), false); // read streamable size in bytes
+        aStreamable.Deserialize(static_cast<Stream>(mStream->Read(ReadCount())),
+                                false); // read streamable size in bytes
         return *this;
     }
 
@@ -205,7 +206,7 @@ class StreamReader
             }
         });
 
-        aStreamablePtr->Deserialize(mStream->Read(ReadCount()), false);
+        aStreamablePtr->Deserialize(static_cast<Stream>(mStream->Read(ReadCount())), false);
         return *this;
     }
 
