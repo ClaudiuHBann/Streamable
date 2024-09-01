@@ -10,9 +10,6 @@
     <ClCompile Include="Utilities\SizeFinder.cpp">
       <Filter>Utilities</Filter>
     </ClCompile>
-    <ClCompile Include="Utilities\Stream.cpp">
-      <Filter>Utilities</Filter>
-    </ClCompile>
     <ClCompile Include="Streams\IStreamable.cpp">
       <Filter>Streams</Filter>
     </ClCompile>
@@ -27,6 +24,9 @@
     </ClCompile>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Streams\Stream.cpp">
+      <Filter>Streams</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Utilities">
@@ -49,9 +49,6 @@
     <ClInclude Include="Utilities\SizeFinder.h">
       <Filter>Utilities</Filter>
     </ClInclude>
-    <ClInclude Include="Utilities\Stream.h">
-      <Filter>Utilities</Filter>
-    </ClInclude>
     <ClInclude Include="Streams\StreamWriter.h">
       <Filter>Streams</Filter>
     </ClInclude>
@@ -65,5 +62,8 @@
       <Filter>FWD</Filter>
     </ClInclude>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Streams\Stream.h">
+      <Filter>Streams</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -160,23 +160,23 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Streams\IStreamable.cpp" />
+    <ClCompile Include="Streams\Stream.cpp" />
     <ClCompile Include="Streams\StreamReader.cpp" />
     <ClCompile Include="Streams\StreamWriter.cpp" />
     <ClCompile Include="Utilities\Converter.cpp" />
     <ClCompile Include="Utilities\Size.cpp" />
     <ClCompile Include="Utilities\SizeFinder.cpp" />
-    <ClCompile Include="Utilities\Stream.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FWD\StreamableFWD.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Streams\IStreamable.h" />
+    <ClInclude Include="Streams\Stream.h" />
     <ClInclude Include="Streams\StreamReader.h" />
     <ClInclude Include="Streams\StreamWriter.h" />
     <ClInclude Include="Utilities\Converter.h" />
     <ClInclude Include="Utilities\Size.h" />
     <ClInclude Include="Utilities\SizeFinder.h" />
-    <ClInclude Include="Utilities\Stream.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

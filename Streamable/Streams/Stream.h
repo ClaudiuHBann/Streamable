@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "Size.h"
+#include "Utilities/Size.h"
 
 namespace hbann
 {
