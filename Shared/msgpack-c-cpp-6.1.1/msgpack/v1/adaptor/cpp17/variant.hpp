@@ -40,11 +40,11 @@ Variant construct_variant(
     std::index_sequence<current_index, indices...>
 ) {
     if constexpr(sizeof...(Ts) == 0) {
-        return object.as<T>();
+        return Variant{std::in_place_index<current_index>, object.as<T>()};
     }
     else {
         if (index == current_index) {
-            return object.as<T>();
+            return Variant{std::in_place_index<current_index>, object.as<T>()};
         }
         return construct_variant<Variant, Ts...>(
             index,
