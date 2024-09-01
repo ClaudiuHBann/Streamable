@@ -57,4 +57,4 @@ While **Streamable** offers many benefits, it's essential to consider its limita
 
 ## Examples
 
-- [Examples](https://github.com/ClaudiuHBann/Streamable_v2/blob/master/Test/Main.cpp) - Mixed
+- [Examples](https://github.com/ClaudiuHBann/Streamable/blob/master/Tests/Main.cpp) - Mixed
