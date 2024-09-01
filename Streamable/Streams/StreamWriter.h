@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include "Converter.h"
-#include "SizeFinder.h"
-#include "Stream.h"
+#include "Utilities/Converter.h"
+#include "Utilities/SizeFinder.h"
+#include "Utilities/Stream.h"
 
 namespace hbann
 {
