@@ -3594,6 +3594,7 @@ namespace Catch {
 
     private:
         T* nullableValue;
+#pragma warning(suppress: 4324)
         alignas(alignof(T)) char storage[sizeof(T)];
     };
 
