@@ -12,7 +12,7 @@ inline constexpr guid GUID_RND = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
 class Shape : public virtual hbann::IStreamable
 {
-    STREAMABLE_DEFINE(Shape, mType, mID);
+    STREAMABLE_DEFINE(Shape, mType, mID)
 
   public:
     enum class Type : uint8_t
@@ -48,8 +48,8 @@ class Shape : public virtual hbann::IStreamable
 
 class Circle : public Shape
 {
-    STREAMABLE_DEFINE_BASE(Shape);
-    STREAMABLE_DEFINE(Circle, mSVG, mURL, mVariant);
+    STREAMABLE_DEFINE_BASE(Shape)
+    STREAMABLE_DEFINE(Circle, mSVG, mURL, mVariant)
 
   public:
     Circle() = default;
@@ -73,8 +73,8 @@ class Circle : public Shape
 
 class Sphere : public Circle
 {
-    STREAMABLE_DEFINE_BASE(Circle);
-    STREAMABLE_DEFINE(Sphere, mReflexion, mTuple, mPair);
+    STREAMABLE_DEFINE_BASE(Circle)
+    STREAMABLE_DEFINE(Sphere, mReflexion, mTuple, mPair)
 
   public:
     Sphere() = default;
@@ -98,8 +98,8 @@ class Sphere : public Circle
 
 class RectangleEx : public Shape
 {
-    STREAMABLE_DEFINE_BASE(Shape);
-    STREAMABLE_DEFINE(RectangleEx, mCenter, mMap, mCells);
+    STREAMABLE_DEFINE_BASE(Shape)
+    STREAMABLE_DEFINE(RectangleEx, mCenter, mMap, mCells)
 
   public:
     RectangleEx() = default;
@@ -121,8 +121,8 @@ class RectangleEx : public Shape
 
 class Diamond : public Circle, public RectangleEx
 {
-    STREAMABLE_DEFINE_BASE(Circle, RectangleEx);
-    STREAMABLE_DEFINE(Diamond);
+    STREAMABLE_DEFINE_BASE(Circle, RectangleEx)
+    STREAMABLE_DEFINE(Diamond)
 
   public:
     Diamond() = default;
@@ -146,11 +146,14 @@ hbann::IStreamable *Shape::FindDerivedStreamable(hbann::StreamReader &aStreamRea
 
     switch (type)
     {
-    case Shape::Type::CIRCLE:
+        using enum Shape::Type;
+
+    case CIRCLE:
         return new Circle;
-    case Shape::Type::RECTANGLE:
+    case RECTANGLE:
         return new RectangleEx;
 
+    case NONE:
     default:
         return nullptr;
     }
@@ -158,7 +161,7 @@ hbann::IStreamable *Shape::FindDerivedStreamable(hbann::StreamReader &aStreamRea
 
 class Context : public hbann::IStreamable
 {
-    STREAMABLE_DEFINE(Context, mShapes);
+    STREAMABLE_DEFINE(Context, mShapes)
 
   public:
     Context() = default;
@@ -190,7 +193,9 @@ class Context : public hbann::IStreamable
 
             switch ((*mShapes)[i]->GetType())
             {
-            case Shape::Type::CIRCLE: {
+                using enum Shape::Type;
+
+            case CIRCLE: {
                 if (*(Circle *)(*mShapes)[i] != *(Circle *)(*aContext.mShapes)[i])
                 {
                     return false;
@@ -199,7 +204,7 @@ class Context : public hbann::IStreamable
                 break;
             }
 
-            case Shape::Type::RECTANGLE: {
+            case RECTANGLE: {
                 if (*(RectangleEx *)(*mShapes)[i] != *(RectangleEx *)(*aContext.mShapes)[i])
                 {
                     return false;
@@ -207,6 +212,10 @@ class Context : public hbann::IStreamable
 
                 break;
             }
+
+            case NONE:
+            default:
+                return false;
             }
         }
 

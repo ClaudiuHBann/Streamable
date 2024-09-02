@@ -48,5 +48,5 @@ jobs:
 
       - name: Build & Run Tests
         run: |
-          g++-12 -std=c++20 -I./Shared -I./nuget -ITests Tests/pch.cpp Tests/Main.cpp -o tests
+          g++-12 -Wall -Wextra -Wpedantic -Wdisabled-optimization -Wduplicated-branches -Wduplicated-cond -Wlogical-op -Wmissing-include-dirs -Wnull-dereference -Woverloaded-virtual -Wpointer-arith -Wshadow -Wswitch-enum -Wvla -std=c++20 -I./Shared -I./nuget -ITests Tests/pch.cpp Tests/Main.cpp -o tests
           ./tests
