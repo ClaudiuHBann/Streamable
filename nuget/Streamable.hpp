@@ -269,7 +269,7 @@ concept is_range_standard_layout =
 template <typename Container>
 concept has_method_size = requires(Container &aContainer) { std::ranges::size(aContainer); };
 
-[[nodiscard]] consteval bool static_equal(const char *aString1, const char *aString2) noexcept
+[[nodiscard]] consteval bool static_equal(const auto &aString1, const auto &aString2) noexcept
 {
     return *aString1 == *aString2 && (!*aString1 || static_equal(aString1 + 1, aString2 + 1));
 }
@@ -287,6 +287,26 @@ template <typename Type, std::size_t vIndex = 0>
     {
         throw std::out_of_range("Out of bounds variant index!");
     }
+}
+
+template <typename Type> [[nodiscard]] static constexpr Type ByteSwap(const Type aSize) noexcept
+{
+    static_assert(always_false<Type>, "ByteSwap is not implemented for this type!");
+    return {};
+}
+
+template <> [[nodiscard]] constexpr uint32_t ByteSwap(const uint32_t aSize) noexcept
+{
+    return ((aSize >> 24) & 0x000000FF) | ((aSize >> 8) & 0x0000FF00) | ((aSize << 8) & 0x00FF0000) |
+           ((aSize << 24) & 0xFF000000);
+}
+
+template <> [[nodiscard]] constexpr uint64_t ByteSwap(const uint64_t aSize) noexcept
+{
+    return ((aSize & 0xFF00000000000000) >> 56) | ((aSize & 0x00FF000000000000) >> 40) |
+           ((aSize & 0x0000FF0000000000) >> 24) | ((aSize & 0x000000FF00000000) >> 8) |
+           ((aSize & 0x00000000FF000000) << 8) | ((aSize & 0x0000000000FF0000) << 24) |
+           ((aSize & 0x000000000000FF00) << 40) | ((aSize & 0x00000000000000FF) << 56);
 }
 
 class Converter
@@ -448,26 +468,6 @@ class Size
         {
             return aSize;
         }
-    }
-
-    template <typename Type> [[nodiscard]] static constexpr Type ByteSwap(const Type aSize) noexcept
-    {
-        static_assert(always_false<Type>, "ByteSwap is not implemented for this type!");
-        return {};
-    }
-
-    template <> [[nodiscard]] constexpr uint32_t ByteSwap(const uint32_t aSize) noexcept
-    {
-        return ((aSize >> 24) & 0x000000FF) | ((aSize >> 8) & 0x0000FF00) | ((aSize << 8) & 0x00FF0000) |
-               ((aSize << 24) & 0xFF000000);
-    }
-
-    template <> [[nodiscard]] constexpr uint64_t ByteSwap(const uint64_t aSize) noexcept
-    {
-        return ((aSize & 0xFF00000000000000) >> 56) | ((aSize & 0x00FF000000000000) >> 40) |
-               ((aSize & 0x0000FF0000000000) >> 24) | ((aSize & 0x000000FF00000000) >> 8) |
-               ((aSize & 0x00000000FF000000) << 8) | ((aSize & 0x0000000000FF0000) << 24) |
-               ((aSize & 0x000000000000FF00) << 40) | ((aSize & 0x00000000000000FF) << 56);
     }
 };
 

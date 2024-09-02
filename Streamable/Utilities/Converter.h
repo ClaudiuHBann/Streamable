@@ -8,6 +8,26 @@
 
 namespace hbann
 {
+template <typename Type> [[nodiscard]] static constexpr Type ByteSwap(const Type aSize) noexcept
+{
+    static_assert(always_false<Type>, "ByteSwap is not implemented for this type!");
+    return {};
+}
+
+template <> [[nodiscard]] constexpr uint32_t ByteSwap(const uint32_t aSize) noexcept
+{
+    return ((aSize >> 24) & 0x000000FF) | ((aSize >> 8) & 0x0000FF00) | ((aSize << 8) & 0x00FF0000) |
+           ((aSize << 24) & 0xFF000000);
+}
+
+template <> [[nodiscard]] constexpr uint64_t ByteSwap(const uint64_t aSize) noexcept
+{
+    return ((aSize & 0xFF00000000000000) >> 56) | ((aSize & 0x00FF000000000000) >> 40) |
+           ((aSize & 0x0000FF0000000000) >> 24) | ((aSize & 0x000000FF00000000) >> 8) |
+           ((aSize & 0x00000000FF000000) << 8) | ((aSize & 0x0000000000FF0000) << 24) |
+           ((aSize & 0x000000000000FF00) << 40) | ((aSize & 0x00000000000000FF) << 56);
+}
+
 class Converter
 {
   public:

@@ -244,7 +244,7 @@ concept is_range_standard_layout =
 template <typename Container>
 concept has_method_size = requires(Container &aContainer) { std::ranges::size(aContainer); };
 
-[[nodiscard]] consteval bool static_equal(const char *aString1, const char *aString2) noexcept
+[[nodiscard]] consteval bool static_equal(const auto &aString1, const auto &aString2) noexcept
 {
     return *aString1 == *aString2 && (!*aString1 || static_equal(aString1 + 1, aString2 + 1));
 }
