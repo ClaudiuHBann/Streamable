@@ -23,10 +23,6 @@ jobs:
         working-directory: ./Streamable
         run: msbuild /m /p:Configuration=Release /p:Platform=x64
 
-      - name: Restore Tests's NuGet packages
-        working-directory: ./Tests
-        run: nuget restore
-
       - name: Build & Run Tests
         working-directory: ./Tests
         run: |
