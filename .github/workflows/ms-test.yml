@@ -1,0 +1,40 @@
+name: MS Test
+
+on:
+  push:
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4.1.7
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore Streamable's NuGet packages
+        working-directory: ./Streamable
+        run: nuget restore
+
+      - name: Build Streamable
+        working-directory: ./Streamable
+        run: msbuild /m /p:Configuration=Release /p:Platform=x64
+
+      - name: Restore Tests's NuGet packages
+        working-directory: ./Tests
+        run: nuget restore
+
+      - name: Build & Run Tests
+        working-directory: ./Tests
+        run: |
+          msbuild /m /p:Configuration=Debug /p:Platform=x86
+          Debug/Tests.exe
+          msbuild /m /p:Configuration=Debug /p:Platform=x64
+          x64/Debug/Tests.exe
+          msbuild /m /p:Configuration=Release /p:Platform=x86
+          Release/Tests.exe
+          msbuild /m /p:Configuration=Release /p:Platform=x64
+          x64/Release/Tests.exe
