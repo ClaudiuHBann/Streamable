@@ -34,7 +34,7 @@ class Shape : public virtual hbann::IStreamable
         return mType == aShape.mType && !memcmp(&mID, &aShape.mID, sizeof(mID));
     }
 
-    Type GetType()
+    Type GetType() const
     {
         return mType;
     }
@@ -279,14 +279,30 @@ TEST_CASE("Streamable", "[Streamable]")
         const auto bicepsView = stream.Read(biceps.size());
         REQUIRE(!std::memcmp(biceps.c_str(), bicepsView.data(), bicepsView.size()));
 
-        REQUIRE(!stream.Read(1).size());
+        try
+        {
+            static_cast<void>(stream.Read(1).size());
+            REQUIRE(false);
+        }
+        catch (const std::out_of_range &)
+        {
+            REQUIRE(true);
+        }
 
         std::string triceps("triceps");
         stream.Write({reinterpret_cast<uint8_t *>(triceps.data()), triceps.size()});
         const auto tricepsView = stream.Read(triceps.size());
         REQUIRE(!std::memcmp(triceps.c_str(), tricepsView.data(), tricepsView.size()));
 
-        REQUIRE(!stream.Read(1).size());
+        try
+        {
+            static_cast<void>(stream.Read(1).size());
+            REQUIRE(false);
+        }
+        catch (const std::out_of_range &)
+        {
+            REQUIRE(true);
+        }
 
         std::string cariceps("cariceps");
         stream.Write({reinterpret_cast<uint8_t *>(cariceps.data()), cariceps.size()});
@@ -410,6 +426,48 @@ TEST_CASE("IStreamable", "[IStreamable]")
         contextEnd.Deserialize(contextStart.Serialize());
 
         REQUIRE(contextStart == contextEnd);
+    }
+}
+
+struct v1 : public hbann::IStreamable
+{
+    STREAMABLE_DEFINE(v1, a)
+
+  public:
+    int a{};
+};
+
+struct v2 : public hbann::IStreamable
+{
+    STREAMABLE_DEFINE(v2, a, b)
+
+  public:
+    int a{};
+    int b{};
+};
+
+TEST_CASE("Compatibility", "[Compatibility]")
+{
+    SECTION("Forwards/Backwards")
+    {
+        v1 v1;
+        v2 v2;
+
+        v1.a = 420;
+
+        v2.a = 420;
+        v2.b = 69;
+
+        v1.Deserialize(v2.Serialize());
+        REQUIRE(v1.a == v2.a);
+
+        v1.a = 420;
+
+        v2.a = 420;
+        v2.b = 69;
+
+        v2.Deserialize(v1.Serialize());
+        REQUIRE(v2.a == v1.a);
     }
 }
 

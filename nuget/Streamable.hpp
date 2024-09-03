@@ -525,14 +525,19 @@ class Stream
         return spen ? *spen : GetStream();
     }
 
-    [[nodiscard]] constexpr auto Read(Size::size_max aSize) noexcept
+    [[nodiscard]] constexpr auto CanRead(const Size::size_max aSize) noexcept
+    {
+        const auto view = View();
+        return mReadIndex + aSize <= view.size();
+    }
+
+    [[nodiscard]] constexpr auto Read(const Size::size_max aSize)
     {
         const auto view = View();
 
-        // clamp read count
-        if (mReadIndex + aSize > view.size())
+        if (!CanRead(aSize))
         {
-            aSize = view.size() - mReadIndex;
+            throw std::out_of_range("Invalid Stream subscript!");
         }
 
         mReadIndex += aSize;
@@ -902,6 +907,11 @@ class StreamReader
     template <typename Type> constexpr decltype(auto) ReadObjectOfKnownSize(Type &aObject)
     {
         static_assert(is_standard_layout_no_pointer<Type>, "Type is not an object of known size or it is a pointer!");
+
+        if (!mStream->CanRead(sizeof(Type)))
+        {
+            return *this;
+        }
 
         const auto view = mStream->Read(sizeof(Type));
         aObject = *reinterpret_cast<const Type *>(view.data());

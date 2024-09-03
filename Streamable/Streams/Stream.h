@@ -64,14 +64,19 @@ class Stream
         return spen ? *spen : GetStream();
     }
 
-    [[nodiscard]] constexpr auto Read(Size::size_max aSize) noexcept
+    [[nodiscard]] constexpr auto CanRead(const Size::size_max aSize) noexcept
+    {
+        const auto view = View();
+        return mReadIndex + aSize <= view.size();
+    }
+
+    [[nodiscard]] constexpr auto Read(const Size::size_max aSize)
     {
         const auto view = View();
 
-        // clamp read count
-        if (mReadIndex + aSize > view.size())
+        if (!CanRead(aSize))
         {
-            aSize = view.size() - mReadIndex;
+            throw std::out_of_range("Invalid Stream subscript!");
         }
 
         mReadIndex += aSize;
