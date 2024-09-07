@@ -1,16 +1,16 @@
 /*
     Copyright (c) 2024 Claudiu HBann
-    
+
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
     in the Software without restriction, including without limitation the rights
     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
     copies of the Software, and to permit persons to whom the Software is
     furnished to do so, subject to the following conditions:
-    
+
     The above copyright notice and this permission notice shall be included in all
     copies or substantial portions of the Software.
-    
+
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -533,19 +533,15 @@ class Stream
 
     [[nodiscard]] constexpr auto Read(const Size::size_max aSize)
     {
-        const auto view = View();
-
-        if (!CanRead(aSize))
-        {
-            throw std::out_of_range("Invalid Stream subscript!");
-        }
+        ThrowIfCantRead(aSize);
 
         mReadIndex += aSize;
-        return span{view.data() + (mReadIndex - aSize), aSize};
+        return span{View().data() + (mReadIndex - aSize), aSize};
     }
 
-    [[nodiscard]] constexpr auto Current() noexcept
+    [[nodiscard]] constexpr auto Current()
     {
+        ThrowIfCantRead(1);
         return View()[mReadIndex];
     }
 
@@ -582,6 +578,14 @@ class Stream
     {
         // if crashed here --> it's read only (span)
         return std::get<vector>(mStream);
+    }
+
+    constexpr void ThrowIfCantRead(const Size::size_max aSize)
+    {
+        if (!CanRead(aSize))
+        {
+            throw std::out_of_range("Invalid Stream subscript!");
+        }
     }
 };
 
@@ -863,6 +867,11 @@ class StreamReader
 
         using TypeValueType = typename Type::value_type;
 
+        if (!aCount)
+        {
+            return *this;
+        }
+
         if constexpr (is_utf16string<Type>)
         {
             aRange.assign(Converter::Decode<Type>(mStream->Read(aCount)));
@@ -921,7 +930,17 @@ class StreamReader
 
     inline Size::size_max ReadCount() noexcept
     {
+        if (!mStream->CanRead(1))
+        {
+            return 0;
+        }
+
         const auto size = Size::FindRequiredBytes(mStream->Current());
+        if (!mStream->CanRead(size))
+        {
+            return 0;
+        }
+
         return Size::MakeSize(mStream->Read(size));
     }
 };

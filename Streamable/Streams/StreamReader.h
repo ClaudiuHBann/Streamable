@@ -253,6 +253,11 @@ class StreamReader
 
         using TypeValueType = typename Type::value_type;
 
+        if (!aCount)
+        {
+            return *this;
+        }
+
         if constexpr (is_utf16string<Type>)
         {
             aRange.assign(Converter::Decode<Type>(mStream->Read(aCount)));
@@ -311,7 +316,17 @@ class StreamReader
 
     inline Size::size_max ReadCount() noexcept
     {
+        if (!mStream->CanRead(1))
+        {
+            return 0;
+        }
+
         const auto size = Size::FindRequiredBytes(mStream->Current());
+        if (!mStream->CanRead(size))
+        {
+            return 0;
+        }
+
         return Size::MakeSize(mStream->Read(size));
     }
 };
