@@ -3,8 +3,49 @@
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Independent\Streams.cpp">
+      <Filter>Independent</Filter>
+    </ClCompile>
+    <ClCompile Include="Independent\Utilities.cpp">
+      <Filter>Independent</Filter>
+    </ClCompile>
+    <ClCompile Include="Compatibility\Backwards.cpp">
+      <Filter>Compatibility</Filter>
+    </ClCompile>
+    <ClCompile Include="Compatibility\Forwards.cpp">
+      <Filter>Compatibility</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities\Classes.cpp">
+      <Filter>Utilities</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Independent\Utilities.h">
+      <Filter>Independent</Filter>
+    </ClInclude>
+    <ClInclude Include="Independent\Streams.h">
+      <Filter>Independent</Filter>
+    </ClInclude>
+    <ClInclude Include="Compatibility\Forwards.h">
+      <Filter>Compatibility</Filter>
+    </ClInclude>
+    <ClInclude Include="Compatibility\Backwards.h">
+      <Filter>Compatibility</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities\Classes.h">
+      <Filter>Utilities</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Independent">
+      <UniqueIdentifier>{26537e12-a56d-4233-8875-6e136e9e2756}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Compatibility">
+      <UniqueIdentifier>{c79dc11e-c18c-4cef-a0f2-12357a757774}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utilities">
+      <UniqueIdentifier>{ae8acf5f-8dd7-4587-a92f-9bd2693055aa}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>
