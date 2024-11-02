@@ -221,7 +221,7 @@ concept is_any_pointer = std::is_pointer_v<Type> || is_smart_pointer<Type>;
 
 template <typename Derived, typename Base>
 concept is_derived_from_pointer =
-    std::is_pointer_v<Derived> && std::derived_from<std::remove_pointer_t<Derived>, Base> ||
+    (std::is_pointer_v<Derived> && std::derived_from<std::remove_pointer_t<Derived>, Base>) ||
     (is_smart_pointer<Derived> && std::derived_from<typename Derived::element_type, Base>);
 
 template <typename... Types>

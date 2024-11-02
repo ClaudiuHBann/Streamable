@@ -2,15 +2,15 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <metadata>
         <id>Streamable</id>
-        <version>1.2.1</version>
+        <version>1.5.0</version>
 	<authors>Claudiu HBann</authors>
-        <description>Fast and easy-to-use single-header parser with a simple format for C++20 and NO dependencies.</description>
+        <description>Fastest, Smallest and Simplest (De)Serializer for C++20 and newer.</description>
 	<copyright>Copyright (c) Claudiu HBann 2024</copyright>
-	<projectUrl>https://github.com/ClaudiuHBann/Streamable_v2</projectUrl>
+	<projectUrl>https://github.com/ClaudiuHBann/Streamable</projectUrl>
 	<readme>README.md</readme>
-	<repository type="git" url="https://github.com/ClaudiuHBann/Streamable_v2" branch="master" commit="2c7b69f917ee02168dbdd1f71fa9103b8092abde" />
-	<releaseNotes>fixed streamable pointers memory leak, default access modifier
-added copy ctors and assignment operators</releaseNotes>
+	<repository type="git" url="https://github.com/ClaudiuHBann/Streamable" branch="master" commit="fa528a2a4da2f0e1493ad27ee9b04aa40dfd00a7" />
+	<releaseNotes>added forwards and backwards compatibility
+fixed build for gcc</releaseNotes>
 	<license type="expression">MIT</license>
 	<tags>fast, easy-to-use, single-header, native, parser, simple-format, C++20, no-dependencies</tags>
     </metadata>

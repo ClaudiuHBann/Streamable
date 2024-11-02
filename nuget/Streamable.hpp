@@ -246,7 +246,7 @@ concept is_any_pointer = std::is_pointer_v<Type> || is_smart_pointer<Type>;
 
 template <typename Derived, typename Base>
 concept is_derived_from_pointer =
-    std::is_pointer_v<Derived> && std::derived_from<std::remove_pointer_t<Derived>, Base> ||
+    (std::is_pointer_v<Derived> && std::derived_from<std::remove_pointer_t<Derived>, Base>) ||
     (is_smart_pointer<Derived> && std::derived_from<typename Derived::element_type, Base>);
 
 template <typename... Types>
@@ -505,8 +505,6 @@ class Stream
     template <typename FunctionSeek>
     constexpr decltype(auto) Peek(FunctionSeek &&aFunctionSeek, const Size::size_max aOffset = 0)
     {
-        ThrowIfCantRead(aOffset);
-
         const auto readIndex = mReadIndex;
         mReadIndex += aOffset;
         aFunctionSeek(readIndex);
@@ -527,24 +525,28 @@ class Stream
         return spen ? *spen : GetStream();
     }
 
-    [[nodiscard]] constexpr auto CanRead(const Size::size_max aSize) noexcept
+    [[nodiscard]] constexpr auto Read(Size::size_max aSize) noexcept
     {
         const auto view = View();
-        return mReadIndex + aSize <= view.size();
-    }
 
-    [[nodiscard]] constexpr auto Read(const Size::size_max aSize)
-    {
-        ThrowIfCantRead(aSize);
+        // clamp read count
+        if (mReadIndex + aSize > view.size())
+        {
+            aSize = view.size() - mReadIndex;
+        }
 
         mReadIndex += aSize;
-        return span{View().data() + (mReadIndex - aSize), aSize};
+        return span{view.data() + (mReadIndex - aSize), aSize};
     }
 
-    [[nodiscard]] constexpr auto Current()
+    [[nodiscard]] constexpr auto Current() noexcept
     {
-        ThrowIfCantRead(1);
         return View()[mReadIndex];
+    }
+
+    constexpr auto IsEOS() noexcept
+    {
+        return View().size() == mReadIndex;
     }
 
     constexpr decltype(auto) Write(const span aSpan)
@@ -569,6 +571,7 @@ class Stream
     constexpr decltype(auto) Clear() noexcept
     {
         GetStream().clear();
+        GetStream().shrink_to_fit();
         return *this;
     }
 
@@ -580,14 +583,6 @@ class Stream
     {
         // if crashed here --> it's read only (span)
         return std::get<vector>(mStream);
-    }
-
-    constexpr void ThrowIfCantRead(const Size::size_max aSize)
-    {
-        if (!CanRead(aSize))
-        {
-            throw std::out_of_range("Invalid Stream subscript!");
-        }
     }
 };
 
@@ -644,7 +639,7 @@ class StreamReader
         *this = std::move(aStreamReader);
     }
 
-    template <typename Type, typename... Types> constexpr void ReadAll(Type &aObject, Types &...aObjects)
+    template <typename Type, typename... Types> constexpr decltype(auto) ReadAll(Type &aObject, Types &...aObjects)
     {
         using TypeRaw = std::remove_cvref_t<Type>;
 
@@ -654,10 +649,13 @@ class StreamReader
         {
             ReadAll<Types...>(aObjects...);
         }
+
+        return *this;
     }
 
-    constexpr void ReadAll()
+    constexpr decltype(auto) ReadAll()
     {
+        return *this;
     }
 
     template <typename FunctionSeek>
@@ -684,6 +682,12 @@ class StreamReader
 
     template <typename Type> constexpr decltype(auto) Read(Type &aObject)
     {
+        // for backwards compatibility
+        if (mStream->IsEOS())
+        {
+            return *this;
+        }
+
         if constexpr (is_optional_v<Type>)
         {
             return ReadOptional(aObject);
@@ -801,9 +805,7 @@ class StreamReader
         // StreamReader that is a friend of streamables
         static_assert(
             requires(StreamReader &aStreamReader) {
-                {
-                    TypeNoPtr::FindDerivedStreamable(aStreamReader)
-                } -> std::convertible_to<IStreamable *>;
+                { TypeNoPtr::FindDerivedStreamable(aStreamReader) } -> std::convertible_to<IStreamable *>;
             }, "Type doesn't have a public/protected method 'static "
                "IStreamable* FindDerivedStreamable(StreamReader &)' !");
 
@@ -919,11 +921,6 @@ class StreamReader
     {
         static_assert(is_standard_layout_no_pointer<Type>, "Type is not an object of known size or it is a pointer!");
 
-        if (!mStream->CanRead(sizeof(Type)))
-        {
-            return *this;
-        }
-
         const auto view = mStream->Read(sizeof(Type));
         aObject = *reinterpret_cast<const Type *>(view.data());
 
@@ -932,17 +929,7 @@ class StreamReader
 
     inline Size::size_max ReadCount() noexcept
     {
-        if (!mStream->CanRead(1))
-        {
-            return 0;
-        }
-
         const auto size = Size::FindRequiredBytes(mStream->Current());
-        if (!mStream->CanRead(size))
-        {
-            return 0;
-        }
-
         return Size::MakeSize(mStream->Read(size));
     }
 };

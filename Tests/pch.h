@@ -22,3 +22,8 @@ using namespace Catch;
 // Test
 #include <iostream>
 #include <list>
+
+/*
+    TODO:
+         - use a cmakelists.txt
+*/
