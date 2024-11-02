@@ -9,6 +9,7 @@ Fastest, Smallest and Simplest (De)Serializer for C++20 or newer.
 - [Features](#features)
 - [Usage](#usage)
 - [Benchmark](#benchmark)
+- [Backwards And Forwards Compatibility](#backwards-and-forwards-compatibility)
 - [Downsides and Limitations](#downsides-and-limitations)
 - [Examples](#examples)
 
@@ -48,6 +49,10 @@ This benchmark contains anything from trivial types to maps of strings to STL co
 | Streamable        | 0.379     | 85                |
 | nlohmann::json    | 2.9       | 187               |
 | MsgPack           | 0.755     | 87                |
+
+## Backwards And Forwards Compatibility
+
+This library supports forwards and backwards compatibility across different versions.
 
 ## Downsides and Limitations
 
