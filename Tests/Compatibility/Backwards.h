@@ -103,7 +103,8 @@ TEST_CASE("Compatibility::Backwards", "[Compatibility][Backwards]")
         vvv1.a = v;
 
         vvv1.Deserialize(vvv2.Serialize());
-        REQUIRE(vvv1.a.size() == 0);
+        // still 2 because we dont overwrite the property
+        REQUIRE(vvv1.a.size() == 2);
 
         vvv1.a = v;
 

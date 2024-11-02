@@ -28,7 +28,7 @@ class StreamReader
         *this = std::move(aStreamReader);
     }
 
-    template <typename Type, typename... Types> constexpr void ReadAll(Type &aObject, Types &...aObjects)
+    template <typename Type, typename... Types> constexpr decltype(auto) ReadAll(Type &aObject, Types &...aObjects)
     {
         using TypeRaw = std::remove_cvref_t<Type>;
 
@@ -38,10 +38,13 @@ class StreamReader
         {
             ReadAll<Types...>(aObjects...);
         }
+
+        return *this;
     }
 
-    constexpr void ReadAll()
+    constexpr decltype(auto) ReadAll()
     {
+        return *this;
     }
 
     template <typename FunctionSeek>
@@ -68,6 +71,12 @@ class StreamReader
 
     template <typename Type> constexpr decltype(auto) Read(Type &aObject)
     {
+        // for backwards compatibility
+        if (mStream->IsEOS())
+        {
+            return *this;
+        }
+
         if constexpr (is_optional_v<Type>)
         {
             return ReadOptional(aObject);
@@ -185,9 +194,7 @@ class StreamReader
         // StreamReader that is a friend of streamables
         static_assert(
             requires(StreamReader &aStreamReader) {
-                {
-                    TypeNoPtr::FindDerivedStreamable(aStreamReader)
-                } -> std::convertible_to<IStreamable *>;
+                { TypeNoPtr::FindDerivedStreamable(aStreamReader) } -> std::convertible_to<IStreamable *>;
             }, "Type doesn't have a public/protected method 'static "
                "IStreamable* FindDerivedStreamable(StreamReader &)' !");
 

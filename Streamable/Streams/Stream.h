@@ -83,6 +83,11 @@ class Stream
         return View()[mReadIndex];
     }
 
+    constexpr auto IsEOS() noexcept
+    {
+        return View().size() == mReadIndex;
+    }
+
     constexpr decltype(auto) Write(const span aSpan)
     {
         GetStream().insert(GetStream().end(), aSpan.data(), aSpan.data() + aSpan.size());
@@ -105,6 +110,7 @@ class Stream
     constexpr decltype(auto) Clear() noexcept
     {
         GetStream().clear();
+        GetStream().shrink_to_fit();
         return *this;
     }
 
