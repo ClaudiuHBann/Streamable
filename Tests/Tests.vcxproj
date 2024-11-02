@@ -108,7 +108,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\Shared;$(SolutionDir)..\Shared\msgpack-c-cpp-6.1.1;$(SolutionDir)..\nuget;$(SolutionDir)..\Tests;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\Shared;$(SolutionDir)..\Shared\msgpack-c-cpp-6.1.1;$(SolutionDir)..\Tests;$(ProjectDir)..\Streamable;$(ProjectDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -128,7 +128,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\Shared;$(SolutionDir)..\Shared\msgpack-c-cpp-6.1.1;$(SolutionDir)..\nuget;$(SolutionDir)..\Tests;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\Shared;$(SolutionDir)..\Shared\msgpack-c-cpp-6.1.1;$(SolutionDir)..\Tests;$(ProjectDir)..\Streamable;$(ProjectDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -148,7 +148,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\Shared;$(SolutionDir)..\Shared\msgpack-c-cpp-6.1.1;$(SolutionDir)..\nuget;$(SolutionDir)..\Tests;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\Shared;$(SolutionDir)..\Shared\msgpack-c-cpp-6.1.1;$(SolutionDir)..\Tests;$(ProjectDir)..\Streamable;$(ProjectDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -168,7 +168,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\Shared;$(SolutionDir)..\Shared\msgpack-c-cpp-6.1.1;$(SolutionDir)..\nuget;$(SolutionDir)..\Tests;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\Shared;$(SolutionDir)..\Shared\msgpack-c-cpp-6.1.1;$(SolutionDir)..\Tests;$(ProjectDir)..\Streamable;$(ProjectDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

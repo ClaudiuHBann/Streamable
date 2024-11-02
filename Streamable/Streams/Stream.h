@@ -44,8 +44,6 @@ class Stream
     template <typename FunctionSeek>
     constexpr decltype(auto) Peek(FunctionSeek &&aFunctionSeek, const Size::size_max aOffset = 0)
     {
-        ThrowIfCantRead(aOffset);
-
         const auto readIndex = mReadIndex;
         mReadIndex += aOffset;
         aFunctionSeek(readIndex);
@@ -66,23 +64,22 @@ class Stream
         return spen ? *spen : GetStream();
     }
 
-    [[nodiscard]] constexpr auto CanRead(const Size::size_max aSize) noexcept
+    [[nodiscard]] constexpr auto Read(Size::size_max aSize) noexcept
     {
         const auto view = View();
-        return mReadIndex + aSize <= view.size();
-    }
 
-    [[nodiscard]] constexpr auto Read(const Size::size_max aSize)
-    {
-        ThrowIfCantRead(aSize);
+        // clamp read count
+        if (mReadIndex + aSize > view.size())
+        {
+            aSize = view.size() - mReadIndex;
+        }
 
         mReadIndex += aSize;
-        return span{View().data() + (mReadIndex - aSize), aSize};
+        return span{view.data() + (mReadIndex - aSize), aSize};
     }
 
-    [[nodiscard]] constexpr auto Current()
+    [[nodiscard]] constexpr auto Current() noexcept
     {
-        ThrowIfCantRead(1);
         return View()[mReadIndex];
     }
 
@@ -119,14 +116,6 @@ class Stream
     {
         // if crashed here --> it's read only (span)
         return std::get<vector>(mStream);
-    }
-
-    constexpr void ThrowIfCantRead(const Size::size_max aSize)
-    {
-        if (!CanRead(aSize))
-        {
-            throw std::out_of_range("Invalid Stream subscript!");
-        }
     }
 };
 } // namespace hbann

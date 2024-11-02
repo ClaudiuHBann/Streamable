@@ -1,7 +1,8 @@
 #pragma once
 
 // Streamable
-#include "Streamable.hpp"
+#include "Streamable/pch.h"
+#include "Streams/IStreamable.h"
 
 // Shared
 #define CATCH_AMALGAMATED_CUSTOM_MAIN

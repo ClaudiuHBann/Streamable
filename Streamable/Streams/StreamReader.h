@@ -303,11 +303,6 @@ class StreamReader
     {
         static_assert(is_standard_layout_no_pointer<Type>, "Type is not an object of known size or it is a pointer!");
 
-        if (!mStream->CanRead(sizeof(Type)))
-        {
-            return *this;
-        }
-
         const auto view = mStream->Read(sizeof(Type));
         aObject = *reinterpret_cast<const Type *>(view.data());
 
@@ -316,17 +311,7 @@ class StreamReader
 
     inline Size::size_max ReadCount() noexcept
     {
-        if (!mStream->CanRead(1))
-        {
-            return 0;
-        }
-
         const auto size = Size::FindRequiredBytes(mStream->Current());
-        if (!mStream->CanRead(size))
-        {
-            return 0;
-        }
-
         return Size::MakeSize(mStream->Read(size));
     }
 };

@@ -11,30 +11,10 @@ TEST_CASE("Streamable::Independent::Streams", "[Streamable][Independent][Streams
         const auto bicepsView = stream.Read(biceps.size());
         REQUIRE(!std::memcmp(biceps.c_str(), bicepsView.data(), bicepsView.size()));
 
-        try
-        {
-            static_cast<void>(stream.Read(1).size());
-            REQUIRE(false);
-        }
-        catch (const std::out_of_range &)
-        {
-            REQUIRE(true);
-        }
-
         std::string triceps("triceps");
         stream.Write({reinterpret_cast<uint8_t *>(triceps.data()), triceps.size()});
         const auto tricepsView = stream.Read(triceps.size());
         REQUIRE(!std::memcmp(triceps.c_str(), tricepsView.data(), tricepsView.size()));
-
-        try
-        {
-            static_cast<void>(stream.Read(1).size());
-            REQUIRE(false);
-        }
-        catch (const std::out_of_range &)
-        {
-            REQUIRE(true);
-        }
 
         std::string cariceps("cariceps");
         stream.Write({reinterpret_cast<uint8_t *>(cariceps.data()), cariceps.size()});
