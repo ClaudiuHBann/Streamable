@@ -1,8 +1,16 @@
 #pragma once
 
 // Streamable
+#ifdef _WIN32
+
 #include "Streamable/pch.h"
 #include "Streams/IStreamable.h"
+
+#else
+
+#include "Streamable.hpp"
+
+#endif // _WIN32
 
 // Shared
 #define CATCH_AMALGAMATED_CUSTOM_MAIN
