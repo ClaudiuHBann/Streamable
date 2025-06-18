@@ -38,7 +38,7 @@ class Stream
 
     constexpr vector &&Release() noexcept
     {
-        return std::move(GetStream());
+        return (std::move)(GetStream());
     }
 
     template <typename FunctionSeek>
@@ -109,8 +109,16 @@ class Stream
 
     constexpr decltype(auto) Clear() noexcept
     {
+        if (IsView())
+        {
+            GetSpan() = {};
+        }
+        else
+    {
         GetStream().clear();
         GetStream().shrink_to_fit();
+        }
+
         return *this;
     }
 
@@ -118,10 +126,21 @@ class Stream
     stream mStream{};
     Size::size_max mReadIndex{};
 
+    constexpr bool IsView() const noexcept
+    {
+        return std::holds_alternative<span>(mStream);
+    }
+
     constexpr vector &GetStream() noexcept
     {
-        // if crashed here --> it's read only (span)
+        assert(!IsView());
         return std::get<vector>(mStream);
+    }
+
+    constexpr span &GetSpan() noexcept
+    {
+        assert(IsView());
+        return std::get<span>(mStream);
     }
 };
 } // namespace hbann

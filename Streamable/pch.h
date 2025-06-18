@@ -35,6 +35,7 @@
 
 // std
 #include <bit>
+#include <cassert>
 #include <cmath>
 #include <cstring>
 #include <filesystem>
@@ -87,6 +88,9 @@
 
 #define STATIC_ASSERT_HAS_ISTREAMABLE_BASE(...)                                                                        \
     static_assert(::hbann::are_derived_from_istreamable<__VA_ARGS__>, "The class must inherit a streamable!");
+
+#define STATIC_ASSERT_IS_DEFAULT_CONSTRUCTIBLE(className)                                                              \
+    static_assert(std::default_initializable<className>, "The class must be default constructible!");
 
 #define STATIC_ASSERT_DONT_PASS_ISTREAMABLE_AS_BASE(...)                                                               \
     static_assert(!::hbann::are_same_as_istreamable<__VA_ARGS__>, "The class ::hbann::IStreamable should not be a "    \
@@ -148,7 +152,17 @@
     friend class ::hbann::StreamReader;                                                                                \
     friend class ::hbann::StreamWriter;
 
+#define STREAMABLE_STATIC_ASSERTS(className)                                                                           \
+  private:                                                                                                             \
+    /* We need those static_asserts in a function else the things are not defined yet... */                            \
+    static consteval void static_asserts() noexcept                                                                    \
+    {                                                                                                                  \
+        STATIC_ASSERT_IS_DEFAULT_CONSTRUCTIBLE(className);                                                             \
+    }
+
 #define STREAMABLE_DEFINE(className, ...)                                                                              \
+    STREAMABLE_STATIC_ASSERTS(className)                                                                               \
+                                                                                                                       \
     STREAMABLE_DEFINE_INTRUSIVE                                                                                        \
                                                                                                                        \
     STREAMABLE_DEFINE_TO_STREAM(className, __VA_ARGS__)                                                                \
