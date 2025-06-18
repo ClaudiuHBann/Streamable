@@ -279,6 +279,40 @@ template <typename Type, std::size_t vIndex = 0>
         throw std::out_of_range("Out of bounds variant index!");
     }
 }
+
+template <std::integral Type>
+    requires std::is_unsigned_v<Type>
+[[nodiscard]] static constexpr Type ByteSwap(const Type aInteger) noexcept
+{
+    if constexpr (sizeof(aInteger) == 8)
+    {
+        return ((aInteger & Type(0xFF00000000000000)) >> Type(56)) |
+               ((aInteger & Type(0x00FF000000000000)) >> Type(40)) |
+               ((aInteger & Type(0x0000FF0000000000)) >> Type(24)) |
+               ((aInteger & Type(0x000000FF00000000)) >> Type(8)) | ((aInteger & Type(0x00000000FF000000)) << Type(8)) |
+               ((aInteger & Type(0x0000000000FF0000)) << Type(24)) |
+               ((aInteger & Type(0x000000000000FF00)) << Type(40)) |
+               ((aInteger & Type(0x00000000000000FF)) << Type(56));
+    }
+    else if constexpr (sizeof(aInteger) == 4)
+    {
+        return ((aInteger >> Type(24)) & Type(0x000000FF)) | ((aInteger >> Type(8)) & Type(0x0000FF00)) |
+               ((aInteger << Type(8)) & Type(0x00FF0000)) | ((aInteger << Type(24)) & Type(0xFF000000));
+    }
+    else if constexpr (sizeof(aInteger) == 2)
+    {
+        return ((aInteger >> Type(8)) & Type(0x00FF)) | ((aInteger << Type(8)) & Type(0xFF00));
+    }
+    else if constexpr (sizeof(aInteger) == 1)
+    {
+        return aInteger;
+    }
+    else
+    {
+        static_assert(always_false<Type>, "ByteSwap is not implemented for this type!");
+        return {};
+    }
+}
 } // namespace hbann
 
 /*
