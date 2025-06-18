@@ -47,10 +47,12 @@
 
 // Streamable
 #define EXPAND(x) x
-#define GET_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, MACRO, ...) MACRO
+#define GET_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, \
+                  _23, _24, MACRO, ...)                                                                                \
+    MACRO
 
 // clang-format off
-#define PASTE(...) EXPAND(GET_MACRO(__VA_ARGS__, PASTE9, PASTE8, PASTE7, PASTE6, PASTE5, PASTE4, PASTE3, PASTE2, PASTE1)(__VA_ARGS__))
+#define PASTE(...) EXPAND(GET_MACRO(__VA_ARGS__, PASTE23, PASTE22, PASTE21, PASTE20, PASTE19, PASTE18, PASTE17, PASTE16, PASTE15, PASTE14, PASTE13, PASTE12, PASTE11, PASTE10, PASTE9, PASTE8, PASTE7, PASTE6, PASTE5, PASTE4, PASTE3, PASTE2, PASTE1)(__VA_ARGS__))
 
 #define PASTE1(func, v1) func(v1)
 #define PASTE2(func, v1, v2) PASTE1(func, v1) PASTE1(func, v2)
@@ -61,6 +63,20 @@
 #define PASTE7(func, v1, v2, v3, v4, v5, v6, v7) PASTE1(func, v1) PASTE6(func, v2, v3, v4, v5, v6, v7)
 #define PASTE8(func, v1, v2, v3, v4, v5, v6, v7, v8) PASTE1(func, v1) PASTE7(func, v2, v3, v4, v5, v6, v7, v8)
 #define PASTE9(func, v1, v2, v3, v4, v5, v6, v7, v8, v9) PASTE1(func, v1) PASTE8(func, v2, v3, v4, v5, v6, v7, v8, v9)
+#define PASTE10(func, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) PASTE1(func, v1) PASTE9(func, v2, v3, v4, v5, v6, v7, v8, v9, v10)
+#define PASTE11(func, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) PASTE1(func, v1) PASTE10(func, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11)
+#define PASTE12(func, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) PASTE1(func, v1) PASTE11(func, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12)
+#define PASTE13(func, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) PASTE1(func, v1) PASTE12(func, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13)
+#define PASTE14(func, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) PASTE1(func, v1) PASTE13(func, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14)
+#define PASTE15(func, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) PASTE1(func, v1) PASTE14(func, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15)
+#define PASTE16(func, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) PASTE1(func, v1) PASTE15(func, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16)
+#define PASTE17(func, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17) PASTE1(func, v1) PASTE16(func, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17)
+#define PASTE18(func, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18) PASTE1(func, v1) PASTE17(func, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18)
+#define PASTE19(func, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19) PASTE1(func, v1) PASTE18(func, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19)
+#define PASTE20(func, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20) PASTE1(func, v1) PASTE19(func, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20)
+#define PASTE21(func, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21) PASTE1(func, v1) PASTE20(func, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21)
+#define PASTE22(func, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22) PASTE1(func, v1) PASTE21(func, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22)
+#define PASTE23(func, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23) PASTE1(func, v1) PASTE22(func, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23)
 // clang-format on
 
 #define TS_BASE(base) base::ToStream();
