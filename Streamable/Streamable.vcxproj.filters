@@ -27,6 +27,9 @@
     <ClCompile Include="Streams\Stream.cpp">
       <Filter>Streams</Filter>
     </ClCompile>
+    <ClCompile Include="Streams\StreamFile.cpp">
+      <Filter>Streams</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Utilities">
@@ -63,6 +66,9 @@
     </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Streams\Stream.h">
+      <Filter>Streams</Filter>
+    </ClInclude>
+    <ClInclude Include="Streams\StreamFile.h">
       <Filter>Streams</Filter>
     </ClInclude>
   </ItemGroup>

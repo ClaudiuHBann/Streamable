@@ -1,16 +1,12 @@
 #include "pch.h"
 
-// not in PCH because it's not used in the library itself
-// and only in this single header maker
-#include <fstream>
-
 using namespace std::string_literals;
 using namespace std::string_view_literals;
 
 namespace
 {
 constexpr auto LICENSE = R"(/*
-    Copyright (c) 2024 Claudiu HBann
+    Copyright (c) 2025 Claudiu HBann
     
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -31,8 +27,11 @@ constexpr auto LICENSE = R"(/*
     SOFTWARE.
 */)"sv;
 
-constexpr auto FILES = {R"(Utilities/Converter.h)"sv,  R"(Utilities/Size.h)"sv,       R"(Streams/Stream.h)"sv,
-                        R"(Utilities/SizeFinder.h)"sv, R"(Streams/StreamReader.h)"sv, R"(Streams/StreamWriter.h)"sv};
+constexpr auto FILES = {
+    R"(Utilities/Converter.h)"sv,  R"(Utilities/Size.h)"sv,       R"(Streams/StreamFile.h)"sv,
+    R"(Streams/Stream.h)"sv,       R"(Utilities/SizeFinder.h)"sv, R"(Streams/StreamReader.h)"sv,
+    R"(Streams/StreamWriter.h)"sv,
+};
 
 constexpr auto FILE_FWD = R"(FWD/StreamableFWD.h)"sv;
 constexpr auto FILE_PCH = R"(pch.h)"sv;

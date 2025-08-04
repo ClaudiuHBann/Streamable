@@ -161,6 +161,7 @@
     </ClCompile>
     <ClCompile Include="Streams\IStreamable.cpp" />
     <ClCompile Include="Streams\Stream.cpp" />
+    <ClCompile Include="Streams\StreamFile.cpp" />
     <ClCompile Include="Streams\StreamReader.cpp" />
     <ClCompile Include="Streams\StreamWriter.cpp" />
     <ClCompile Include="Utilities\Converter.cpp" />
@@ -172,6 +173,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="Streams\IStreamable.h" />
     <ClInclude Include="Streams\Stream.h" />
+    <ClInclude Include="Streams\StreamFile.h" />
     <ClInclude Include="Streams\StreamReader.h" />
     <ClInclude Include="Streams\StreamWriter.h" />
     <ClInclude Include="Utilities\Converter.h" />

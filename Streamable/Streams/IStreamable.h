@@ -26,6 +26,14 @@ class IStreamable
         return Release();
     }
 
+    constexpr decltype(auto) Serialize(const std::filesystem::path &aFile)
+    {
+        Swap(Stream(aFile, StreamUsageType::SERIALIZE));
+        ToStream();
+        mStream.Clear();
+        return Release();
+    }
+
     constexpr void Deserialize(Stream &&aStream, const bool aClear = true)
     {
         Swap(std::move(aStream));
@@ -35,6 +43,14 @@ class IStreamable
         {
             mStream.Clear();
         }
+    }
+
+    constexpr void Deserialize(const std::filesystem::path &aFile, const bool aRemoveFile = false)
+    {
+        Swap(Stream(aFile, StreamUsageType::DESERIALIZE));
+        FromStream();
+
+        mStream.Clear(aRemoveFile);
     }
 
   protected:

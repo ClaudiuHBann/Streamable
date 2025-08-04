@@ -39,6 +39,7 @@
 #include <cmath>
 #include <cstring>
 #include <filesystem>
+#include <fstream>
 #include <memory>
 #include <optional>
 #include <span>
@@ -327,6 +328,12 @@ template <std::integral Type>
         return {};
     }
 }
+
+enum class StreamUsageType : uint8_t
+{
+    SERIALIZE,
+    DESERIALIZE
+};
 } // namespace hbann
 
 /*
